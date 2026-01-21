@@ -93,6 +93,8 @@ const GestionImportaciones = ({ onUpdate }) => {
             
             // 3. Opcional: Recargar datos generales si es necesario
             await cargarDatos(); 
+            // 4. Limpiar el input file en el DOM
+            document.querySelector('input[type="file"]').value = "";
             
         } catch (err) {
             console.error("Error al subir:", err.response?.data);

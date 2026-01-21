@@ -6,16 +6,21 @@ from datetime import date, timedelta
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 import os
-
+from django.contrib.auth.models import User
 from .models import Cliente, Archivo, Aduana, Importacion, Exportacion
 from .serializers import (
     ClienteSerializer, 
     ArchivoSerializer, 
     AduanaSerializer, 
     ImportacionSerializer, 
-    ExportacionSerializer
+    ExportacionSerializer,
+    UserSerializer
 )
-
+from rest_framework.permissions import IsAdminUser
+class UserViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    #permission_classes = [IsAdminUser]# Asegura que solo los admins puedan acceder
 
 class ClienteViewSet(viewsets.ModelViewSet):
     # MAL: queryset = Cliente.objects.filter(baja=False) 
@@ -112,3 +117,19 @@ class ExportacionViewSet(viewsets.ModelViewSet):
         
         serializer = self.get_serializer(alertas, many=True)
         return Response(serializer.data)
+    
+from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from rest_framework_simplejwt.views import TokenObtainPairView
+
+class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
+    @classmethod
+    def get_token(cls, user):
+        token = super().get_token(user)
+        # ESTO ES LO QUE FALTA EN TU CONSOLA:
+        token['is_staff'] = user.is_staff
+        token['username'] = user.username
+        return token
+
+class MyTokenObtainPairView(TokenObtainPairView):
+    # ESTA LÍNEA ES VITAL: vincula la vista con el serializador de arriba
+    serializer_class = MyTokenObtainPairSerializer

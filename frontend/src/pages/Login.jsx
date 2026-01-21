@@ -14,7 +14,13 @@ const Login = () => {
         setError('');
         setLoading(true);
         try {
-            await login(username, password);
+            // 1. Capturamos la respuesta (debe traer token y datos del usuario)
+            const response = await login(username, password);
+            
+            // 2. Guardamos el rol. 
+            // Nota: Asegúrate de que tu backend envíe 'is_staff' o 'isAdmin'
+            localStorage.setItem('isAdmin', response.user.is_staff); 
+            
             navigate('/dashboard'); 
         } catch (err) {
             setError('Usuario o contraseña incorrectos');

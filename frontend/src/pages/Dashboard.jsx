@@ -4,7 +4,8 @@ import {
     getArchivos, 
     getAduanas, 
     getImportaciones, 
-    getExportaciones 
+    getExportaciones,
+    getUsuarios
 } from '../api/files'; 
 
 import FileUpload from '../components/FileUpload';
@@ -13,16 +14,19 @@ import GestionAduanas from '../components/GestionAduanas';
 import GestionImportaciones from '../components/GestionImportaciones';
 import GestionExportaciones from '../components/GestionExportaciones';
 import AlertasVencimiento from '../components/AlertasVencimiento';
+import GestionUsuarios from '../components/GestionUsuarios'; 
+import Home from '../components/Home';
 
 const Dashboard = () => {
-    const [view, setView] = useState('archivos');
+    const [view, setView] = useState('home');
     const [archivos, setArchivos] = useState([]);
     const [stats, setStats] = useState({ 
         clientes: 0, 
         archivos: 0, 
         aduanas: 0, 
         importaciones: 0, 
-        exportaciones: 0 
+        exportaciones: 0 ,
+        usuarios: 0
     });
 
     useEffect(() => {
@@ -36,7 +40,8 @@ const Dashboard = () => {
                 getArchivos(),
                 getAduanas(),
                 getImportaciones(),
-                getExportaciones()
+                getExportaciones(),
+                getUsuarios()
             ]);
             
             setStats({ 
@@ -44,7 +49,9 @@ const Dashboard = () => {
                 archivos: dataArc.length,
                 aduanas: dataAdu.length,
                 importaciones: dataImp.length,
-                exportaciones: dataExp.length
+                exportaciones: dataExp.length,
+                usuarios: dataExp.length
+                
             });
             setArchivos(dataArc);
         } catch (err) {
@@ -89,24 +96,28 @@ const Dashboard = () => {
                 <button style={styles.logoutBtn} onClick={handleLogout}>Cerrar Sesión</button>
             </div>
 
-            {/* Panel de Estadísticas */}
+            {/* Panel de Estadísticas 
             <div style={styles.statsGrid}>
                 <div style={styles.card}><h2 style={{ margin: 0 }}>{stats.clientes}</h2><p style={{ color: '#888', margin: '5px 0 0' }}>Clientes</p></div>
                 <div style={styles.card}><h2 style={{ margin: 0 }}>{stats.aduanas}</h2><p style={{ color: '#888', margin: '5px 0 0' }}>Aduanas</p></div>
                 <div style={{...styles.card, borderTop: '4px solid #28a745'}}><h2 style={{ margin: 0 }}>{stats.importaciones}</h2><p style={{ color: '#888', margin: '5px 0 0' }}>Importaciones</p></div>
                 <div style={{...styles.card, borderTop: '4px solid #007bff'}}><h2 style={{ margin: 0 }}>{stats.exportaciones}</h2><p style={{ color: '#888', margin: '5px 0 0' }}>Exportaciones</p></div>
                 <div style={styles.card}><h2 style={{ margin: 0 }}>{stats.archivos}</h2><p style={{ color: '#888', margin: '5px 0 0' }}>Archivos</p></div>
+                <div style={{...styles.card, borderTop: '4px solid #805ad5'}}><h2 style={{ margin: 0 }}>{stats.usuarios}</h2><p style={{ color: '#888', margin: '5px 0 0' }}>Usuarios</p></div>
             </div>
+            */}
             <AlertasVencimiento onAlertClick={handleAlertClick} />
 
             {/* Navegación por Pestañas */}
             <div style={styles.navTabs}>
-                
+                <div style={styles.tab(view === 'home')} onClick={() => setView('home')}>INICIO</div>
                 <div style={styles.tab(view === 'archivos')} onClick={() => setView('archivos')}>📁 DOCUMENTACIÓN</div>
                 <div style={styles.tab(view === 'clientes')} onClick={() => setView('clientes')}>👥 CLIENTES</div>
                 <div style={styles.tab(view === 'aduanas')} onClick={() => setView('aduanas')}>🏛️ ADUANAS</div>
                 <div style={styles.tab(view === 'importaciones')} onClick={() => setView('importaciones')}>📥 IMPORTACIONES</div>
                 <div style={styles.tab(view === 'exportaciones')} onClick={() => setView('exportaciones')}>📤 EXPORTACIONES</div>
+                <div style={styles.tab(view === 'usuarios')} onClick={() => setView('usuarios')}>🔑 USUARIOS</div>
+
             </div>
 
             {/* Contenido Dinámico */}
@@ -142,11 +153,12 @@ const Dashboard = () => {
                         </div>
                     </div>
                 )}
-
+                {view === 'home' && <Home />}
                 {view === 'clientes' && <GestionClientes onUpdate={cargarDatos} />}
                 {view === 'aduanas' && <GestionAduanas onUpdate={cargarDatos} />}
                 {view === 'importaciones' && <GestionImportaciones onUpdate={cargarDatos} />}
                 {view === 'exportaciones' && <GestionExportaciones onUpdate={cargarDatos} />}
+                {view === 'usuarios' && <GestionUsuarios onUpdate={cargarDatos} />}
             </div>
         </div>
     );
