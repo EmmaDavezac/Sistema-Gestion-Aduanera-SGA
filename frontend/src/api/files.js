@@ -189,6 +189,12 @@ export const getExportacionesVencer = async () => {
     const response = await api.get('exportaciones/proximas_a_vencer/');
     return response.data;
 };
+export const getArchivosByExportacion = async (exportacionId) => {
+    // 1. Usamos la instancia 'api' (que tiene el token y la baseURL correcta)
+    // 2. Usamos el endpoint 'documentos/' con el filtro '?exportacion='
+    const response = await api.get(`documentos/?exportacion=${exportacionId}`);
+    return response.data;
+};
 
 export const getUsuarios = async () => (await api.get('/usuarios/')).data;
 
@@ -196,7 +202,6 @@ export const createUsuario = async (data) => (await api.post('/usuarios/', data)
 
 export const updateUsuario = async (id, data) => (await api.put(`/usuarios/${id}/`, data)).data;
 
-export const deleteUsuario = async (id) => await api.delete(`/usuarios/${id}/`);
 
 export default api;
 

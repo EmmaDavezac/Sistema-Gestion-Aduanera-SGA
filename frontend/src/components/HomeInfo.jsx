@@ -60,24 +60,14 @@ const Home = () => {
                     text="Control de jurisdicciones, dependencias y puntos de control operativos." 
                     color="#805ad5" 
                 />
-                <FeatureCard 
-                    icon="fa-folder-tree" 
-                    title="Repositorio Digital" 
-                    text="Almacenamiento seguro de archivos y legajos digitales por operación." 
-                    color="#e53e3e" 
-                />
+                
                 <FeatureCard 
                     icon="fa-shield-halved" 
                     title="Seguridad y Roles" 
                     text="Gestión de usuarios y niveles de acceso para protección de datos críticos." 
                     color="#319795" 
                 />
-                <FeatureCard 
-                    icon="fa-cloud-arrow-up" 
-                    title="Acceso en la Nube" 
-                    text="Opere desde cualquier lugar con una infraestructura segura y escalable." 
-                    color="#d69e2e" 
-                />
+             
             </div>
         </div>
     );

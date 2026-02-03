@@ -3,10 +3,17 @@ from .models import Cliente, Archivo, Aduana, Importacion, Exportacion
 from django.contrib.auth.models import User
 
 class UserSerializer(serializers.ModelSerializer):
+    # Declaramos el campo manualmente para quitarle la obligatoriedad
+    password = serializers.CharField(
+        write_only=True, 
+        required=False, 
+        allow_blank=True, 
+        allow_null=True
+    )
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'first_name', 'email', 'password', 'is_staff', 'is_active']
-        extra_kwargs = {'password': {'write_only': True}}
+        fields = ['id', 'username', 'first_name','last_name', 'email', 'password', 'is_staff', 'is_active']
 
     def create(self, validated_data):
         # Django encripta la contraseña automáticamente con create_user
@@ -17,6 +24,22 @@ class UserSerializer(serializers.ModelSerializer):
             first_name=validated_data.get('first_name', '')
         )
         return user
+    
+    def update(self, instance, validated_data):
+            # 1. Sacamos la contraseña del paquete de datos
+            password = validated_data.pop('password', None)
+            
+            # 2. Actualizamos los demás campos (nombre, email, etc.)
+            for attr, value in validated_data.items():
+                setattr(instance, attr, value)
+
+            # 3. ¡ESTO ES LO MÁS IMPORTANTE!
+            # Si hay una nueva contraseña, usamos set_password para encriptarla
+            if password and password.strip():
+                instance.set_password(password) # <--- Aquí ocurre la magia
+                
+            instance.save()
+            return instance
 
 class AduanaSerializer(serializers.ModelSerializer):
     class Meta:

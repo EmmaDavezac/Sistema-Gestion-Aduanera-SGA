@@ -125,11 +125,10 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     def get_token(cls, user):
         token = super().get_token(user)
-        # ESTO ES LO QUE FALTA EN TU CONSOLA:
+        # Añade esto para estar 100% seguros
         token['is_staff'] = user.is_staff
         token['username'] = user.username
         return token
 
 class MyTokenObtainPairView(TokenObtainPairView):
-    # ESTA LÍNEA ES VITAL: vincula la vista con el serializador de arriba
-    serializer_class = MyTokenObtainPairSerializer
+    serializer_class = MyTokenObtainPairSerializer # <-- ESTO vincula el serializador

@@ -11,7 +11,6 @@ const AlertasVencimiento = ({ onAlertClick }) => {
             try {
                 setLoading(true);
                 const data = await getExportacionesVencer();
-                console.log("Alertas cargadas desde API:", data);
                 setAlertas(data);
                 setError(null);
             } catch (err) {

@@ -1,7 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard'
-
+import Home from './pages/Home'
+import '@fortawesome/fontawesome-free/css/all.min.css';
 // Componente para proteger rutas
 const PrivateRoute = ({ children }) => {
     const token = localStorage.getItem('token');
@@ -13,7 +13,7 @@ function App() {
         <Router>
             <Routes>
                 <Route path="/login" element={<Login />} />
-                <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
+                <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/login" />} />
             </Routes>
         </Router>
