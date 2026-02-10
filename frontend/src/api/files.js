@@ -142,9 +142,6 @@ export const createAduana = async (data) => {
     return await api.post('aduanas/', data);
 };
 
-export const updateAduana = async (id, data) => {
-    return await api.put(`aduanas/${id}/`, data);
-};
 
 export const deleteAduana = async (id) => {
     return await api.delete(`aduanas/${id}/`);

@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('gestion_archivos', '0004_remove_exportacion_id_aduana_and_more'),
+        ('SGA', '0004_remove_exportacion_id_aduana_and_more'),
     ]
 
     operations = [
@@ -44,12 +44,12 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='exportacion',
             name='aduana',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='gestion_archivos.aduana'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='SGA.aduana'),
         ),
         migrations.AlterField(
             model_name='exportacion',
             name='cliente',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='gestion_archivos.cliente'),
+            field=models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, to='SGA.cliente'),
         ),
         migrations.AlterField(
             model_name='exportacion',

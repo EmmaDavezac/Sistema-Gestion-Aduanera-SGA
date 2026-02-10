@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   getImportaciones,
   createImportacion,
@@ -9,7 +9,7 @@ import {
   uploadFile,
   deleteArchivo,
 } from "../api/files";
-
+import SkeletonTable from "./SkeletonTable";
 const GestionImportaciones = ({ onUpdate }) => {
   // Estados de datos
   const [importaciones, setImportaciones] = useState([]);
@@ -24,7 +24,7 @@ const GestionImportaciones = ({ onUpdate }) => {
   const [isReadOnly, setIsReadOnly] = useState(true); // Bloquea inputs inicialmente
   const [selectedId, setSelectedId] = useState(null);
   const [fileToUpload, setFileToUpload] = useState(null);
-
+  const [loading, setLoading] = useState(true);
   // Estado del Formulario
   const [formData, setFormData] = useState({
     numero_destinacion: "",
@@ -49,35 +49,47 @@ const GestionImportaciones = ({ onUpdate }) => {
     vencimiento_preimposicion: "",
     estado: "Pendiente",
   });
+// 1. Candado para evitar doble consulta en StrictMode
+const cargadoRef = useRef(false);
 
-  useEffect(() => {
+// 2. Envolvemos la carga en useCallback para que sea una referencia estable
+const cargarDatos = useCallback(async () => {
+  setLoading(true);
+  try {
+    const [dataImp, dataCli, dataAdu] = await Promise.all([
+      getImportaciones(),
+      getClientes(),
+      getAduanas(),
+    ]);
+    setImportaciones(dataImp);
+    setClientes(dataCli);
+    setAduanas(dataAdu);
+    if (onUpdate) onUpdate();
+  } catch (err) {
+    console.error("Error al cargar datos:", err);
+  }
+  finally {
+    setLoading(false);
+  }
+}, [onUpdate]); // onUpdate como dependencia si viene de props
+
+const cargarArchivos = useCallback(async (id) => {
+  if (!id) return;
+  try {
+    const data = await getArchivosByImportacion(id);
+    setArchivos(data);
+  } catch (err) {
+    console.error("Error al cargar archivos:", err);
+  }
+}, []);
+
+// 3. useEffect con el candado de seguridad
+useEffect(() => {
+  if (!cargadoRef.current) {
     cargarDatos();
-  }, []);
-
-  const cargarDatos = async () => {
-    try {
-      const [dataImp, dataCli, dataAdu] = await Promise.all([
-        getImportaciones(),
-        getClientes(),
-        getAduanas(),
-      ]);
-      setImportaciones(dataImp);
-      setClientes(dataCli);
-      setAduanas(dataAdu);
-      if (onUpdate) onUpdate();
-    } catch (err) {
-      console.error("Error al cargar datos:", err);
-    }
-  };
-
-  const cargarArchivos = async (id) => {
-    try {
-      const data = await getArchivosByImportacion(id);
-      setArchivos(data);
-    } catch (err) {
-      console.error("Error al cargar archivos:", err);
-    }
-  };
+    cargadoRef.current = true;
+  }
+}, [cargarDatos]);
 
   // --- MANEJADORES DE ACCIÓN ---
 
@@ -356,7 +368,10 @@ const GestionImportaciones = ({ onUpdate }) => {
             </div>
             
           ))}
-          {impFiltradas.length === 0 && (
+              {loading ? (
+    // 1. Estado de Carga: Muestra el Skeleton
+    <SkeletonTable rows={4} />
+                    ) :impFiltradas.length === 0 && (
       <div style={{ 
         textAlign: 'center', 
         padding: '60px 20px', 

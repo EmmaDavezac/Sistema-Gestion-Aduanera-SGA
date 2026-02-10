@@ -1,0 +1,6 @@
+
+from django.apps import AppConfig
+
+class SGAConfig(AppConfig):
+    default_auto_field = 'django.db.models.BigAutoField'
+    name = 'apps.SGA' # <--- DEBE DECIR ESTO

@@ -1,64 +1,77 @@
-import { useState, useEffect } from 'react';
-import { getAduanas, createAduana, updateAduana, deleteAduana } from '../api/files';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { getAduanas, createAduana, deleteAduana } from '../api/files';
+import SkeletonTable from './SkeletonTable';
 
 const GestionAduanas = () => {
     const [aduanas, setAduanas] = useState([]);
-    const [view, setView] = useState("list"); // Control de vista igual a Usuarios
-    const [isEditing, setIsEditing] = useState(false);
+    const [view, setView] = useState("list"); 
     const [busqueda, setBusqueda] = useState("");
     const [formData, setFormData] = useState({ id: '', nombre: '' });
+    const [loading, setLoading] = useState(true);
 
-    useEffect(() => { cargarAduanas(); }, []);
+    const cargadoRef = useRef(false);
 
-    const cargarAduanas = async () => {
+    const cargarAduanas = useCallback(async () => {
+        setLoading(true);
         try {
             const data = await getAduanas();
             setAduanas(data);
-        } catch (err) { console.error("Error:", err); }
-    };
+        } catch (err) {
+            console.error("Error cargando aduanas:", err);
+        } finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!cargadoRef.current) {
+            cargarAduanas();
+            cargadoRef.current = true;
+        }
+    }, [cargarAduanas]);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         try {
-            if (isEditing) {
-                await updateAduana(formData.id, formData);
-            } else {
-                await createAduana(formData);
-            }
-            alert("Operación exitosa");
+            // Solo creación, eliminamos la lógica de isEditing
+            await createAduana(formData);
+            alert("Aduana registrada con éxito");
             setView("list");
+            setFormData({ id: '', nombre: '' }); // Limpiar formulario
             window.scrollTo({ top: 0, behavior: 'smooth' });
             cargarAduanas();
         } catch (err) {
-            alert("Error: ID ya existente o datos inválidos.");
+            alert("Error: El código (ID) ya existe o los datos son inválidos.");
         }
-    };
-
-    const handleEditar = (aduana) => {
-        setFormData(aduana);
-        setIsEditing(true);
-        setView("form");
     };
 
     const handleEliminar = async (id) => {
-        if (window.confirm("¿Eliminar esta aduana?")) {
-            await deleteAduana(id);
-            cargarAduanas();
+        if (window.confirm("¿Está seguro de eliminar esta aduana? Esta acción no se puede deshacer.")) {
+            try {
+                await deleteAduana(id);
+                cargarAduanas();
+            } catch (err) {
+                alert("No se pudo eliminar la aduana.");
+            }
         }
     };
 
+    const aduanasFiltradas = aduanas.filter(a => 
+        a.nombre.toLowerCase().includes(busqueda.toLowerCase()) || 
+        a.id.toString().includes(busqueda)
+    );
+
     const styles = {
         container: { padding: '30px', backgroundColor: '#f4f7f6', minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif' },
-        header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' },
+        header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', gap: '15px', flexWrap: 'wrap' },
         searchWrapper: { position: 'relative', width: '60%' },
         searchIcon: { position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#888' },
-        card: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.05)', marginBottom: '15px', border: '1px solid #eee'  },
-        input: { padding: '12px 12px 12px 40px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '14px' },
+        card: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.05)', marginBottom: '15px', border: '1px solid #eee' },
+        input: { padding: '12px 12px 12px 40px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '14px', boxSizing: 'border-box' },
         label: { display: 'block', marginBottom: '5px', fontWeight: 'bold', fontSize: '12px', color: '#4a5568' },
-        formInput: { padding: '10px', border: '1px solid #ddd', borderRadius: '6px', width: '100%', marginTop: '5px' },
-        
+        formInput: { padding: '12px', border: '1px solid #ddd', borderRadius: '6px', width: '100%', marginTop: '5px', boxSizing: 'border-box' },
         btnGreen: { padding: '12px 24px', backgroundColor: '#2ecc71', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' },
-        btnAction: (color) => ({ padding: '8px 12px', backgroundColor: 'transparent', color: color, border: `1px solid ${color}`, borderRadius: '6px', cursor: 'pointer', transition: '0.3s', marginLeft: '8px' }),
+        btnDelete: { padding: '8px 12px', backgroundColor: 'transparent', color: '#e53e3e', border: '1px solid #e53e3e', borderRadius: '6px', cursor: 'pointer', transition: '0.3s' },
         badge: { padding: '4px 10px', borderRadius: '12px', fontSize: '12px', backgroundColor: '#edf2f7', color: '#2d3748', fontWeight: 'bold' }
     };
 
@@ -70,82 +83,87 @@ const GestionAduanas = () => {
                         <div style={styles.searchWrapper}>
                             <i className="fa-solid fa-magnifying-glass" style={styles.searchIcon}></i>
                             <input 
-                                style={ styles.input} 
-                                placeholder="Buscar aduana por nombre o código..." 
+                                style={styles.input} 
+                                placeholder="Buscar por nombre o código..." 
                                 onChange={(e) => setBusqueda(e.target.value)}
                             />
                         </div>
-                        <button style={styles.btnGreen} onClick={() => { 
-                            setFormData({ id: '', nombre: '' });
-                            setIsEditing(false); setView("form"); 
-                        }}>
+                        <button style={styles.btnGreen} onClick={() => setView("form")}>
                             <i className="fa-solid fa-plus"></i> Registrar
                         </button>
                     </div>
 
-                    {aduanas.filter(a => a.nombre.toLowerCase().includes(busqueda.toLowerCase()) || a.id.toString().includes(busqueda)).map(a => (
-                        <div key={a.id} style={styles.card}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                                    <div style={{ width: '45px', height: '45px', borderRadius: '50%', backgroundColor: '#ebf4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3182ce' }}>
-                                        <i className="fa-solid fa-landmark"></i>
+                    {loading ? (
+                        <SkeletonTable rows={4} />
+                    ) : aduanasFiltradas.length === 0 ? (
+                        <div style={{ 
+                            textAlign: 'center', 
+                            padding: '60px 20px', 
+                            color: '#a0aec0',
+                            backgroundColor: '#fff',
+                            borderRadius: '12px',
+                            border: '2px dashed #e2e8f0' // Un borde punteado queda muy bien para estados vacíos
+                          }}>
+                            <i className="fa-solid fa-box-open" style={{ fontSize: '50px', marginBottom: '15px', color: '#cbd5e0' }}></i>
+                            <h3 style={{ margin: 0, fontSize: '18px', color: '#4a5568' }}>No hay coincidencias</h3>
+                            <p style={{ marginTop: '8px' }}>Prueba con otro código u otro nombre.</p>
+                          </div>
+                    ) : (
+                        aduanasFiltradas.map(a => (
+                            <div key={a.id} style={styles.card}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
+                                        <div style={{ width: '40px', height: '40px', borderRadius: '8px', backgroundColor: '#ebf4ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3182ce' }}>
+                                            <i className="fa-solid fa-building-columns"></i>
+                                        </div>
+                                        <div>
+                                            <span style={styles.badge}>ID: {a.id}</span>
+                                            <h3 style={{ margin: '4px 0 0 0', fontSize: '16px', color: '#2d3748' }}>{a.nombre}</h3>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <span style={styles.badge}>Cód: {a.id}</span>
-                                        <h3 style={{ margin: '5px 0 0 0', fontSize: '16px', color: '#2d3748' }}>{a.nombre}</h3>
-                                    </div>
-                                </div>
-                                <div>
-                                    <button style={styles.btnAction('#3182ce')} onClick={() => handleEditar(a)}>
-                                        <i className="fa-solid fa-pen-to-square"></i> 
-                                    </button>
-                                    
-                                    <button  style={styles.btnAction('#e53e3e')}
-                                    
-                                     onClick={() => handleEliminar(a.id)}>
+                                    <button 
+                                        style={styles.btnDelete} 
+                                        onClick={() => handleEliminar(a.id)}
+                                        title="Eliminar Aduana"
+                                    >
                                         <i className="fa-solid fa-trash-can"></i>
                                     </button>
                                 </div>
                             </div>
-                        </div>
-                    ))}
+                        ))
+                    )}
                 </div>
             ) : (
-                <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+                <div style={{ maxWidth: '500px', margin: '0 auto' }}>
                     <button onClick={() => setView("list")} style={{ border: 'none', background: 'none', color: '#3182ce', cursor: 'pointer', marginBottom: '20px', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '5px' }}>
-                        <i className="fa-solid fa-arrow-left"></i> Volver al listado
+                        <i className="fa-solid fa-arrow-left"></i> Cancelar y volver
                     </button>
                     
                     <div style={styles.card}>
-                        <h2 style={{ marginTop: 0, marginBottom: '20px', color: '#2d3748' }}>
-                            <i className={isEditing ? "fa-solid fa-pen-to-square" : "fa-solid fa-plus"} style={{ marginRight: '10px', color: '#38a169' }}></i>
-                            {isEditing ? `Editando Aduana: ${formData.id}` : 'Nueva Aduana'}
-                        </h2>
-                        
+                        <h2 style={{ marginTop: 0, marginBottom: '20px', fontSize: '20px' }}>Registrar Aduana</h2>
                         <form onSubmit={handleSubmit}>
                             <div style={{ marginBottom: '15px' }}>
-                                <label style={styles.label}>Código de Aduana (ID)</label>
+                                <label style={styles.label}>Código Identificador (No modificable después)</label>
                                 <input 
                                     style={styles.formInput}
                                     value={formData.id} 
                                     onChange={e => setFormData({ ...formData, id: e.target.value })} 
                                     required 
-                                    disabled={isEditing}
-                                    placeholder="Ej: 001"
+                                    placeholder="Ej: ADU-77"
                                 />
                             </div>
                             <div style={{ marginBottom: '20px' }}>
-                                <label style={styles.label}>Nombre de la Aduana</label>
+                                <label style={styles.label}>Nombre Oficial</label>
                                 <input 
                                     style={styles.formInput}
                                     value={formData.nombre} 
                                     onChange={e => setFormData({ ...formData, nombre: e.target.value })} 
                                     required 
-                                    placeholder="Ej: Aduana de Mendoza"
+                                    placeholder="Ej: Aduana Central de Buenos Aires"
                                 />
                             </div>
                             <button type="submit" style={{ ...styles.btnGreen, width: '100%', justifyContent: 'center' }}>
-                                <i className="fa-solid fa-floppy-disk"></i> Guardar Aduana
+                                <i className="fa-solid fa-check"></i> Confirmar Registro
                             </button>
                         </form>
                     </div>

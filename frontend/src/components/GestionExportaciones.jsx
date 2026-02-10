@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     getExportaciones, 
     createExportacion,
@@ -9,7 +9,7 @@ import {
     uploadFile,
     deleteArchivo,
   } from "../api/files";
-
+import SkeletonTable from './SkeletonTable';
   const GestionExportaciones = ({ onUpdate }) => {
     // Estados de datos
     const [exportaciones, setExportaciones] = useState([]);
@@ -24,6 +24,10 @@ import {
     const [isReadOnly, setIsReadOnly] = useState(true);
     const [selectedId, setSelectedId] = useState(null);
     const [fileToUpload, setFileToUpload] = useState(null);
+    const [loading, setLoading] = useState(true);
+    // Candado para evitar la doble consulta inicial (Strict Mode)
+    const cargadoRef = useRef(false);
+
     const initialFormState = {
         numero_destinacion: "",
         condicion_venta: "",
@@ -72,39 +76,45 @@ const [formData, setFormData] = useState({
     vencimiento_preimposicion: "",
     estado: "Pendiente",
   });
-
-    useEffect(() => {
-        cargarDatos();
-    }, []);
-
-    const cargarDatos = async () => {
+// 3. Funciones de carga estabilizadas con useCallback
+    const cargarDatos = useCallback(async () => {
+      setLoading(true);
         try {
-          const [dataExp, dataCli, dataAdu] = await Promise.all([
-            getExportaciones(),
-            getClientes(),
-            getAduanas(),
-          ]);
-          setExportaciones(dataExp);
-          setClientes(dataCli);
-          setAduanas(dataAdu);
-          if (onUpdate) onUpdate();
+            const [dataExp, dataCli, dataAdu] = await Promise.all([
+                getExportaciones(),
+                getClientes(),
+                getAduanas(),
+            ]);
+            setExportaciones(dataExp);
+            setClientes(dataCli);
+            setAduanas(dataAdu);
+            if (onUpdate) onUpdate();
         } catch (err) {
-          console.error("Error al cargar datos:", err);
+            console.error("Error al cargar datos:", err);
         }
-      };
+        finally {
+          setLoading(false);
+        }
+    }, [onUpdate]);
 
-    // --- LÓGICA DE ARCHIVOS (Igual a Clientes) ---
-
-    const cargarArchivos = async (id) => {
+    const cargarArchivos = useCallback(async (id) => {
+        if (!id) return;
         try {
             const data = await getArchivosByExportacion(id);
             setArchivos(Array.isArray(data) ? data : []);
         } catch (err) {
             console.error("Error al cargar archivos:", err);
-            setArchivos([]); // Resetear a array vacío si falla
+            setArchivos([]);
         }
-    };
+    }, []);
 
+    // 4. useEffect controlado
+    useEffect(() => {
+        if (!cargadoRef.current) {
+            cargarDatos();
+            cargadoRef.current = true;
+        }
+    }, [cargarDatos]);
     // --- MANEJADORES DE ACCIÓN ---
 
   const handleInputChange = (e) => {
@@ -122,19 +132,33 @@ const [formData, setFormData] = useState({
       [name]: value === "" ? 0 : parseFloat(value),
     });
   };
+  // Función interna para limpiar la fecha
+  const formatSafeDate = (dateVal) => {
+    if (!dateVal) return null; // Si está vacío, enviar null
+    // Si viene con hora (ISO string), cortamos solo los primeros 10 caracteres
+    return typeof dateVal === 'string' ? dateVal.split('T')[0] : dateVal;
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const dataToSend = {
-        ...formData,
-        aduana: formData.aduana ? parseInt(formData.aduana) : null,
-        cliente: formData.cliente,
-        cantidad_unidades: parseFloat(formData.cantidad_unidades),
-        unitario_en_divisa: parseFloat(formData.unitario_en_divisa),
-        fob_total_en_divisa: parseFloat(formData.fob_total_en_divisa),
-        fob_total_en_dolar: parseFloat(formData.fob_total_en_dolar),
-      };
+        const dataToSend = {
+            ...formData,
+            // Convertimos IDs a números
+            aduana: formData.aduana ? parseInt(formData.aduana) : null,
+            cliente: formData.cliente ? parseInt(formData.cliente) : null,
+            
+            // Limpieza estricta de fechas YYYY-MM-DD
+            oficializacion: formatSafeDate(formData.oficializacion),
+            vencimiento_embarque: formatSafeDate(formData.vencimiento_embarque),
+            vencimiento_preimposicion: formatSafeDate(formData.vencimiento_preimposicion),
+
+            // Aseguramos que los números no sean strings
+            cantidad_unidades: parseFloat(formData.cantidad_unidades || 0),
+            unitario_en_divisa: parseFloat(formData.unitario_en_divisa || 0),
+            fob_total_en_divisa: parseFloat(formData.fob_total_en_divisa || 0),
+            fob_total_en_dolar: parseFloat(formData.fob_total_en_dolar || 0),
+        };
 
       if (isEditing && selectedId) {
         await updateExportacion(selectedId, dataToSend);
@@ -190,17 +214,21 @@ const handleFileDelete = async (id) => {
 
 
   // --- NAVEGACIÓN ---
-
   const handleVerDetalle = (exp) => {
     setSelectedId(exp.id);
-    // Mapeo seguro para evitar el error de 'null' en los inputs
     const sanitizedData = {};
     
     Object.keys(initialFormState).forEach(key => {
-        sanitizedData[key] = exp[key] ?? initialFormState[key];
+        let value = exp[key] ?? initialFormState[key];
+        
+        // Si es una de las fechas, forzamos el formato YYYY-MM-DD para el input
+        if (['oficializacion', 'vencimiento_embarque', 'vencimiento_preimposicion'].includes(key) && value) {
+            value = value.split('T')[0];
+        }
+        
+        sanitizedData[key] = value;
     });
     
-    // Manejo especial para relaciones
     sanitizedData.aduana = exp.aduana?.id || exp.aduana || "";
     sanitizedData.cliente = exp.cliente?.id || exp.cliente || "";
 
@@ -321,7 +349,10 @@ const handleFileDelete = async (id) => {
               </div>
             </div>
           ))}
-             {expFiltradas.length === 0 && (
+              {loading ? (
+    // 1. Estado de Carga: Muestra el Skeleton
+    <SkeletonTable rows={4} />
+                    ) :expFiltradas.length === 0 && (
       <div style={{ 
         textAlign: 'center', 
         padding: '60px 20px', 

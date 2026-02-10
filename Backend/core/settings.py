@@ -20,7 +20,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework_simplejwt',
     # Tu App
-    'apps.gestion_archivos',
+    'apps.SGA',
 ]
 
 MIDDLEWARE = [

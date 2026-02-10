@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { getUsuarios, createUsuario, updateUsuario } from '../api/files';
-
+import SkeletonTable from './SkeletonTable';
 const GestionUsuarios = () => {
     const [usuarios, setUsuarios] = useState([]);
     const [view, setView] = useState("list");
     const [isEditing, setIsEditing] = useState(false);
-    
+    const [loading, setLoading] = useState(true);
     const [selectedId, setSelectedId] = useState(null);
     const [busqueda, setBusqueda] = useState("");
     const [isReadOnly, setIsReadOnly] = useState(true);
@@ -18,15 +18,29 @@ const GestionUsuarios = () => {
         is_staff: false,
         is_active: true
     });
+// Candado para evitar doble carga inicial
+const cargadoRef = useRef(false);
 
-    useEffect(() => { cargarUsuarios(); }, []);
-
-    const cargarUsuarios = async () => {
+    const cargarUsuarios = useCallback(async () => {
+        setLoading(true);
         try {
             const data = await getUsuarios();
             setUsuarios(data);
-        } catch (err) { console.error("Error:", err); }
-    };
+        } catch (err) {
+            console.error("Error al cargar usuarios:", err);
+        }
+        finally {
+            setLoading(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!cargadoRef.current) {
+            cargarUsuarios();
+            cargadoRef.current = true;
+        }
+    }, [cargarUsuarios]);
+
     const usuariosFiltrados = usuarios.filter(u => 
         u.username.toLowerCase().includes(busqueda.toLowerCase())
     );
@@ -52,12 +66,7 @@ const GestionUsuarios = () => {
         setView("form");
     };
 
-    const volverALista = () => {
-        setView("list");
-        setIsEditing(false);
-        setIsReadOnly(true);
-        setSelectedId(null);
-    };
+ 
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -99,20 +108,7 @@ const GestionUsuarios = () => {
         }
     };
 
-    const handleEditar = (user) => {
-        setSelectedId(user.id);
-        setFormData({
-            username: user.username,
-            first_name: user.first_name || '',
-            last_name: user.last_name || '',
-            email: user.email || '',
-            password: '', // Password se deja vacío por seguridad al editar
-            is_staff: user.is_staff,
-            is_active: user.is_active
-        });
-        setIsEditing(true);
-        setView("form");
-    };
+
 
     const handleResetPassword = () => {
         alert(`Se ha enviado una solicitud para restablecer la contraseña del usuario: ${formData.username}`);
@@ -125,7 +121,7 @@ const GestionUsuarios = () => {
         header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px', gap: '15px', flexWrap: 'wrap' },
         searchWrapper: { position: 'relative', width: '60%' },
         searchIcon: { position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#888' },
-        card: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '15px', border: '1px solid #eee' },
+        card: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 2px 6px rgba(0,0,0,0.05)', marginBottom: '15px', border: '1px solid #eee' },
         input: { padding: '12px 12px 12px 40px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '14px' },
         formInput: { 
             padding: '10px', 
@@ -218,8 +214,10 @@ const GestionUsuarios = () => {
                         </button>
                     </div>
 
-                    
-                    {usuariosFiltrados.length === 0 ? (
+                    {loading ? (
+    // 1. Estado de Carga: Muestra el Skeleton
+    <SkeletonTable rows={4} />
+                    ) :usuariosFiltrados.length === 0 ? (
                          <div style={{ 
                             textAlign: 'center', 
                             padding: '60px 20px', 
@@ -350,9 +348,9 @@ const GestionUsuarios = () => {
     )}
 </div>
                             
-                            <div style={{ gridColumn: '1 / -1', display: 'flex', flexWrap: 'wrap', gap: '20px', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px' }}>
+<div style={{ gridColumn: '1 / -1', display: 'flex', flexWrap: 'wrap', gap: '20px', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px' }}>
     
-    {/* Switch Administrador */}
+    {/* Switch Administrador - SIEMPRE VISIBLE */}
     <div 
         style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: isReadOnly ? 'not-allowed' : 'pointer', opacity: isReadOnly ? 0.7 : 1 }}
         onClick={() => !isReadOnly && setFormData({ ...formData, is_staff: !formData.is_staff })}
@@ -366,23 +364,27 @@ const GestionUsuarios = () => {
         </div>
     </div>
 
-    {/* Separador vertical solo visible en desktop */}
-    <div style={{ width: '1px', backgroundColor: '#e2e8f0', margin: '0 10px' }} className="hide-mobile"></div>
-
-    {/* Switch Activo */}
-    <div 
-        style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: isReadOnly ? 'not-allowed' : 'pointer', opacity: isReadOnly ? 0.7 : 1 }}
-        onClick={() => !isReadOnly && setFormData({ ...formData, is_active: !formData.is_active })}
-    >
-        <div style={styles.switchTrack(formData.is_active, '#38a169')}>
-            <div style={styles.switchThumb(formData.is_active, '#38a169')}></div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
-            <span style={styles.statusLabel(formData.is_active, '#2f855a')}>{formData.is_active ? "Activo" : "Inactivo"}</span>
-            <span style={{ fontSize: '11px', color: '#718096' }}>Estado de cuenta</span>
-        </div>
-    </div>
+    {/* Switch Activo - SOLO EN EDICIÓN */}
+    {isEditing && (
+        <>
+            <div style={{ width: '1px', backgroundColor: '#e2e8f0', margin: '0 10px' }}></div>
+            <div 
+                style={{ display: 'flex', alignItems: 'center', gap: '12px', cursor: isReadOnly ? 'not-allowed' : 'pointer', opacity: isReadOnly ? 0.7 : 1 }}
+                onClick={() => !isReadOnly && setFormData({ ...formData, is_active: !formData.is_active })}
+            >
+                <div style={styles.switchTrack(formData.is_active, '#38a169')}>
+                    <div style={styles.switchThumb(formData.is_active, '#38a169')}></div>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={styles.statusLabel(formData.is_active, '#2f855a')}>{formData.is_active ? "Activo" : "Inactivo"}</span>
+                    <span style={{ fontSize: '11px', color: '#718096' }}>Estado de cuenta</span>
+                </div>
+            </div>
+        </>
+    )}
 </div>
+
+{/* Botón de Guardar - FUERA DE LOS CONDICIONALES DE ARRIBA */}
 <div style={{ gridColumn: '1 / -1' }}>
     {!isReadOnly && (
         <button type="submit" style={{ ...styles.btnGreen, width: '100%', justifyContent: 'center', fontSize: '16px', marginTop: '10px' }}>
@@ -390,6 +392,8 @@ const GestionUsuarios = () => {
         </button>
     )}
 </div>
+
+
                         </form>
                     </div>
                 </div>

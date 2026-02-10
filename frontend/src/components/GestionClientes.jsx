@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef , useCallback} from "react";
 import {
   getClientes,
   createCliente,
@@ -10,7 +10,7 @@ import {
   darBajaCliente,
   darAltaCliente,
 } from "../api/files";
-
+import SkeletonTable from './SkeletonTable';
 const GestionClientes = ({ onUpdate }) => {
   const [clientes, setClientes] = useState([]);
   const [archivos, setArchivos] = useState([]);
@@ -19,6 +19,11 @@ const GestionClientes = ({ onUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [fileToUpload, setFileToUpload] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+
+  // Candado para evitar doble GET inicial
+  const cargadoRef = useRef(false);
 
   const [formData, setFormData] = useState({
     cuit: "",
@@ -31,21 +36,17 @@ const GestionClientes = ({ onUpdate }) => {
     baja: false,
   });
 
-  useEffect(() => {
-    cargarDatos();
-  }, []);
 
-  const cargarDatos = async () => {
+// Usamos useCallback para que la función sea estable
+const cargarDatos = useCallback(async () => {
+  setLoading(true);
     try {
       const [c, a] = await Promise.all([getClientes(), getArchivos()]);
       setClientes(c);
       setArchivos(a);
 
-      // Si hay un cliente seleccionado, actualizar sus datos desde la lista fresca
       if (clienteSeleccionado) {
-        const actualizado = c.find(
-          (item) => item.cuit === clienteSeleccionado.cuit
-        );
+        const actualizado = c.find((item) => item.cuit === clienteSeleccionado.cuit);
         if (actualizado) {
           setClienteSeleccionado(actualizado);
           setFormData(actualizado);
@@ -54,35 +55,21 @@ const GestionClientes = ({ onUpdate }) => {
     } catch (err) {
       console.error("Error cargando datos", err);
     }
-  };
-  const handleAltaCliente = async (cuit) => {
-    if (!window.confirm("¿Deseas reactivar este cliente?")) return;
-    try {
-      const response = await darAltaCliente(cuit);
-      console.log("Servidor respondió ok:", response);
-      await cargarDatos();
-      alert("Cliente reactivado con éxito");
-    } catch (err) {
-      console.error("ERROR AL DAR DE ALTA:");
-      console.dir(err); // Esto te mostrará el objeto de error completo en la consola
-
-      const msg =
-        err.response?.data?.detail || "Error de conexión con el servidor";
-      alert("No se pudo dar de alta: " + msg);
+    finally {
+      setLoading(false);
     }
-  };
+  }, [clienteSeleccionado]);
 
-  const handleBajaCliente = async (cuit) => {
-    if (!window.confirm("¿Confirmas la baja de este cliente?")) return;
-    try {
-      await darBajaCliente(cuit);
-      // Sincronizamos con el servidor
-      await cargarDatos();
-      alert("Cliente dado de baja correctamente");
-    } catch (err) {
-      alert("Error al procesar la baja");
+  useEffect(() => {
+    // Solo ejecutamos si el candado está abierto
+    if (!cargadoRef.current) {
+      cargarDatos();
+      cargadoRef.current = true;
     }
-  };
+  }, [cargarDatos]);
+
+
+ 
   const handleFileUpload = async () => {
     if (!fileToUpload) return;
     const fData = new FormData();
@@ -416,7 +403,10 @@ const GestionClientes = ({ onUpdate }) => {
               </div>
             </div>
           ))}
-          {clientesFiltrados.length === 0 && (
+            {loading ? (
+    // 1. Estado de Carga: Muestra el Skeleton
+    <SkeletonTable rows={4} />
+                    ) :clientesFiltrados.length === 0 && (
             <div
               style={{
                 textAlign: "center",

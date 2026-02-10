@@ -1,12 +1,5 @@
 import { useState, useEffect } from 'react';
-import { 
-    getClientes, 
-    getAduanas, 
-    getImportaciones, 
-    getExportaciones,
-    getUsuarios
-} from '../api/files'; 
-
+import { motion, AnimatePresence } from 'framer-motion';
 import GestionClientes from '../components/GestionClientes';
 import GestionAduanas from '../components/GestionAduanas';
 import GestionImportaciones from '../components/GestionImportaciones';
@@ -16,18 +9,25 @@ import GestionUsuarios from '../components/GestionUsuarios';
 import HomeInfo from '../components/HomeInfo';
 import Footer from '../components/Footer';
 import Profile from '../components/Profile';
+import Toast from '../components/Toast';
+
 
 const Home = () => {
     const [view, setView] = useState('home');
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // <--- Nuevo estado
-    const userName = localStorage.getItem('userName') || 'Usuario';
-    const isAdmin = localStorage.getItem('isAdmin') === 'true';
     const [showUserMenu, setShowUserMenu] = useState(false);
-    const [highlightId, setHighlightId] = useState(null);
-    useEffect(() => {
-        cargarDatos();
-    }, []);
-    
+    const [highlightId, setHighlightId] = useState(null); 
+
+    const userName = localStorage.getItem('userName') || 'Usuario'; // Obtener nombre de usuario del localStorage
+    const isAdmin = localStorage.getItem('isAdmin') === 'true'; // Obtener rol de administrador del localStorage
+
+    const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
+
+    const showToast = (msg, type = 'success') => {
+        setToast({ show: true, msg, type });
+    };
+   
+    // Cerrar el menú de usuario al hacer clic fuera
     useEffect(() => {
         const closeMenu = () => setShowUserMenu(false);
         if (showUserMenu) {
@@ -36,35 +36,47 @@ const Home = () => {
         }
         return () => window.removeEventListener('click', closeMenu);
     }, [showUserMenu]);
-    const cargarDatos = async () => {
-        try {
-            const [dataCli, dataAdu, dataImp, dataExp,dataUsr] = await Promise.all([
-                getClientes(), 
-                getAduanas(),
-                getImportaciones(),
-                getExportaciones(),
-                getUsuarios()
-            ]);
-            
-           
-        } catch (err) {
-            console.error("Error al sincronizar datos:", err);
-        }
-    };
 
+
+    // Función para cerrar sesión
     const handleLogout = () => {
         localStorage.removeItem('token');
         window.location.href = '/login';
     };
 
+     // Función para cambiar vista y cerrar menú móvil
+     const changeView = (newView) => {
+        setView(newView);
+        setIsMobileMenuOpen(false);
+        window.scrollTo(0, 0)
+    };
+
+    //Función para manejar el click en una alerta
+    const handleAlertClick = (id) => {
+        setView('exportaciones');
+        setHighlightId(id);
+        
+        // Limpiamos el resaltado después de 5 segundos
+        setTimeout(() => setHighlightId(null), 5000);
+    };
+
     const styles = {
         container: { 
-            padding: '20px clamp(10px, 5vw, 40px)', // Usa clamp para padding dinámico
             fontFamily: "'Segoe UI', Roboto, sans-serif", 
             backgroundColor: '#f4f7f6', 
             minHeight: '100vh',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            alignItems: 'center', // Centra el contenido horizontalmente
+        },
+        contentWrapper: {
+            width: '100%',
+            maxWidth: '1200px', // El ancho ideal para sistemas de gestión
+            padding: '20px clamp(10px, 3vw, 30px)', // Padding responsivo
+            display: 'flex',
+            flexDirection: 'column',
+            flex: 1, // Esto empuja al footer hacia abajo
+            boxSizing: 'border-box'
         },
         header: { 
             display: 'flex', 
@@ -75,6 +87,7 @@ const Home = () => {
             padding: '15px 25px',
             borderRadius: '12px',
             boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+            
         },
         logoSection: { display: 'flex', alignItems: 'center', gap: '15px' },
         logoIcon: { backgroundColor: '#007bff', color: 'white', padding: '10px', borderRadius: '8px', fontSize: '20px' },
@@ -111,44 +124,39 @@ const Home = () => {
             alignItems: 'center',
             gap: '8px'
         },
-        navTabs: { 
+        navTabs: (isOpen) => ({ 
             display: 'flex', 
             gap: '5px', 
             marginBottom: '20px', 
             backgroundColor: '#e9ecef', 
             padding: '5px', 
             borderRadius: '10px',
-            // Responsive: permitimos scroll lateral suave en móviles
             overflowX: 'auto', 
-            WebkitOverflowScrolling: 'touch', // Scroll suave en iOS
+            WebkitOverflowScrolling: 'touch',
             scrollbarWidth: 'none', 
             msOverflowStyle: 'none',
-        },
+            
+        }),
         tab: (active) => ({
-            padding: '10px 18px', 
-            cursor: 'pointer', 
-            borderRadius: '8px',
-            backgroundColor: active ? 'white' : 'transparent',
-            color: active ? '#007bff' : '#666', 
-            fontWeight: '600', 
+            position: 'relative', // Para posicionar la barrita animada
+            padding: '12px 20px',
+            cursor: 'pointer',
+            color: active ? '#007bff' : '#64748b',
+            fontWeight: '600',
             fontSize: '14px',
             display: 'flex',
-            flexDirection: 'row', // <--- Ícono arriba, texto abajo en móviles
-            justifyContent: 'flex-start',
             alignItems: 'center',
-            gap: '12px',
-            boxShadow: active ? '0 2px 6px rgba(0,0,0,0.1)' : 'none',
-            transition: '0.2s',
-            minWidth: '80px', // Asegura que el área táctil sea suficiente
-            flexShrink: 0     // Evita que se compriman
+            gap: '10px',
+            transition: 'color 0.3s ease',
         }),
         mainContent: { 
             backgroundColor: 'white', 
             padding: '30px', 
             borderRadius: '12px', 
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)', 
-            flex: 1,                // <--- CAMBIAR minHeight por flex: 1
-            marginBottom: '20px'    // <--- Opcional: espacio antes del footer
+            flex: 1, // Hace que el contenido crezca y ocupe el espacio disponible
+            marginBottom: '40px',
+            minHeight: '400px' // Evita que se vea muy colapsado si está vacío
         },
         dropdown: {
             position: 'absolute',
@@ -197,32 +205,12 @@ const Home = () => {
             cursor: 'pointer',
             padding: '10px'
         },
-        navTabs: (isOpen) => ({
-            display: 'flex', 
-            gap: '5px', 
-            backgroundColor: '#e9ecef', 
-            padding: '5px', 
-            borderRadius: '10px',
-            transition: 'all 0.3s ease',
-            // En escritorio se ve normal, en móvil cambia según isOpen (ver CSS abajo)
-        }),
+        
+      
         
     };
 
-    // Función para cambiar vista y cerrar menú móvil
-    const changeView = (newView) => {
-        setView(newView);
-        setIsMobileMenuOpen(false);
-    };
-
-    //Función para manejar el click en una alerta
-    const handleAlertClick = (id) => {
-        setView('exportaciones');
-        setHighlightId(id);
-        
-        // Limpiamos el resaltado después de 5 segundos
-        setTimeout(() => setHighlightId(null), 5000);
-    };
+   
    return (
     <div style={styles.container}>
             {/* Agrega este bloque de CSS en línea para manejar la responsividad de forma sencilla */}
@@ -241,7 +229,11 @@ const Home = () => {
         width: 100%;
         margin-bottom: 10px;
     }
-
+    .tab-item:hover {
+        color: #007bff !important;
+        background: rgba(0, 123, 255, 0.08);
+        border-radius: 8px;
+    }
     /* Cambiamos a 1024px para cubrir el rango donde se cortaba */
     @media (max-width: 1024px) {
         .hamburger-btn {
@@ -279,7 +271,7 @@ const Home = () => {
         }
     }
 `}</style>
-        
+        <div style={styles.contentWrapper}>
             {/* Header Principal Refinado */}
             <div style={styles.header}>
                 <div style={styles.logoSection}>
@@ -310,8 +302,16 @@ const Home = () => {
                         </div>
                     </div>
 
-                    {showUserMenu && (
-                        <div style={styles.dropdown} onClick={(e) => e.stopPropagation()}>
+                    <AnimatePresence>
+    {showUserMenu && (
+        <motion.div 
+            initial={{ opacity: 0, y: -10, scale: 0.95 }} // Empieza invisible, un poco arriba y más chico
+            animate={{ opacity: 1, y: 0, scale: 1 }}      // Baja y toma su tamaño real
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}    // Se desvanece al cerrar
+            transition={{ duration: 0.2, ease: "easeOut" }}
+            style={styles.dropdown} 
+            onClick={(e) => e.stopPropagation()}
+        >
                             <div style={{ padding: '10px 15px', fontSize: '12px', color: '#999', fontWeight: 'bold' }}>CUENTA</div>
                             
                             <div 
@@ -333,8 +333,10 @@ const Home = () => {
                             >
                                 <i className="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
                             </div>
-                        </div>
-                    )}
+                            </motion.div>
+    )}
+</AnimatePresence>
+                    
                 </div>
             </div>
 
@@ -354,44 +356,68 @@ const Home = () => {
 
     {/* Contenedor de Pestañas con Animación */}
     <div className="nav-tabs-desktop" style={styles.navTabs()}>
-        <div style={styles.tab(view === 'home')} onClick={() => changeView('home')}>
-            <i className="fa-solid fa-house"></i> INICIO
-        </div>
-        <div style={styles.tab(view === 'clientes')} onClick={() => changeView('clientes')}>
-            <i className="fa-solid fa-users"></i> CLIENTES
-        </div>
-        {isAdmin && (
-            <div style={styles.tab(view === 'aduanas')} onClick={() => changeView('aduanas')}>
-                <i className="fa-solid fa-landmark"></i> ADUANAS
+    {['home','aduanas', 'clientes', 'importaciones', 'exportaciones', 'usuarios'].map((tabName) => {
+        // Validación de permisos
+        if ((tabName === 'usuarios' || tabName === 'aduanas') && !isAdmin) return null;
+        
+        const isActive = view === tabName;
+        
+        return (
+            <div 
+                key={tabName}
+                style={styles.tab(isActive)} 
+                onClick={() => changeView(tabName)}
+                className="tab-item"
+            >
+                {/* Iconos dinámicos según el nombre */}
+                <i className={`fa-solid fa-${tabName === 'home' ? 'house' : tabName === 'clientes' ? 'users' : 'file-invoice'}`}></i>
+                {tabName.toUpperCase()}
+
+                {/* LA MEJORA: Barrita animada que "viaja" entre pestañas */}
+                {isActive && (
+                    <motion.div 
+                        layoutId="activeTabIndicator"
+                        style={{
+                            position: 'absolute',
+                            bottom: 0,
+                            left: 0,
+                            right: 0,
+                            height: '3px',
+                            background: '#007bff',
+                            borderRadius: '10px'
+                        }}
+                    />
+                )}
             </div>
-        )}
-        <div style={styles.tab(view === 'importaciones')} onClick={() => changeView('importaciones')}>
-            <i className="fa-solid fa-file-import"></i> IMPORTACIONES
-        </div>
-        <div style={styles.tab(view === 'exportaciones')} onClick={() => changeView('exportaciones')}>
-            <i className="fa-solid fa-file-export"></i> EXPORTACIONES
-        </div>
-        {isAdmin && (
-            <div style={styles.tab(view === 'usuarios')} onClick={() => changeView('usuarios')}>
-                <i className="fa-solid fa-user-shield"></i> USUARIOS
-            </div>
-        )}
-    </div>
+        );
+    })}
+</div>
 </div>
 
             {/* Contenido Dinámico */}
             <div style={styles.mainContent}>
                 {/* ... (Toda tu lógica de renderizado se mantiene igual) ... */}
                 {view === 'home' && <HomeInfo />}
-                {view === 'clientes' && <GestionClientes onUpdate={cargarDatos} />}
-                {view === 'aduanas' && <GestionAduanas onUpdate={cargarDatos} />}
-                {view === 'importaciones' && <GestionImportaciones onUpdate={cargarDatos} />}
-                {view === 'exportaciones' && <GestionExportaciones onUpdate={cargarDatos} highlightId={highlightId} />}
-                {view === 'usuarios' && <GestionUsuarios onUpdate={cargarDatos} />}
-                {view === 'Profile' && <Profile />} 
+                {view === 'clientes' && <GestionClientes  />}
+                {view === 'aduanas' && <GestionAduanas  />}
+                {view === 'importaciones' && <GestionImportaciones  />}
+                {view === 'exportaciones' && <GestionExportaciones  highlightId={highlightId} />}
+                {view === 'usuarios' && <GestionUsuarios  />}
+                {view === 'Profile' && <Profile onNotification={showToast} />}
             </div>
+        </div>
+
           
             <Footer />
+            {toast.show && (
+    <Toast 
+        msg={toast.msg} 
+        type={toast.type} 
+        onClose={() => setToast({ ...toast, show: false })} 
+    />
+    
+)} 
+
         </div>
         
     );

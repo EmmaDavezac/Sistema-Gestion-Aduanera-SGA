@@ -33,7 +33,16 @@ const Login = () => {
     // --- OBJETOS DE ESTILO ---
     const styles = {
         container: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw', backgroundColor: '#f0f2f5', fontFamily: "'Segoe UI', Roboto, sans-serif", margin: 0 },
-        card: { backgroundColor: 'white', padding: '40px', borderRadius: '12px', boxShadow: '0 8px 24px rgba(0,0,0,0.1)', width: '100%', maxWidth: '400px', boxSizing: 'border-box' },
+        card: { 
+            backgroundColor: 'white', 
+            padding: '40px', 
+            borderRadius: '16px', // Un poco más redondeado
+            boxShadow: '0 10px 25px rgba(0,0,0,0.08)', 
+            width: '100%', 
+            maxWidth: '400px', 
+            boxSizing: 'border-box',
+            animation: 'slideUp 0.5s ease-out' // Animación de entrada
+        },
         title: {
             textAlign: 'center',
             marginBottom: '8px',
@@ -49,7 +58,19 @@ const Login = () => {
         },
         inputGroup: { marginBottom: '20px', position: 'relative' }, // Añadimos position relative aquí
         label: { display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#444' },
-        input: { width: '100%', padding: '12px', paddingRight: '40px', borderRadius: '6px', border: '1px solid #ddd', fontSize: '16px', boxSizing: 'border-box', outline: 'none' },
+        input: (isLoading) => ({
+            width: '100%', 
+            padding: '12px', 
+            paddingRight: '40px', 
+            borderRadius: '8px', 
+            border: '1px solid #ddd', 
+            fontSize: '16px', 
+            boxSizing: 'border-box', 
+            outline: 'none',
+            transition: 'all 0.3s',
+            backgroundColor: isLoading ? '#f8f9fa' : 'white',
+            cursor: isLoading ? 'not-allowed' : 'text'
+        }),
         eyeButton: {
             position: 'absolute',
             right: '12px', // Un poquito más separado del borde
@@ -66,16 +87,19 @@ const Login = () => {
         },
         button: {
             width: '100%',
-            padding: '12px',
-            backgroundColor: loading ? '#a0c4ff' : '#007bff',
+            padding: '14px',
+            backgroundColor: loading ? '#80bdff' : '#007bff',
             color: 'white',
             border: 'none',
-            borderRadius: '6px',
+            borderRadius: '8px',
             fontSize: '16px',
-            fontWeight: 'bold',
+            fontWeight: '600',
             cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'background-color 0.2s',
-            marginTop: '10px',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '10px',
+            transition: 'transform 0.1s active'
         },
         errorMsg: {
             backgroundColor: '#fff2f2',
@@ -91,42 +115,82 @@ const Login = () => {
 
     return (
         <div style={styles.container}>
+            <style>{`
+                @keyframes slideUp {
+                    from { opacity: 0; transform: translateY(20px); }
+                    to { opacity: 1; transform: translateY(0); }
+                }
+                .btn-login:hover { background-color: #0069d9 !important; }
+                .btn-login:active { transform: scale(0.98); }
+                /* Animación de sacudida para errores */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    50% { transform: translateX(8px); }
+    75% { transform: translateX(-8px); }
+}
+
+/* Efecto suave para que el mensaje aparezca */
+@keyframes fadeInError {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+            `}</style>
+
             <div style={styles.card}>
-                <h2 style={styles.title}>¡Bienvenido de nuevo!</h2>
-                <p style={styles.subtitle}>Ingresa a SGA para gestionar tus operaciones aduaneras</p>
+                {/* Logo o Icono para dar identidad */}
+                <div style={{ textAlign: 'center', marginBottom: '20px' }}>
+                    <div style={{ backgroundColor: '#e7f1ff', width: '60px', height: '60px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <i className="fa-solid fa-ship" style={{ color: '#007bff', fontSize: '24px' }}></i>
+                    </div>
+                </div>
+
+                <h2 style={styles.title}>¡Bienvenido!</h2>
+                <p style={styles.subtitle}>Ingresa tus credenciales para continuar</p>
                 
-                {error && <div style={styles.errorMsg}>{error}</div>}
+                {error && (
+    <div style={{
+        ...styles.errorMsg, 
+        animation: 'shake 0.4s cubic-bezier(.36,.07,.19,.97) both, fadeInError 0.3s ease' 
+    }}>
+        <i className="fa-solid fa-triangle-exclamation" style={{marginRight: '8px'}}></i>
+        {error}
+    </div>
+)}
                 
                 <form onSubmit={handleSubmit}>
-                    <div style={styles.inputGroup}>
-                        <label style={styles.label}>Nombre de usuario</label>
-                        <input 
-                            type="text" 
-                            placeholder="Ej: emma_admin"
-                            value={username} 
-                            onChange={(e) => setUsername(e.target.value)}
-                            required
-                            style={styles.input}
-                            onFocus={(e) => e.target.style.borderColor = '#007bff'}
-                            onBlur={(e) => e.target.style.borderColor = '#ddd'}
-                        />
-                    </div>
+                <div style={styles.inputGroup}>
+                    <label style={styles.label}>Usuario</label>   
+                <input 
+    disabled={loading}
+    type="text" 
+    value={username} 
+    placeholder='Ingresa tu usuario'
+    onChange={(e) => {
+        setUsername(e.target.value);
+        if(error) setError(''); // Limpia el error mientras el usuario corrige
+    }}
+    style={styles.input(loading)}
+    required
+/>
+                </div>
+
                     
                     <div style={styles.inputGroup}>
                         <label style={styles.label}>Contraseña</label>
                         <input 
-                            type={showPassword ? "text" : "password"} // Alterna el tipo de input
+                            disabled={loading}
+                            type={showPassword ? "text" : "password"} 
                             value={password} 
                             onChange={(e) => setPassword(e.target.value)}
+                            style={styles.input(loading)}
                             required
-                            style={styles.input}
                         />
-                        {/* Botón de Ojo */}
                         <button 
                             type="button" 
+                            placeholder='Ingresa tu contraseña'
                             onClick={() => setShowPassword(!showPassword)}
                             style={styles.eyeButton}
-                            tabIndex="-1" // Evita que el tabulador se detenga en el ojo
                         >
                             <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                         </button>
@@ -135,9 +199,15 @@ const Login = () => {
                     <button 
                         type="submit" 
                         disabled={loading}
+                        className="btn-login"
                         style={styles.button}
                     >
-                        {loading ? 'Validando...' : 'Iniciar Sesión'}
+                        {loading ? (
+                            <>
+                                <i className="fa-solid fa-circle-notch fa-spin"></i> 
+                                Validando...
+                            </>
+                        ) : 'Entrar al Sistema'}
                     </button>
                 </form>
             </div>

@@ -1,77 +1,133 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 
 const Footer = () => {
     const year = new Date().getFullYear();
 
-    const styles = {
-        footer: {
-            backgroundColor: '#ffffff',
-            borderTop: '1px solid #e2e8f0',
-            padding: '15px 40px',
-            marginTop: '30px',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            color: '#718096',
-            fontSize: '13px'
-        },
-        section: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '15px'
-        },
-        devLink: {
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            textDecoration: 'none',
-            color: '#4a5568',
-            padding: '5px 10px',
-            borderRadius: '6px',
-            transition: '0.3s',
-            backgroundColor: '#f8fafc',
-            border: '1px solid #edf2f7'
-        },
-        whatsapp: { color: '#25D366', fontSize: '16px' },
-        email: { color: '#EA4335', fontSize: '16px' }
-    };
-
     return (
         <footer style={styles.footer}>
-            <div style={styles.section}>
-                <span style={{fontWeight: '700', color: '#2d3748'}}>SGA | Aduana</span>
-                <span>© {year}</span>
-            </div>
-
-            <div style={styles.section}>
-                <span style={{fontWeight: '600', marginRight: '5px'}}>Soporte Desarrollador:</span>
+            <div style={styles.container}>
                 
-                {/* Link a WhatsApp */}
-                <a 
-                    href="https://wa.me/5491122334455" // Reemplaza con tu número
-                    target="_blank" 
-                    rel="noopener noreferrer" 
-                    style={styles.devLink}
-                >
-                    <i className="fa-brands fa-whatsapp" style={styles.whatsapp}></i>
-                    WhatsApp
-                </a>
+                {/* COLUMNA 1: Identidad del Proyecto */}
+                <div style={styles.column}>
+                    <div style={styles.brandGroup}>
+                        <span style={styles.brandTitle}>SGA</span>
+                        <span style={styles.brandDivider}>|</span>
+                        <span style={styles.brandSubtitle}>Gestión Aduanera</span>
+                    </div>
+                    <p style={styles.description}>
+                        Optimización y control de operaciones de comercio exterior para Despachantes de Aduana.
+                    </p>
+                </div>
 
-                {/* Link a Email */}
-                <a 
-                    href="mailto:desarrollador@ejemplo.com" 
-                    style={styles.devLink}
-                >
-                    <i className="fa-solid fa-envelope" style={styles.email}></i>
-                    Email
-                </a>
+                {/* COLUMNA 2: Recursos (Futuro Manual) */}
+                <div style={styles.column}>
+                    <span style={styles.sectionTitle}>Recursos</span>
+                    <a 
+                        href="#manual" 
+                        onClick={(e) => { e.preventDefault(); alert('El manual de usuario estará disponible próximamente.'); }}
+                        style={styles.resourceLink}
+                    >
+                        <i className="fa-solid fa-book-open" style={{ marginRight: '8px' }}></i>
+                        Manual de Usuario
+                    </a>
+                </div>
+
+                {/* COLUMNA 3: Soporte y Desarrollador */}
+                <div style={styles.column}>
+                    <span style={styles.sectionTitle}>Soporte Técnico</span>
+                    <div style={styles.contactGrid}>
+                        <motion.a 
+                            whileHover={{ x: 5, color: '#3182ce' }}
+                            href="mailto:lucianodavezac@gmail.com" 
+                            style={styles.contactLink}
+                        >
+                            <i className="fa-solid fa-envelope" style={styles.emailIcon}></i>
+                            lucianodavezac@gmail.com
+                        </motion.a>
+                        
+                        <motion.a 
+                            whileHover={{ x: 5, color: '#25D366' }}
+                            href="https://wa.me/5491122334455" 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            style={styles.contactLink}
+                        >
+                            <i className="fa-brands fa-whatsapp" style={styles.whatsappIcon}></i>
+                            WhatsApp Directo
+                        </motion.a>
+                    </div>
+                </div>
             </div>
 
-            <div style={styles.section}>
-                <span style={{fontSize: '11px', color: '#a0aec0'}}>v1.0.2</span>
+            {/* BARRA INFERIOR: Créditos Finales */}
+            <div style={styles.bottomBar}>
+                <div style={styles.credits}>
+                    Desarrollado con precisión por <span style={styles.devName}>Emmanuel Davezac</span>
+                </div>
+                <div style={styles.versionGroup}>
+                    <span>© {year} Todos los derechos reservados</span>
+                    <span style={styles.versionBadge}>v1.0.2</span>
+                </div>
             </div>
         </footer>
     );
+};
+
+const styles = {
+    footer: {
+        backgroundColor: '#ffffff',
+        borderTop: '2px solid #f1f5f9',
+        padding: '40px 0 20px 0',
+        marginTop: '60px',
+        width: '100%',
+        fontFamily: 'system-ui, -apple-system, sans-serif'
+    },
+    container: {
+        maxWidth: '1200px',
+        margin: '0 auto',
+        padding: '0 40px',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+        gap: '40px',
+        marginBottom: '40px'
+    },
+    column: {
+        display: 'flex',
+        flexDirection: 'column',
+        gap: '12px'
+    },
+    brandGroup: {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '10px',
+        marginBottom: '5px'
+    },
+    brandTitle: { fontSize: '20px', fontWeight: '800', color: '#1a365d', letterSpacing: '-0.5px' },
+    brandDivider: { color: '#cbd5e0', fontSize: '18px' },
+    brandSubtitle: { fontSize: '14px', fontWeight: '600', color: '#4a5568', textTransform: 'uppercase' },
+    description: { fontSize: '14px', color: '#718096', lineHeight: '1.6', margin: 0 },
+    sectionTitle: { fontSize: '12px', fontWeight: '700', color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' },
+    resourceLink: { color: '#3182ce', textDecoration: 'none', fontSize: '14px', fontWeight: '500', transition: '0.2s' },
+    contactGrid: { display: 'flex', flexDirection: 'column', gap: '10px' },
+    contactLink: { display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: '#4a5568', fontSize: '14px', transition: '0.2s' },
+    emailIcon: { color: '#EA4335' },
+    whatsappIcon: { color: '#25D366' },
+    bottomBar: {
+        borderTop: '1px solid #f1f5f9',
+        padding: '20px 40px 0',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        maxWidth: '1200px',
+        margin: '0 auto',
+        flexWrap: 'wrap',
+        gap: '15px'
+    },
+    credits: { fontSize: '13px', color: '#718096' },
+    devName: { color: '#2d3748', fontWeight: '700' },
+    versionGroup: { display: 'flex', alignItems: 'center', gap: '15px', color: '#a0aec0', fontSize: '12px' },
+    versionBadge: { backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: '6px', fontWeight: '600', color: '#4a5568' }
 };
 
 export default Footer;
