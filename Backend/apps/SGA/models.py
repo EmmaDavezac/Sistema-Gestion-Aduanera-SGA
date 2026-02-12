@@ -50,7 +50,6 @@ class Importacion(models.Model):
     estado = models.CharField(max_length=50, default='Pendiente')
     baja = models.BooleanField(default=False)
     
-    # Relaciones
     aduana = models.ForeignKey(Aduana, on_delete=models.PROTECT, related_name='importaciones')
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='importaciones')
 
@@ -99,16 +98,14 @@ class Archivo(models.Model):
         (2, 'Importación'),
         (3, 'Exportación'),
     ]
-    nombre = models.CharField(max_length=255) # Equivale al campo 'nombre' del SQL
-    archivo = models.FileField(upload_to=generar_ruta_archivo) # Almacena la ruta (url)
+    nombre = models.CharField(max_length=255) 
+    archivo = models.FileField(upload_to=generar_ruta_archivo) 
     tipo = models.IntegerField(choices=TIPO_CHOICES)
     
-    # Relaciones del SQL
     cuit_cliente = models.ForeignKey(Cliente, on_delete=models.SET_NULL, null=True, blank=True, db_column='cuit_cliente')
     id_importacion = models.ForeignKey(Importacion, on_delete=models.SET_NULL, null=True, blank=True, db_column='id_importacion')
     id_exportacion = models.ForeignKey(Exportacion, on_delete=models.SET_NULL, null=True, blank=True, db_column='id_exportacion')
     
-    # Usuario que realiza la carga
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     fecha_subida = models.DateTimeField(auto_now_add=True)
 

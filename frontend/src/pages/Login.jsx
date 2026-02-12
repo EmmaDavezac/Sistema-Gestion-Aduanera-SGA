@@ -1,47 +1,60 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; 
 import { login } from '../api/auth';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios'; 
 
 const Login = () => {
     const [username, setUsername] = useState('');
     const [password, setPassword] = useState('');
-    const [showPassword, setShowPassword] = useState(false); // Estado para el botón de "ojo"
+    const [showPassword, setShowPassword] = useState(false);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    const [captchaData, setCaptchaData] = useState({ key: '', url: '' });
+    const [userCaptcha, setUserCaptcha] = useState('');
+    
     const navigate = useNavigate();
 
+    const fetchCaptcha = async () => {
+        try {
+            const res = await axios.get('http://localhost:8000/api/get-captcha/');
+            setCaptchaData({ key: res.data.key, url: res.data.image_url });
+            setUserCaptcha(''); 
+        } catch (err) {
+            console.error("Error cargando captcha", err);
+        }
+    };
+
+    useEffect(() => { 
+        fetchCaptcha(); 
+    }, []);
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
         setLoading(true);
+        
         try {
-            // auth.js ya se encarga de guardar el token y el isAdmin en localStorage
-            await login(username, password);
-            
-            // Si la línea de arriba no falló, redirigimos
+            await login(username, password, captchaData.key, userCaptcha);
             navigate('/'); 
         } catch (err) {
             console.error("Error en login:", err);
-            // Si el error tiene un mensaje del servidor, lo mostramos, si no, el genérico
-            setError(err.detail || 'Usuario o contraseña incorrectos');
+            setError(err.response?.data?.error || 'Usuario, contraseña o captcha incorrectos');
+            fetchCaptcha(); 
         } finally {
             setLoading(false);
         }
-
     };
 
-    // --- OBJETOS DE ESTILO ---
     const styles = {
         container: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', width: '100vw', backgroundColor: '#f0f2f5', fontFamily: "'Segoe UI', Roboto, sans-serif", margin: 0 },
         card: { 
             backgroundColor: 'white', 
             padding: '40px', 
-            borderRadius: '16px', // Un poco más redondeado
+            borderRadius: '16px', 
             boxShadow: '0 10px 25px rgba(0,0,0,0.08)', 
             width: '100%', 
             maxWidth: '400px', 
             boxSizing: 'border-box',
-            animation: 'slideUp 0.5s ease-out' // Animación de entrada
+            animation: 'slideUp 0.5s ease-out' 
         },
         title: {
             textAlign: 'center',
@@ -56,7 +69,7 @@ const Login = () => {
             color: '#666',
             fontSize: '14px',
         },
-        inputGroup: { marginBottom: '20px', position: 'relative' }, // Añadimos position relative aquí
+        inputGroup: { marginBottom: '20px', position: 'relative' }, 
         label: { display: 'block', marginBottom: '8px', fontSize: '14px', fontWeight: '600', color: '#444' },
         input: (isLoading) => ({
             width: '100%', 
@@ -73,15 +86,15 @@ const Login = () => {
         }),
         eyeButton: {
             position: 'absolute',
-            right: '12px', // Un poquito más separado del borde
-            top: '50%',    // Lo centramos verticalmente
-            transform: 'translateY(10%)', // Ajuste fino según tu label
+            right: '12px', 
+            top: '50%',    
+            transform: 'translateY(10%)',
             background: 'none',
             border: 'none',
             cursor: 'pointer',
-            color: '#007bff', // Cambiamos a azul para que resalte
+            color: '#007bff', 
             fontSize: '18px',
-            zIndex: 10, // Asegura que esté por encima del input
+            zIndex: 10, 
             display: 'flex',
             alignItems: 'center',
         },
@@ -168,7 +181,7 @@ const Login = () => {
     placeholder='Ingresa tu usuario'
     onChange={(e) => {
         setUsername(e.target.value);
-        if(error) setError(''); // Limpia el error mientras el usuario corrige
+        if(error) setError(''); 
     }}
     style={styles.input(loading)}
     required
@@ -179,6 +192,7 @@ const Login = () => {
                     <div style={styles.inputGroup}>
                         <label style={styles.label}>Contraseña</label>
                         <input 
+                            placeholder='Ingresa tu contraseña'
                             disabled={loading}
                             type={showPassword ? "text" : "password"} 
                             value={password} 
@@ -195,7 +209,32 @@ const Login = () => {
                             <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                         </button>
                     </div>
-                    
+                    <div style={styles.inputGroup}>
+                        <label style={styles.label}>Verificación de seguridad</label>
+                        <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
+                            <img 
+                                src={captchaData.url} 
+                                alt="captcha" 
+                                style={{ borderRadius: '8px', border: '1px solid #ddd', height: '50px' }} 
+                            />
+                            <button 
+                                type="button" 
+                                onClick={fetchCaptcha}
+                                style={{ background: '#f0f2f5', border: 'none', borderRadius: '8px', padding: '10px', cursor: 'pointer' }}
+                            >
+                                <i className="fa-solid fa-arrows-rotate"></i>
+                            </button>
+                        </div>
+                        <input 
+                            disabled={loading}
+                            type="text" 
+                            value={userCaptcha} 
+                            placeholder='Copia el código de la imagen'
+                            onChange={(e) => setUserCaptcha(e.target.value)}
+                            style={styles.input(loading)}
+                            required
+                        />
+                    </div>
                     <button 
                         type="submit" 
                         disabled={loading}

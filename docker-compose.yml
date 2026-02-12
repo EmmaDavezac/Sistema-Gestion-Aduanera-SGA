@@ -1,0 +1,27 @@
+services:
+  backend:
+    build: ./Backend
+    container_name: sga_backend
+    volumes:
+      - ./Backend:/app
+    ports:
+      - "8000:8000"
+    environment:
+      - EMAIL_HOST_USER=lucianodavezac@gmail.com
+      - EMAIL_HOST_PASSWORD=gjaw awjx bseh ssns
+    restart: always
+
+  Frontend:
+      build: 
+        context: ./Frontend
+      container_name: sga_frontend
+      ports:
+        - "5173:5173"
+      volumes:
+        - ./Frontend:/app
+        - /app/node_modules
+      environment:
+        - REACT_APP_API_URL=http://localhost:8000
+      depends_on:
+        - backend
+      restart: always

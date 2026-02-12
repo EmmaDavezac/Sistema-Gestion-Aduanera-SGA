@@ -8,24 +8,24 @@ import {
   getArchivosByImportacion,
   uploadFile,
   deleteArchivo,
-} from "../api/files";
+} from "../api/api";
 import SkeletonTable from "./SkeletonTable";
 const GestionImportaciones = ({ onUpdate }) => {
-  // Estados de datos
+
   const [importaciones, setImportaciones] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [aduanas, setAduanas] = useState([]);
   const [archivos, setArchivos] = useState([]);
 
-  // Estados de UI
+
   const [busqueda, setBusqueda] = useState("");
-  const [view, setView] = useState("list"); // 'list', 'form', 'detail'
+  const [view, setView] = useState("list"); 
   const [isEditing, setIsEditing] = useState(false);
-  const [isReadOnly, setIsReadOnly] = useState(true); // Bloquea inputs inicialmente
+  const [isReadOnly, setIsReadOnly] = useState(true); 
   const [selectedId, setSelectedId] = useState(null);
   const [fileToUpload, setFileToUpload] = useState(null);
   const [loading, setLoading] = useState(true);
-  // Estado del Formulario
+  const isAdmin = localStorage.getItem('isAdmin') === 'true'; 
   const [formData, setFormData] = useState({
     numero_destinacion: "",
     condicion_venta: "",
@@ -49,10 +49,8 @@ const GestionImportaciones = ({ onUpdate }) => {
     vencimiento_preimposicion: "",
     estado: "Pendiente",
   });
-// 1. Candado para evitar doble consulta en StrictMode
 const cargadoRef = useRef(false);
 
-// 2. Envolvemos la carga en useCallback para que sea una referencia estable
 const cargarDatos = useCallback(async () => {
   setLoading(true);
   try {
@@ -71,7 +69,7 @@ const cargarDatos = useCallback(async () => {
   finally {
     setLoading(false);
   }
-}, [onUpdate]); // onUpdate como dependencia si viene de props
+}, [onUpdate]); 
 
 const cargarArchivos = useCallback(async (id) => {
   if (!id) return;
@@ -83,7 +81,6 @@ const cargarArchivos = useCallback(async (id) => {
   }
 }, []);
 
-// 3. useEffect con el candado de seguridad
 useEffect(() => {
   if (!cargadoRef.current) {
     cargarDatos();
@@ -91,7 +88,6 @@ useEffect(() => {
   }
 }, [cargarDatos]);
 
-  // --- MANEJADORES DE ACCIÓN ---
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -115,7 +111,7 @@ useEffect(() => {
       const dataToSend = {
         ...formData,
       aduana: formData.aduana ? parseInt(formData.aduana) : null,
-      cliente: formData.cliente ? formData.cliente : null, // O parseInt si es numérico
+      cliente: formData.cliente ? formData.cliente : null, 
       cantidad_unidades: parseFloat(formData.cantidad_unidades),
       unitario_en_divisa: parseFloat(formData.unitario_en_divisa),
       fob_total_en_divisa: parseFloat(formData.fob_total_en_divisa),
@@ -165,7 +161,6 @@ useEffect(() => {
     }
   };
 
-  // --- NAVEGACIÓN ---
 
   const handleVerDetalle = async (imp) => {
     setSelectedId(imp.id);
@@ -175,7 +170,7 @@ useEffect(() => {
       cliente: imp.cliente,
     });
     setIsEditing(true);
-    setIsReadOnly(true); // Entra en modo lectura
+    setIsReadOnly(true); 
     setView("form");
     try {
       const data = await getArchivosByImportacion(imp.id);
@@ -217,7 +212,6 @@ useEffect(() => {
     });
   };
 
-  // --- ESTILOS ---
   const styles = {
     container: { padding: '30px', backgroundColor: '#f4f7f6', minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' },
@@ -231,7 +225,7 @@ useEffect(() => {
       borderRadius: '6px', 
       width: '100%', 
       marginTop: '5px',
-      backgroundColor: isReadOnly ? "#f8fafc" : "#fff", // Gris si es solo lectura
+      backgroundColor: isReadOnly ? "#f8fafc" : "#fff", 
       color: isReadOnly ? "#4a5568" : "#2d3748",
       transition: 'all 0.3s'
     },
@@ -255,11 +249,11 @@ useEffect(() => {
       fontSize: '13px', 
       color: '#4a5568', 
       marginBottom: '5px', 
-      display: 'block', // Cambia inline-block por block
-      whiteSpace: 'nowrap' // Evita que el nombre del campo se parta en dos líneas
+      display: 'block', 
+      whiteSpace: 'nowrap' 
   },
     sectionTitle: { 
-      gridColumn: "1 / -1", // Crucial: de la primera a la última columna
+      gridColumn: "1 / -1", 
       fontWeight: '700', 
       marginTop: '25px', 
       marginBottom: '10px',
@@ -270,26 +264,27 @@ useEffect(() => {
       textTransform: 'uppercase',
       letterSpacing: '1px'
   },
-    switchTrack: (active) => ({
-      width: '50px',
-      height: '26px',
-      backgroundColor: active ? '#fed7d7' : '#c6f6d5', // Fondo suave
-      borderRadius: '15px',
-      position: 'relative',
-      cursor: 'pointer',
-      transition: 'all 0.3s ease',
-      border: `2px solid ${active ? '#e53e3e' : '#38a169'}`,
-    }),
-    switchThumb: (active) => ({
-      width: '18px',
-      height: '18px',
-      backgroundColor: active ? '#e53e3e' : '#38a169', // Círculo fuerte
-      borderRadius: '50%',
-      position: 'absolute',
-      top: '2px',
-      left: active ? '26px' : '2px', // Desplazamiento
-      transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
-    }),
+  switchTrack: (baja) => ({
+    width: '50px',
+    height: '26px',
+    backgroundColor: baja ? '#fed7d7' : '#c6f6d5', 
+    borderRadius: '15px',
+    position: 'relative',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+    border: `2px solid ${baja ? '#e53e3e' : '#38a169'}`,
+  }),
+  
+  switchThumb: (baja) => ({
+    width: '18px',
+    height: '18px',
+    backgroundColor: baja ? '#e53e3e' : '#38a169',
+    borderRadius: '50%',
+    position: 'absolute',
+    top: '2px',
+    left: baja ? '2px' : '26px', 
+    transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+  }),
     statusLabel: (active) => ({
       fontSize: '13px',
       fontWeight: 'bold',
@@ -302,7 +297,6 @@ useEffect(() => {
     const termino = busqueda.toLowerCase();
   
   
-    // 2. Definir los criterios de coincidencia
     const matchDestinacion = i.numero_destinacion?.toLowerCase().includes(termino);
     const matchVendedor = i.vendedor?.toLowerCase().includes(termino);
     const matchClienteID = String(i.cliente || "").toLowerCase().includes(termino);
@@ -369,7 +363,6 @@ useEffect(() => {
             
           ))}
               {loading ? (
-    // 1. Estado de Carga: Muestra el Skeleton
     <SkeletonTable rows={4} />
                     ) :impFiltradas.length === 0 && (
       <div style={{ 
@@ -378,7 +371,7 @@ useEffect(() => {
         color: '#a0aec0',
         backgroundColor: '#fff',
         borderRadius: '12px',
-        border: '2px dashed #e2e8f0' // Un borde punteado queda muy bien para estados vacíos
+        border: '2px dashed #e2e8f0' 
       }}>
         <i className="fa-solid fa-box-open" style={{ fontSize: '50px', marginBottom: '15px', color: '#cbd5e0' }}></i>
         <h3 style={{ margin: 0, fontSize: '18px', color: '#4a5568' }}>No hay coincidencias</h3>
@@ -415,10 +408,9 @@ useEffect(() => {
   onSubmit={handleSubmit} 
   style={{ 
     display: "grid", 
-    // CAMBIA ESTO:
     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
     gap: "25px",
-    alignItems: "end" // Ayuda a que los inputs y etiquetas alineen bien si varían de altura
+    alignItems: "end" 
   }}
 >
               <div style={styles.sectionTitle}>Datos Generales</div>
@@ -507,7 +499,6 @@ useEffect(() => {
   <input name="nombre_transporte" value={formData.nombre_transporte} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
 </div>
 
-{/* --- SECCIÓN ADICIONAL: DETALLE DE MERCADERÍA --- */}
 <div style={styles.sectionTitle}>Detalle de Mercadería</div>
 
 <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -522,12 +513,15 @@ useEffect(() => {
   <label style={styles.label}>Unitario en Divisa</label>
   <input type="number" name="unitario_en_divisa" value={formData.unitario_en_divisa} onChange={handleNumericChange} style={styles.formInput} disabled={isReadOnly} />
 </div>
-<label style={styles.sectionTitle}>Estado Logico de la importacion</label>
 
+{isAdmin && (
+  <> 
+<div style={styles.sectionTitle}>Estado Lógico de la importación</div>
 <div style={{ 
-    gridColumn: "1 / -1", // Haz que el switch ocupe todo el ancho para que no se deforme
+    gridColumn: "1 / -1", 
     marginTop: '10px' 
 }}>
+
   <div tabIndex={0}
    style={{ 
     display: 'flex', 
@@ -538,37 +532,40 @@ useEffect(() => {
     borderRadius: '10px', 
     border: '1px solid #edf2f7', 
     cursor: isReadOnly ? 'default' : 'pointer',
-    width: 'fit-content' // Para que no se estire a lo loco
+    width: 'fit-content'
   }}
     onClick={() => !isReadOnly && setFormData({...formData, baja: !formData.baja})}
   >
-    {/* El Switch (Slide) */}
+   
     <div style={styles.switchTrack(formData.baja)}>
       <div style={styles.switchThumb(formData.baja)}></div>
     </div>
 
-    {/* Texto descriptivo */}
+
     <div style={{ display: 'flex', flexDirection: 'column' }}>
       <span style={styles.statusLabel(formData.baja)}>
         {formData.baja ? "Dada de baja" : "Activa"}
       </span>
       <span style={{ fontSize: '11px', color: '#718096' }}>
-        {isEditing ? "Haz clic para cambiar el estado" : "Modo lectura"}
+        {isReadOnly?  "Modo lectura": "Haz clic para cambiar el estado" }
       </span>
     </div>
   </div>
 </div>
+</>
+)}
               {!isReadOnly && (
                 <div style={{ 
-        gridColumn: "1 / -1", // CAMBIO: De span 3 a 1/-1
+        gridColumn: "1 / -1", 
         marginTop: "20px" }}>
                   <button type="submit" style={{ ...styles.btnBlue, backgroundColor: "#2ecc71", width: "100%", justifyContent: "center" }}>
                     Guardar Cambios
                   </button>
                 </div>
+                
               )}
             </form>
-              {/* SECCIÓN ARCHIVOS */}
+
               {isEditing && (
                         <div style={{ marginTop: '40px', borderTop: '2px solid #eee', paddingTop: '20px' }}>
                             <h3 style={{ fontSize: '16px', marginBottom: '15px' }}><i className="fa-solid fa-folder-open" style={{ color: '#3182ce', marginRight: '10px' }}></i>Documentación</h3>

@@ -14,12 +14,12 @@ import Toast from '../components/Toast';
 
 const Home = () => {
     const [view, setView] = useState('home');
-    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // <--- Nuevo estado
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); 
     const [showUserMenu, setShowUserMenu] = useState(false);
     const [highlightId, setHighlightId] = useState(null); 
 
-    const userName = localStorage.getItem('userName') || 'Usuario'; // Obtener nombre de usuario del localStorage
-    const isAdmin = localStorage.getItem('isAdmin') === 'true'; // Obtener rol de administrador del localStorage
+    const userName = localStorage.getItem('userName') || 'Usuario';
+    const isAdmin = localStorage.getItem('isAdmin') === 'true'; 
 
     const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
 
@@ -27,36 +27,30 @@ const Home = () => {
         setToast({ show: true, msg, type });
     };
    
-    // Cerrar el menú de usuario al hacer clic fuera
     useEffect(() => {
         const closeMenu = () => setShowUserMenu(false);
         if (showUserMenu) {
-            // El timeout evita que el mismo click que abre el menú lo cierre
             window.addEventListener('click', closeMenu);
         }
         return () => window.removeEventListener('click', closeMenu);
     }, [showUserMenu]);
 
 
-    // Función para cerrar sesión
     const handleLogout = () => {
         localStorage.removeItem('token');
         window.location.href = '/login';
     };
 
-     // Función para cambiar vista y cerrar menú móvil
      const changeView = (newView) => {
         setView(newView);
         setIsMobileMenuOpen(false);
         window.scrollTo(0, 0)
     };
 
-    //Función para manejar el click en una alerta
     const handleAlertClick = (id) => {
         setView('exportaciones');
         setHighlightId(id);
         
-        // Limpiamos el resaltado después de 5 segundos
         setTimeout(() => setHighlightId(null), 5000);
     };
 
@@ -67,15 +61,15 @@ const Home = () => {
             minHeight: '100vh',
             display: 'flex',
             flexDirection: 'column',
-            alignItems: 'center', // Centra el contenido horizontalmente
+            alignItems: 'center', 
         },
         contentWrapper: {
             width: '100%',
-            maxWidth: '1200px', // El ancho ideal para sistemas de gestión
-            padding: '20px clamp(10px, 3vw, 30px)', // Padding responsivo
+            maxWidth: '1200px', 
+            padding: '20px clamp(10px, 3vw, 30px)', 
             display: 'flex',
             flexDirection: 'column',
-            flex: 1, // Esto empuja al footer hacia abajo
+            flex: 1, 
             boxSizing: 'border-box'
         },
         header: { 
@@ -95,9 +89,10 @@ const Home = () => {
             display: 'flex',
             alignItems: 'center',
             gap: '12px',
-            marginRight: '20px',
-            paddingRight: '20px',
-            borderRight: '1px solid #eee'
+            marginLeft: '20px', 
+            paddingLeft: '20px', 
+            borderLeft: '1px solid #eee', 
+            cursor: 'pointer' 
         },
         userAvatar: {
             width: '35px',
@@ -138,7 +133,7 @@ const Home = () => {
             
         }),
         tab: (active) => ({
-            position: 'relative', // Para posicionar la barrita animada
+            position: 'relative', 
             padding: '12px 20px',
             cursor: 'pointer',
             color: active ? '#007bff' : '#64748b',
@@ -154,9 +149,9 @@ const Home = () => {
             padding: '30px', 
             borderRadius: '12px', 
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)', 
-            flex: 1, // Hace que el contenido crezca y ocupe el espacio disponible
+            flex: 1, 
             marginBottom: '40px',
-            minHeight: '400px' // Evita que se vea muy colapsado si está vacío
+            minHeight: '400px' 
         },
         dropdown: {
             position: 'absolute',
@@ -197,7 +192,7 @@ const Home = () => {
             marginBottom: '20px',
         },
         hamburger: {
-            display: 'none', // Se activará en la Media Query (ver abajo)
+            display: 'none', 
             fontSize: '24px',
             background: 'none',
             border: 'none',
@@ -213,7 +208,6 @@ const Home = () => {
    
    return (
     <div style={styles.container}>
-            {/* Agrega este bloque de CSS en línea para manejar la responsividad de forma sencilla */}
             <style>{`
     .hamburger-btn {
         display: none;
@@ -234,18 +228,17 @@ const Home = () => {
         background: rgba(0, 123, 255, 0.08);
         border-radius: 8px;
     }
-    /* Cambiamos a 1024px para cubrir el rango donde se cortaba */
     @media (max-width: 1024px) {
         .hamburger-btn {
             display: flex; 
         }
 
         .nav-tabs-desktop {
-            flex-direction: column !important; /* Forzamos verticalidad */
+            flex-direction: column !important; 
             overflow: hidden;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             
-            /* Estado dinámico */
+      
             max-height: ${isMobileMenuOpen ? '600px' : '0px'};
             opacity: ${isMobileMenuOpen ? '1' : '0'};
             margin-bottom: ${isMobileMenuOpen ? '20px' : '0px'};
@@ -261,7 +254,6 @@ const Home = () => {
         }
     }
 
-    /* Para pantallas GRANDES, nos aseguramos que se vea horizontal siempre */
     @media (min-width: 1025px) {
         .nav-tabs-desktop {
             display: flex !important;
@@ -272,7 +264,6 @@ const Home = () => {
     }
 `}</style>
         <div style={styles.contentWrapper}>
-            {/* Header Principal Refinado */}
             <div style={styles.header}>
                 <div style={styles.logoSection}>
                     <div style={styles.logoIcon}><i className="fa-solid fa-ship"></i></div>
@@ -285,29 +276,31 @@ const Home = () => {
                     <div 
                         style={styles.userProfile} 
                         onClick={(e) => {
-                            e.stopPropagation(); // Evita que el useEffect lo cierre al instante
+                            e.stopPropagation(); 
                             setShowUserMenu(!showUserMenu);
                         }}
                     >
-                        <div style={{ textAlign: 'right' }}>
-                            <div style={{ fontWeight: '600', fontSize: '14px', color: '#333' }}>
-                                @{userName} <i className="fa-solid fa-caret-down" style={{fontSize: '10px', marginLeft: '5px'}}></i>
-                            </div>
-                            <div style={{ fontSize: '11px', color: isAdmin ? '#28a745' : '#666' }}>
-                                {isAdmin ? 'Administrador' : 'Operador'}
-                            </div>
-                        </div>
-                        <div style={styles.userAvatar}>
-                            {userName.charAt(0).toUpperCase()}
-                        </div>
-                    </div>
+                       <div style={styles.userAvatar}>
+        {userName.charAt(0).toUpperCase()}
+    </div>
+
+   
+    <div style={{ textAlign: 'left' }}> 
+        <div style={{ fontWeight: '600', fontSize: '14px', color: '#333' }}>
+            @{userName} <i className="fa-solid fa-caret-down" style={{fontSize: '10px', marginLeft: '5px'}}></i>
+        </div>
+        <div style={{ fontSize: '11px', color: isAdmin ? '#28a745' : '#666' }}>
+            {isAdmin ? 'Administrador' : 'Usuario'}
+        </div>
+    </div>
+    </div>
 
                     <AnimatePresence>
     {showUserMenu && (
         <motion.div 
-            initial={{ opacity: 0, y: -10, scale: 0.95 }} // Empieza invisible, un poco arriba y más chico
-            animate={{ opacity: 1, y: 0, scale: 1 }}      // Baja y toma su tamaño real
-            exit={{ opacity: 0, y: -10, scale: 0.95 }}    // Se desvanece al cerrar
+            initial={{ opacity: 0, y: -10, scale: 0.95 }} 
+            animate={{ opacity: 1, y: 0, scale: 1 }}      
+            exit={{ opacity: 0, y: -10, scale: 0.95 }}    
             transition={{ duration: 0.2, ease: "easeOut" }}
             style={styles.dropdown} 
             onClick={(e) => e.stopPropagation()}
@@ -342,22 +335,17 @@ const Home = () => {
 
             <AlertasVencimiento onAlertClick={handleAlertClick} />
 
-            {/* Navegación por Pestañas con Iconos */}
-           {/* NAVBAR CON HAMBURGUESA */}
+       
            <div style={styles.navContainer}>
-    {/* Botón Hamburguesa */}
     <button 
         className="hamburger-btn" 
         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
     >
         <i className={`fa-solid ${isMobileMenuOpen ? 'fa-xmark' : 'fa-bars'}`} style={{fontSize: '20px'}}></i>
-        <span>{isMobileMenuOpen ? 'CERRAR MENÚ' : 'MENÚ DE OPCIONES'}</span>
     </button>
 
-    {/* Contenedor de Pestañas con Animación */}
     <div className="nav-tabs-desktop" style={styles.navTabs()}>
     {['home','aduanas', 'clientes', 'importaciones', 'exportaciones', 'usuarios'].map((tabName) => {
-        // Validación de permisos
         if ((tabName === 'usuarios' || tabName === 'aduanas') && !isAdmin) return null;
         
         const isActive = view === tabName;
@@ -369,11 +357,9 @@ const Home = () => {
                 onClick={() => changeView(tabName)}
                 className="tab-item"
             >
-                {/* Iconos dinámicos según el nombre */}
                 <i className={`fa-solid fa-${tabName === 'home' ? 'house' : tabName === 'clientes' ? 'users' : 'file-invoice'}`}></i>
                 {tabName.toUpperCase()}
 
-                {/* LA MEJORA: Barrita animada que "viaja" entre pestañas */}
                 {isActive && (
                     <motion.div 
                         layoutId="activeTabIndicator"
@@ -394,15 +380,13 @@ const Home = () => {
 </div>
 </div>
 
-            {/* Contenido Dinámico */}
             <div style={styles.mainContent}>
-                {/* ... (Toda tu lógica de renderizado se mantiene igual) ... */}
                 {view === 'home' && <HomeInfo />}
-                {view === 'clientes' && <GestionClientes  />}
-                {view === 'aduanas' && <GestionAduanas  />}
-                {view === 'importaciones' && <GestionImportaciones  />}
-                {view === 'exportaciones' && <GestionExportaciones  highlightId={highlightId} />}
-                {view === 'usuarios' && <GestionUsuarios  />}
+                {view === 'clientes' && <GestionClientes onNotification={showToast}  />}
+                {view === 'aduanas' && <GestionAduanas  onNotification={showToast}  />}
+                {view === 'importaciones' && <GestionImportaciones  onNotification={showToast} />}
+                {view === 'exportaciones' && <GestionExportaciones  highlightId={highlightId} onNotification={showToast} />}
+                {view === 'usuarios' && <GestionUsuarios onNotification={showToast} />}
                 {view === 'Profile' && <Profile onNotification={showToast} />}
             </div>
         </div>

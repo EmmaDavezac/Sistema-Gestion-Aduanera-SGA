@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef , useCallback} from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import {
   getClientes,
   createCliente,
@@ -7,11 +7,10 @@ import {
   uploadFile,
   downloadFile,
   deleteArchivo,
-  darBajaCliente,
-  darAltaCliente,
-} from "../api/files";
-import SkeletonTable from './SkeletonTable';
-const GestionClientes = ({ onUpdate }) => {
+} from "../api/api";
+import validarCUIT from "../utils/validaciones";
+import SkeletonTable from "./SkeletonTable";
+const GestionClientes = ({ onNotification }) => {
   const [clientes, setClientes] = useState([]);
   const [archivos, setArchivos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
@@ -20,9 +19,8 @@ const GestionClientes = ({ onUpdate }) => {
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [fileToUpload, setFileToUpload] = useState(null);
   const [loading, setLoading] = useState(true);
+  const isAdmin = localStorage.getItem("isAdmin") === "true";
 
-
-  // Candado para evitar doble GET inicial
   const cargadoRef = useRef(false);
 
   const [formData, setFormData] = useState({
@@ -36,40 +34,38 @@ const GestionClientes = ({ onUpdate }) => {
     baja: false,
   });
 
-
-// Usamos useCallback para que la función sea estable
-const cargarDatos = useCallback(async () => {
-  setLoading(true);
+  const cargarDatos = useCallback(async () => {
+    setLoading(true);
     try {
       const [c, a] = await Promise.all([getClientes(), getArchivos()]);
       setClientes(c);
       setArchivos(a);
 
       if (clienteSeleccionado) {
-        const actualizado = c.find((item) => item.cuit === clienteSeleccionado.cuit);
+        const actualizado = c.find(
+          (item) => item.cuit === clienteSeleccionado.cuit
+        );
         if (actualizado) {
           setClienteSeleccionado(actualizado);
+
           setFormData(actualizado);
         }
       }
     } catch (err) {
-      console.error("Error cargando datos", err);
-    }
-    finally {
+      onNotification("Error cargando datos", "error");
+      console.error("Error detallado:", err.response?.data);
+    } finally {
       setLoading(false);
     }
-  }, [clienteSeleccionado]);
+  }, [clienteSeleccionado?.cuit]);
 
   useEffect(() => {
-    // Solo ejecutamos si el candado está abierto
     if (!cargadoRef.current) {
       cargarDatos();
       cargadoRef.current = true;
     }
   }, [cargarDatos]);
 
-
- 
   const handleFileUpload = async () => {
     if (!fileToUpload) return;
     const fData = new FormData();
@@ -80,11 +76,11 @@ const cargarDatos = useCallback(async () => {
 
     try {
       await uploadFile(fData);
-      alert("Archivo añadido");
+      onNotification("Archivo añadido", "success");
       setFileToUpload(null);
       await cargarDatos();
     } catch (err) {
-      alert("Error al subir");
+      onNotification("Error al subir", "error");
     }
   };
 
@@ -93,12 +89,12 @@ const cargarDatos = useCallback(async () => {
     try {
       await deleteArchivo(id);
       await cargarDatos();
+      onNotification("Archivo eliminado", "success");
     } catch (err) {
-      alert("Error al eliminar");
+      onNotification("Error al eliminar", "error");
     }
   };
 
-  // Filtro limpio: No filtramos por 'baja', solo por búsqueda de texto
   const clientesFiltrados = clientes.filter(
     (c) =>
       c.cuit.toLowerCase().includes(busqueda.toLowerCase()) ||
@@ -107,28 +103,39 @@ const cargarDatos = useCallback(async () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (!validarCUIT(formData.cuit)) {
+      onNotification("El CUIT no es válido. Verifique los dígitos.", "error");
+      return;
+    }
+
     try {
       if (isEditing && clienteSeleccionado) {
-        // Si el estado de baja cambió, ejecutamos la acción correspondiente
-        if (formData.baja !== clienteSeleccionado.baja) {
-          if (formData.baja) {
-            await darBajaCliente(formData.cuit);
-          } else {
-            await darAltaCliente(formData.cuit);
-          }
-        }
-        await updateCliente(formData.cuit, formData);
-        alert("Datos actualizados");
+        const datosParaEnviar = { ...formData };
+        delete datosParaEnviar.cuit;
+        await updateCliente(clienteSeleccionado.cuit, datosParaEnviar);
+        onNotification("¡Actualizado con éxito!", "success");
+        await cargarDatos();
+        setIsEditing(false);
       } else {
         await createCliente(formData);
-        alert("Cliente registrado");
+        onNotification("¡Cliente registrado con éxito!", "success");
+        await cargarDatos();
+        volverALista();
       }
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      await cargarDatos();
-      if (onUpdate) onUpdate();
-      volverALista();
     } catch (err) {
-      alert("Error en la operación");
+      console.log("Estructura completa del error:", err.response?.data);
+
+      const mensajeBackend =
+        err.response?.data?.message || err.response?.data?.error;
+
+      if (mensajeBackend) {
+        onNotification(mensajeBackend, "error");
+      } else if (err.response?.status === 400) {
+        onNotification("Error en los datos: El CUIT ya registrado", "error");
+      } else {
+        onNotification("Error de comunicación con el servidor", "error");
+      }
     }
   };
 
@@ -162,7 +169,7 @@ const cargarDatos = useCallback(async () => {
       minHeight: "100vh",
       fontFamily: "Segoe UI, sans-serif",
     },
-    
+
     header: {
       display: "flex",
       justifyContent: "space-between",
@@ -251,7 +258,7 @@ const cargarDatos = useCallback(async () => {
       fontWeight: "600",
       fontSize: "13px",
       color: "#4a5568",
-      marginBottom: "5px", // Espacio hacia abajo
+      marginBottom: "5px",
       display: "inline-block",
     },
     sectionTitle: {
@@ -275,30 +282,33 @@ const cargarDatos = useCallback(async () => {
       border: "1px solid #edf2f7",
       cursor: "pointer",
     },
-    switchTrack: (active) => ({
+    switchTrack: (baja) => ({
       width: "50px",
       height: "26px",
-      backgroundColor: active ? "#fed7d7" : "#c6f6d5", // Fondo suave
+
+      backgroundColor: baja ? "#fed7d7" : "#c6f6d5",
       borderRadius: "15px",
       position: "relative",
       cursor: "pointer",
       transition: "all 0.3s ease",
-      border: `2px solid ${active ? "#e53e3e" : "#38a169"}`,
+      border: `2px solid ${baja ? "#e53e3e" : "#38a169"}`,
     }),
-    switchThumb: (active) => ({
+
+    switchThumb: (baja) => ({
       width: "18px",
       height: "18px",
-      backgroundColor: active ? "#e53e3e" : "#38a169", // Círculo fuerte
+      backgroundColor: baja ? "#e53e3e" : "#38a169",
       borderRadius: "50%",
       position: "absolute",
       top: "2px",
-      left: active ? "26px" : "2px", // Desplazamiento
+      left: baja ? "2px" : "26px",
       transition: "all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
     }),
-    statusLabel: (active) => ({
+
+    statusLabel: (isBaja) => ({
       fontSize: "13px",
       fontWeight: "bold",
-      color: active ? "#c53030" : "#2f855a",
+      color: isBaja ? "#c53030" : "#2f855a",
       textTransform: "uppercase",
       letterSpacing: "0.5px",
     }),
@@ -403,37 +413,40 @@ const cargarDatos = useCallback(async () => {
               </div>
             </div>
           ))}
-            {loading ? (
-    // 1. Estado de Carga: Muestra el Skeleton
-    <SkeletonTable rows={4} />
-                    ) :clientesFiltrados.length === 0 && (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "60px 20px",
-                color: "#a0aec0",
-                backgroundColor: "#fff",
-                borderRadius: "12px",
-                border: "2px dashed #e2e8f0", // Un borde punteado queda muy bien para estados vacíos
-              }}
-            >
-              <i
-                className="fa-solid fa-box-open"
+          {loading ? (
+            <SkeletonTable rows={4} />
+          ) : (
+            clientesFiltrados.length === 0 && (
+              <div
                 style={{
-                  fontSize: "50px",
-                  marginBottom: "15px",
-                  color: "#cbd5e0",
+                  textAlign: "center",
+                  padding: "60px 20px",
+                  color: "#a0aec0",
+                  backgroundColor: "#fff",
+                  borderRadius: "12px",
+                  border: "2px dashed #e2e8f0",
                 }}
-              ></i>
-              <h3 style={{ margin: 0, fontSize: "18px", color: "#4a5568" }}>
-                No hay coincidencias
-              </h3>
-              <p style={{ marginTop: "8px" }}>Prueba con otro nombre o CUIT.</p>
-            </div>
+              >
+                <i
+                  className="fa-solid fa-box-open"
+                  style={{
+                    fontSize: "50px",
+                    marginBottom: "15px",
+                    color: "#cbd5e0",
+                  }}
+                ></i>
+                <h3 style={{ margin: 0, fontSize: "18px", color: "#4a5568" }}>
+                  No hay coincidencias
+                </h3>
+                <p style={{ marginTop: "8px" }}>
+                  Prueba con otro nombre o CUIT.
+                </p>
+              </div>
+            )
           )}
         </div>
       ) : view === "form" ? (
-        <div style={{ maxWidth: "800px", margin: "0 auto" }}>
+        <div style={{ maxWidth: "900px", margin: "0 auto" }}>
           <button
             onClick={volverALista}
             style={{
@@ -467,43 +480,128 @@ const cargarDatos = useCallback(async () => {
               ></i>
               Registrar Nuevo Cliente
             </h2>
+
             <form
               onSubmit={handleSubmit}
               style={{
                 display: "grid",
-                gridTemplateColumns: "repeat(3, 1fr)",
-                gap: "25px",
+                gridTemplateColumns: "repeat(2, 1fr)",
+                gap: "20px",
               }}
             >
-              <div>
+              <div style={styles.sectionTitle}>Datos Identificatorios</div>
+
+              <div style={{ gridColumn: "span 1" }}>
                 <label style={styles.label}>CUIT / Identificación</label>
                 <input
+                  type="text"
+                  pattern="[0-9]{11}"
                   style={styles.formInput}
                   placeholder="Ej: 20-12345678-9"
+                  value={formData.cuit}
                   onChange={(e) =>
                     setFormData({ ...formData, cuit: e.target.value })
                   }
                   required
                 />
               </div>
-              <div>
+
+              <div style={{ gridColumn: "span 1" }}>
                 <label style={styles.label}>Razón Social / Nombre</label>
                 <input
                   style={styles.formInput}
                   placeholder="Ej: Logística S.A."
+                  value={formData.nombre}
                   onChange={(e) =>
                     setFormData({ ...formData, nombre: e.target.value })
                   }
                   required
                 />
               </div>
+
+              <div style={styles.sectionTitle}>Información de Contacto</div>
+
               <div style={{ gridColumn: "span 2" }}>
+                <label style={styles.label}>Domicilio</label>
+                <input
+                  style={styles.formInput}
+                  placeholder="Calle, Número, Localidad"
+                  value={formData.domicilio}
+                  onChange={(e) =>
+                    setFormData({ ...formData, domicilio: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div style={{ gridColumn: "span 1" }}>
+                <label style={styles.label}>Teléfono Principal</label>
+                <input
+                  type="number"
+                  style={styles.formInput}
+                  placeholder="Ej: 0113438401246"
+                  value={formData.telefono_1}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefono_1: e.target.value })
+                  }
+                  required
+                />
+              </div>
+
+              <div style={{ gridColumn: "span 1" }}>
+                <label style={styles.label}>Teléfono Secundario</label>
+                <input
+                  type="number"
+                  style={styles.formInput}
+                  placeholder="Opcional"
+                  value={formData.telefono_2}
+                  onChange={(e) =>
+                    setFormData({ ...formData, telefono_2: e.target.value })
+                  }
+                />
+              </div>
+
+              <div style={styles.sectionTitle}>Otros Datos</div>
+
+              <div style={{ gridColumn: "span 2" }}>
+                <label style={styles.label}>Fecha Inicio Actividad</label>
+                <input
+                  type="date"
+                  style={styles.formInput}
+                  value={formData.fecha_inicio_actividad}
+                  onChange={(e) =>
+                    setFormData({
+                      ...formData,
+                      fecha_inicio_actividad: e.target.value,
+                    })
+                  }
+                  required
+                />
+              </div>
+              <div style={{ gridColumn: "span 2" }}>
+                <label style={styles.label}>Observaciones</label>
+                <textarea
+                  style={{
+                    ...styles.formInput,
+                    height: "80px",
+                    resize: "none",
+                  }}
+                  placeholder="Notas adicionales sobre el cliente..."
+                  value={formData.observaciones}
+                  onChange={(e) =>
+                    setFormData({ ...formData, observaciones: e.target.value })
+                  }
+                />
+              </div>
+
+              <div style={{ gridColumn: "span 2", marginTop: "10px" }}>
                 <button
                   type="submit"
                   style={{
                     ...styles.btnGreen,
                     width: "100%",
                     justifyContent: "center",
+                    padding: "15px",
                     fontSize: "16px",
                   }}
                 >
@@ -552,14 +650,13 @@ const cargarDatos = useCallback(async () => {
           </div>
 
           <div
-            style={{ 
-              display: 'grid', 
-              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', 
-              gap: '30px',
-              alignItems: 'start' 
-            }}  
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+              gap: "30px",
+              alignItems: "start",
+            }}
           >
-            {/* Formulario de Ficha */}
             <div style={styles.card}>
               <h3 style={{ marginTop: 0, color: "#2d3748" }}>
                 <i
@@ -606,10 +703,11 @@ const cargarDatos = useCallback(async () => {
                     onChange={(e) =>
                       setFormData({ ...formData, domicilio: e.target.value })
                     }
+                    required
                   />
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={styles.label}>Teléfono 1</label>
+                  <label style={styles.label}>Teléfono Principal</label>
                   <input
                     style={styles.formInput}
                     value={formData.telefono_1 || ""}
@@ -617,10 +715,11 @@ const cargarDatos = useCallback(async () => {
                     onChange={(e) =>
                       setFormData({ ...formData, telefono_1: e.target.value })
                     }
+                    required
                   />
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={styles.label}>Teléfono 2</label>
+                  <label style={styles.label}>Teléfono Secundario</label>
                   <input
                     style={styles.formInput}
                     value={formData.telefono_2 || ""}
@@ -630,7 +729,32 @@ const cargarDatos = useCallback(async () => {
                     }
                   />
                 </div>
-                <div style={styles.sectionTitle}>Información Complementaria</div>
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label style={styles.label}>Fecha Inicio Actividad</label>
+                  <input
+                    type="date"
+                    style={{
+                      ...styles.formInput,
+                      backgroundColor: !isEditing ? "#f8fafc" : "white",
+                    }}
+                    value={
+                      formData.fecha_inicio_actividad
+                        ? formData.fecha_inicio_actividad.split("T")[0]
+                        : ""
+                    }
+                    disabled={!isEditing}
+                    onChange={(e) =>
+                      setFormData({
+                        ...formData,
+                        fecha_inicio_actividad: e.target.value,
+                      })
+                    }
+                    required
+                  />
+                </div>
+                <div style={styles.sectionTitle}>
+                  Información Complementaria
+                </div>
                 <div style={{ gridColumn: "1 / -1" }}>
                   <label style={styles.label}>Observaciones</label>
                   <textarea
@@ -649,50 +773,50 @@ const cargarDatos = useCallback(async () => {
                     }
                   />
                 </div>
-                {/* SECCIÓN DE ESTADO TIPO SLIDE */}
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={styles.label}>Estado de la cuenta</label>
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "15px",
-                      padding: "12px",
-                      backgroundColor: "#f8fafc",
-                      borderRadius: "10px",
-                      border: "1px solid #edf2f7",
-                      opacity: isEditing ? 1 : 0.7,
-                      cursor: isEditing ? "pointer" : "default",
-                    }}
-                    onClick={() =>
-                      isEditing &&
-                      setFormData({ ...formData, baja: !formData.baja })
-                    }
-                  >
-                    {/* El Switch (Slide) */}
-                    <div style={styles.switchTrack(formData.baja)}>
-                      <div style={styles.switchThumb(formData.baja)}></div>
-                    </div>
 
-                    {/* Texto descriptivo */}
-                    <div style={{ display: "flex", flexDirection: "column" }}>
-                      <span style={styles.statusLabel(formData.baja)}>
-                        {formData.baja ? "Inactivo" : "Activo"}
-                      </span>
-                      <span style={{ fontSize: "11px", color: "#718096" }}>
-                        {isEditing
-                          ? "Haz clic para cambiar el estado"
-                          : "Modo lectura"}
-                      </span>
+                {isAdmin && (
+                  <div style={{ gridColumn: "1 / -1" }}>
+                    <label style={styles.label}>Estado de la cuenta</label>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "15px",
+                        padding: "12px",
+                        backgroundColor: "#f8fafc",
+                        borderRadius: "10px",
+                        border: "1px solid #edf2f7",
+                        opacity: isEditing ? 1 : 0.7,
+                        cursor: isEditing ? "pointer" : "default",
+                      }}
+                      onClick={() =>
+                        isEditing &&
+                        setFormData({ ...formData, baja: !formData.baja })
+                      }
+                    >
+                      <div style={styles.switchTrack(formData.baja)}>
+                        <div style={styles.switchThumb(formData.baja)}></div>
+                      </div>
+
+                      <div style={{ display: "flex", flexDirection: "column" }}>
+                        <span style={styles.statusLabel(formData.baja)}>
+                          {formData.baja ? "Inactivo" : "Activo"}
+                        </span>
+                        <span style={{ fontSize: "11px", color: "#718096" }}>
+                          {isEditing
+                            ? "Haz clic para cambiar el estado"
+                            : "Modo lectura"}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
                 {isEditing && (
                   <button
                     type="submit"
                     style={{
                       ...styles.btnGreen,
-                      gridColumn: "1 / -1", // IMPORTANTE
+                      gridColumn: "1 / -1",
                       justifyContent: "center",
                       marginTop: "10px",
                     }}
@@ -704,7 +828,6 @@ const cargarDatos = useCallback(async () => {
               </form>
             </div>
 
-            {/* Documentos */}
             <div style={styles.card}>
               <h3 style={{ marginTop: 0, color: "#2d3748" }}>
                 <i

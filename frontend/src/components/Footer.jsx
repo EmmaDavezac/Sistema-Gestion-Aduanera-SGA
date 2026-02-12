@@ -8,7 +8,6 @@ const Footer = () => {
         <footer style={styles.footer}>
             <div style={styles.container}>
                 
-                {/* COLUMNA 1: Identidad del Proyecto */}
                 <div style={styles.column}>
                     <div style={styles.brandGroup}>
                         <span style={styles.brandTitle}>SGA</span>
@@ -20,7 +19,6 @@ const Footer = () => {
                     </p>
                 </div>
 
-                {/* COLUMNA 2: Recursos (Futuro Manual) */}
                 <div style={styles.column}>
                     <span style={styles.sectionTitle}>Recursos</span>
                     <a 
@@ -33,7 +31,6 @@ const Footer = () => {
                     </a>
                 </div>
 
-                {/* COLUMNA 3: Soporte y Desarrollador */}
                 <div style={styles.column}>
                     <span style={styles.sectionTitle}>Soporte Técnico</span>
                     <div style={styles.contactGrid}>
@@ -48,19 +45,18 @@ const Footer = () => {
                         
                         <motion.a 
                             whileHover={{ x: 5, color: '#25D366' }}
-                            href="https://wa.me/5491122334455" 
+                            href="https://wa.me/543438471858" 
                             target="_blank" 
                             rel="noopener noreferrer" 
                             style={styles.contactLink}
                         >
                             <i className="fa-brands fa-whatsapp" style={styles.whatsappIcon}></i>
-                            WhatsApp Directo
+                            WhatsApp
                         </motion.a>
                     </div>
                 </div>
             </div>
 
-            {/* BARRA INFERIOR: Créditos Finales */}
             <div style={styles.bottomBar}>
                 <div style={styles.credits}>
                     Desarrollado con precisión por <span style={styles.devName}>Emmanuel Davezac</span>

@@ -1,7 +1,6 @@
 import React from 'react';
 
 const ProfileSkeleton = () => {
-    // Definimos los estilos base para que no den error de "undefined"
     const baseStyles = {
         container: { display: 'flex', justifyContent: 'center', padding: '20px', fontFamily: 'sans-serif' },
         card: { width: '100%', maxWidth: '500px', background: '#fff', padding: '30px', borderRadius: '12px', boxShadow: '0 8px 30px rgba(0,0,0,0.05)' }
@@ -18,7 +17,6 @@ const ProfileSkeleton = () => {
     return (
         <div style={baseStyles.container}>
             <div style={baseStyles.card}>
-                {/* Agregamos el icono de usuario para que se vea más real */}
                 <div style={skeletonStyles.circle}>
                     <i className="fa-solid fa-user" style={{ color: '#cbd5e0', fontSize: '30px' }}></i>
                 </div>
@@ -31,7 +29,6 @@ const ProfileSkeleton = () => {
                     </div>
                 ))}
                 
-                {/* Simulacro del botón de abajo */}
                 <div style={{...skeletonStyles.input, marginTop: '20px', backgroundColor: '#e2e8f0', height: '45px'}}></div>
             </div>
         </div>

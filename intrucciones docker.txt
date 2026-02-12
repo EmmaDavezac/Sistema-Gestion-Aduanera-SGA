@@ -1,0 +1,3 @@
+docker-compose up --build  contruir el docker
+docker exec -it sga_backend python manage.py migrate --fake elimina falsas migraciones
+docker exec -it sga_backend python manage.py enviar_alertas

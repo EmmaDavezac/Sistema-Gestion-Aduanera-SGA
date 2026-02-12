@@ -8,24 +8,22 @@ import {
     getArchivosByExportacion,
     uploadFile,
     deleteArchivo,
-  } from "../api/files";
+  } from "../api/api";
 import SkeletonTable from './SkeletonTable';
   const GestionExportaciones = ({ onUpdate }) => {
-    // Estados de datos
     const [exportaciones, setExportaciones] = useState([]);
     const [clientes, setClientes] = useState([]);
     const [aduanas, setAduanas] = useState([]);
     const [archivos, setArchivos] = useState([]);
   
-    // Estados de UI
     const [busqueda, setBusqueda] = useState("");
-    const [view, setView] = useState("list"); // 'list', 'form'
+    const [view, setView] = useState("list"); 
     const [isEditing, setIsEditing] = useState(false);
     const [isReadOnly, setIsReadOnly] = useState(true);
     const [selectedId, setSelectedId] = useState(null);
     const [fileToUpload, setFileToUpload] = useState(null);
     const [loading, setLoading] = useState(true);
-    // Candado para evitar la doble consulta inicial (Strict Mode)
+    const isAdmin = localStorage.getItem('isAdmin') === 'true'; 
     const cargadoRef = useRef(false);
 
     const initialFormState = {
@@ -52,7 +50,6 @@ import SkeletonTable from './SkeletonTable';
         vencimiento_preimposicion: "",
         estado: "Pendiente",
     };
-// Estado del Formulario
 const [formData, setFormData] = useState({
     numero_destinacion: "",
     condicion_venta: "",
@@ -76,7 +73,6 @@ const [formData, setFormData] = useState({
     vencimiento_preimposicion: "",
     estado: "Pendiente",
   });
-// 3. Funciones de carga estabilizadas con useCallback
     const cargarDatos = useCallback(async () => {
       setLoading(true);
         try {
@@ -108,14 +104,12 @@ const [formData, setFormData] = useState({
         }
     }, []);
 
-    // 4. useEffect controlado
     useEffect(() => {
         if (!cargadoRef.current) {
             cargarDatos();
             cargadoRef.current = true;
         }
     }, [cargarDatos]);
-    // --- MANEJADORES DE ACCIÓN ---
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -132,10 +126,8 @@ const [formData, setFormData] = useState({
       [name]: value === "" ? 0 : parseFloat(value),
     });
   };
-  // Función interna para limpiar la fecha
   const formatSafeDate = (dateVal) => {
-    if (!dateVal) return null; // Si está vacío, enviar null
-    // Si viene con hora (ISO string), cortamos solo los primeros 10 caracteres
+    if (!dateVal) return null; 
     return typeof dateVal === 'string' ? dateVal.split('T')[0] : dateVal;
 };
 
@@ -144,16 +136,13 @@ const [formData, setFormData] = useState({
     try {
         const dataToSend = {
             ...formData,
-            // Convertimos IDs a números
             aduana: formData.aduana ? parseInt(formData.aduana) : null,
             cliente: formData.cliente ? parseInt(formData.cliente) : null,
             
-            // Limpieza estricta de fechas YYYY-MM-DD
             oficializacion: formatSafeDate(formData.oficializacion),
             vencimiento_embarque: formatSafeDate(formData.vencimiento_embarque),
             vencimiento_preimposicion: formatSafeDate(formData.vencimiento_preimposicion),
 
-            // Aseguramos que los números no sean strings
             cantidad_unidades: parseFloat(formData.cantidad_unidades || 0),
             unitario_en_divisa: parseFloat(formData.unitario_en_divisa || 0),
             fob_total_en_divisa: parseFloat(formData.fob_total_en_divisa || 0),
@@ -182,14 +171,13 @@ const [formData, setFormData] = useState({
 
     const data = new FormData();
     data.append("archivo", fileToUpload);
-    data.append("tipo", 3); // Asumiendo que 1=Cliente, 2=Import, 3=Export
-    data.append("id_exportacion", selectedId); // <-- CAMBIO AQUÍ: Verifica si es 'id_exportacion' o 'exportacion'
+    data.append("tipo", 3); 
+    data.append("id_exportacion", selectedId); 
     data.append("nombre", fileToUpload.name);
 
     try {
         await uploadFile(data);
         setFileToUpload(null);
-        // Limpiar el input en el DOM
         const fileInput = document.querySelector('input[type="file"]');
         if (fileInput) fileInput.value = "";
         
@@ -197,7 +185,6 @@ const [formData, setFormData] = useState({
         alert("Documento subido con éxito");
     } catch (err) {
         console.error("Error detallado del servidor:", err.response?.data);
-        // Esto te dirá exactamente qué campo falta o está mal:
         alert("Error al subir: " + JSON.stringify(err.response?.data));
     }
 };
@@ -213,7 +200,6 @@ const handleFileDelete = async (id) => {
   };
 
 
-  // --- NAVEGACIÓN ---
   const handleVerDetalle = (exp) => {
     setSelectedId(exp.id);
     const sanitizedData = {};
@@ -221,7 +207,6 @@ const handleFileDelete = async (id) => {
     Object.keys(initialFormState).forEach(key => {
         let value = exp[key] ?? initialFormState[key];
         
-        // Si es una de las fechas, forzamos el formato YYYY-MM-DD para el input
         if (['oficializacion', 'vencimiento_embarque', 'vencimiento_preimposicion'].includes(key) && value) {
             value = value.split('T')[0];
         }
@@ -254,7 +239,6 @@ const handleFileDelete = async (id) => {
     });
   };
 
-  // --- ESTILOS (Idénticos a Importaciones) ---
   const styles = {
     container: { padding: '30px', backgroundColor: '#f4f7f6', minHeight: '100vh', fontFamily: 'Segoe UI, sans-serif' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '25px' },
@@ -272,7 +256,7 @@ const handleFileDelete = async (id) => {
     badge: (bg, color) => ({ padding: '5px 12px', borderRadius: '20px', fontSize: '11px', backgroundColor: bg, color: color, fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px' }),
     label: { fontWeight: '600', fontSize: '13px', color: '#4a5568', marginBottom: '5px', display: 'inline-block' },
     sectionTitle: { 
-        gridColumn: "1 / -1", // Crucial: de la primera a la última columna
+        gridColumn: "1 / -1", 
         fontWeight: '700', 
         marginTop: '25px', 
         marginBottom: '10px',
@@ -283,13 +267,26 @@ const handleFileDelete = async (id) => {
         textTransform: 'uppercase',
         letterSpacing: '1px'
     },
-    switchTrack: (active) => ({
-      width: '50px', height: '26px', backgroundColor: active ? '#fed7d7' : '#c6f6d5', borderRadius: '15px',
-      position: 'relative', cursor: 'pointer', transition: 'all 0.3s ease', border: `2px solid ${active ? '#e53e3e' : '#38a169'}`,
+    switchTrack: (baja) => ({
+      width: '50px', 
+      height: '26px', 
+      backgroundColor: baja ? '#fed7d7' : '#c6f6d5', 
+      borderRadius: '15px',
+      position: 'relative', 
+      cursor: 'pointer', 
+      transition: 'all 0.3s ease', 
+      border: `2px solid ${baja ? '#e53e3e' : '#38a169'}`,
     }),
-    switchThumb: (active) => ({
-      width: '18px', height: '18px', backgroundColor: active ? '#e53e3e' : '#38a169', borderRadius: '50%',
-      position: 'absolute', top: '2px', left: active ? '26px' : '2px', transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
+    
+    switchThumb: (baja) => ({
+      width: '18px', 
+      height: '18px', 
+      backgroundColor: baja ? '#e53e3e' : '#38a169', 
+      borderRadius: '50%',
+      position: 'absolute', 
+      top: '2px', 
+      left: baja ? '2px' : '26px', 
+      transition: 'all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)',
     }),
     statusLabel: (active) => ({ fontSize: '13px', fontWeight: 'bold', color: active ? '#c53030' : '#2f855a', textTransform: 'uppercase' }),
   };
@@ -350,7 +347,6 @@ const handleFileDelete = async (id) => {
             </div>
           ))}
               {loading ? (
-    // 1. Estado de Carga: Muestra el Skeleton
     <SkeletonTable rows={4} />
                     ) :expFiltradas.length === 0 && (
       <div style={{ 
@@ -359,7 +355,7 @@ const handleFileDelete = async (id) => {
         color: '#a0aec0',
         backgroundColor: '#fff',
         borderRadius: '12px',
-        border: '2px dashed #e2e8f0' // Un borde punteado queda muy bien para estados vacíos
+        border: '2px dashed #e2e8f0' 
       }}>
         <i className="fa-solid fa-box-open" style={{ fontSize: '50px', marginBottom: '15px', color: '#cbd5e0' }}></i>
         <h3 style={{ margin: 0, fontSize: '18px', color: '#4a5568' }}>No hay coincidencias</h3>
@@ -389,7 +385,6 @@ const handleFileDelete = async (id) => {
   onSubmit={handleSubmit} 
   style={{ 
     display: "grid", 
-    // minmax(250px, 1fr) hace que si la pantalla mide menos de 250px, se apilen
     gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", 
     gap: "20px",
     alignItems: "start" 
@@ -516,10 +511,11 @@ const handleFileDelete = async (id) => {
                 <label style={styles.label}>Unitario Divisa</label>
                 <input type="number" name="unitario_en_divisa" value={formData.unitario_en_divisa} onChange={handleNumericChange} style={styles.formInput} disabled={isReadOnly} />
               </div>
-
+              {isAdmin && (
+  <> 
               <div style={styles.sectionTitle}>Estado de la Operación</div>
               <div style={{ 
-    gridColumn: "1 / -1", // Haz que el switch ocupe todo el ancho para que no se deforme
+    gridColumn: "1 / -1", 
     marginTop: '10px' 
 }}>
               <div  tabIndex={0}
@@ -532,7 +528,7 @@ const handleFileDelete = async (id) => {
         borderRadius: '10px', 
         border: '1px solid #edf2f7', 
         cursor: isReadOnly ? 'default' : 'pointer',
-        width: 'fit-content' // Para que no se estire a lo loco
+        width: 'fit-content'
       }}
                   onClick={() => !isReadOnly && setFormData({...formData, baja: !formData.baja})}
                 >
@@ -547,10 +543,12 @@ const handleFileDelete = async (id) => {
                   </div>
                 </div>
               </div>
+              </>
+              )}
 
               {!isReadOnly && (
     <div style={{ 
-        gridColumn: "1 / -1", // CAMBIO: De span 3 a 1/-1
+        gridColumn: "1 / -1", 
         marginTop: "20px" 
     }}>
       <button type="submit" style={{ ...styles.btnBlue, backgroundColor: "#2ecc71", width: "100%", justifyContent: "center" }}>
