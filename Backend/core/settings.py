@@ -79,10 +79,7 @@ USE_TZ = True
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "https://sistema-gestion-aduanera-6tkia1ydf-emmadavezacs-projects.vercel.app",
-]
+CORS_ALLOWED_ORIGINS = ["*"]
 
 CORS_ALLOW_CREDENTIALS = True
 
