@@ -152,9 +152,11 @@ class MyTokenObtainPairView(TokenObtainPairView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_new_captcha(request):
-    new_key = CaptchaStore.generate_key()
-    image_url = captcha_image_url(new_key)
-    return Response({
-        'key': new_key,
-        'image_url': f"http://localhost:8000{image_url}" 
+    hashkey = CaptchaStore.generate_key()
+    # Forzamos la URL usando el dominio de Render configurado en settings
+    image_url = f"https://{settings.CAPTCHA_DOMAIN}/captcha/image/{hashkey}/"
+    
+    return JsonResponse({
+        'key': hashkey,
+        'image_url': image_url
     })
