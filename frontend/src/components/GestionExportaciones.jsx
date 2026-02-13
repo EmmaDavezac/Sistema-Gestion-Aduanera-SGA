@@ -250,7 +250,19 @@ const handleFileDelete = async (id) => {
       padding: '10px', border: '1px solid #ddd', borderRadius: '6px', width: '100%', marginTop: '5px',
       backgroundColor: isReadOnly ? "#f8fafc" : "#fff", color: isReadOnly ? "#4a5568" : "#2d3748", transition: 'all 0.3s'
     },
-    btnGreen: { padding: '12px 24px', backgroundColor: '#2ecc71', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' },
+  
+  btnGreen: {
+    padding: "12px 24px",
+    backgroundColor: "#2ecc71",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontWeight: "600",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  },
     btnBlue: { padding: '10px 20px', backgroundColor: '#3182ce', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '8px' },
     btnAction: (color) => ({ padding: '8px 12px', backgroundColor: 'transparent', color: color, border: `1px solid ${color}`, borderRadius: '6px', cursor: 'pointer', transition: '0.3s', marginLeft: '8px' }),
     badge: (bg, color) => ({ padding: '5px 12px', borderRadius: '20px', fontSize: '11px', backgroundColor: bg, color: color, fontWeight: 'bold', display: 'inline-flex', alignItems: 'center', gap: '5px' }),
@@ -552,7 +564,7 @@ const handleFileDelete = async (id) => {
         marginTop: "20px" 
     }}>
       <button type="submit" style={{ ...styles.btnBlue, backgroundColor: "#2ecc71", width: "100%", justifyContent: "center" }}>
-        Guardar Exportación
+      <i className="fa-solid fa-floppy-disk"></i> Guardar
       </button>
     </div>
 )}

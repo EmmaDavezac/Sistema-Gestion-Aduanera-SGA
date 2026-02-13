@@ -605,7 +605,7 @@ const GestionClientes = ({ onNotification }) => {
                     fontSize: "16px",
                   }}
                 >
-                  <i className="fa-solid fa-floppy-disk"></i> Confirmar Registro
+                <i className="fa-solid fa-floppy-disk"></i> Guardar
                 </button>
               </div>
             </form>
@@ -821,8 +821,7 @@ const GestionClientes = ({ onNotification }) => {
                       marginTop: "10px",
                     }}
                   >
-                    <i className="fa-solid fa-floppy-disk"></i> Guardar Todos
-                    los Cambios
+                    <i className="fa-solid fa-floppy-disk"></i> Guardar
                   </button>
                 )}
               </form>

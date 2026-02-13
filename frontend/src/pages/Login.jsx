@@ -16,7 +16,7 @@ const Login = () => {
 
     const fetchCaptcha = async () => {
         try {
-            const res = await axios.get('http://localhost:8000/api/get-captcha/');
+            const res = await axios.get('http://127.0.0.1:8000/api/get-captcha/');
             setCaptchaData({ key: res.data.key, url: res.data.image_url });
             setUserCaptcha(''); 
         } catch (err) {
@@ -229,7 +229,7 @@ const Login = () => {
                             disabled={loading}
                             type="text" 
                             value={userCaptcha} 
-                            placeholder='Copia el código de la imagen'
+                            placeholder='Resuelva la ecuación de la imagen'
                             onChange={(e) => setUserCaptcha(e.target.value)}
                             style={styles.input(loading)}
                             required

@@ -559,7 +559,7 @@ useEffect(() => {
         gridColumn: "1 / -1", 
         marginTop: "20px" }}>
                   <button type="submit" style={{ ...styles.btnBlue, backgroundColor: "#2ecc71", width: "100%", justifyContent: "center" }}>
-                    Guardar Cambios
+                  <i className="fa-solid fa-floppy-disk"></i> Guardar
                   </button>
                 </div>
                 

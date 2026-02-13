@@ -33,22 +33,18 @@ const cargarAlertas = useCallback(async () => {
         );
 
         setAlertas(prev => {
-            // Comprobamos si hay algún ID nuevo que sea un vencimiento crítico
             const idsPrevios = new Set(prev.map(a => a.id));
             const t = new Date();
             const hoyUTC = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
 
-            // Filtramos las que acaban de llegar en este polling
             const nuevasAlertas = dataOrdenada.filter(a => !idsPrevios.has(a.id));
             
-            // Si hay registros nuevos Y alguno ya está vencido o vence hoy...
             const tieneNuevosCriticos = nuevasAlertas.some(exp => 
                 normalizarFechaUTC(exp.vencimiento_preimposicion) <= hoyUTC
             );
 
            
 
-            // Evitar re-renderizado innecesario si la data es idéntica
             if (JSON.stringify(prev) === JSON.stringify(dataOrdenada)) return prev;
             return dataOrdenada;
         });
@@ -76,7 +72,6 @@ const obtenerDiasDiferencia = (fechaStr) => {
     const fechaHoy = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
     return Math.round((fechaVenc - fechaHoy) / (1000 * 60 * 60 * 24));
 };
-// --- FILTRADO (ESTE ES EL ARRAY QUE DEBEMOS USAR) ---
 const alertasFiltradas = alertas.filter(exp => {
     const dias = obtenerDiasDiferencia(exp.vencimiento_preimposicion);
     if (filtroTab === 'vencidas') return dias < 0;
@@ -88,11 +83,9 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
 
     const fechaVenc = normalizarFechaUTC(fechaVencimiento);
     const t = new Date();
-    // Normalizamos HOY a medianoche UTC
     const fechaHoy = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
 
     const milisegundosPorDia = 1000 * 60 * 60 * 24;
-    // Usamos Math.round para evitar errores de precisión por segundos/minutos
     const dias = Math.round((fechaVenc - fechaHoy) / milisegundosPorDia);
 
     if (dias < 0) {
@@ -118,12 +111,13 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
             <style>{`
                 .alertas-container {
                     background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-                    padding: 1.5rem; margin-bottom: 2rem;
+                    padding: 1.5rem; margin-bottom: 15px;
                     box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
                     animation: slideIn 0.4s ease-out;
                 }
                 .alertas-header { 
                     display: flex; 
+                    flex-wrap: wrap; /* Permite que el buscador baje en móvil */
                     flex-direction: row; 
                     justify-content: space-between; 
                     align-items: center; 
@@ -141,8 +135,29 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
                     display: flex; justify-content: space-between; align-items: center;
                     padding: 12px 16px; border-radius: 8px; margin-bottom: 8px;
                     cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent;
+                    flex-wrap: wrap;
                 }
                 .alerta-item:hover { transform: translateX(4px); filter: brightness(0.98); }
+                .item-info-principal {
+                    display: flex;
+                    flex-direction: column;
+                    flex: 1;
+                    min-width: 250px; /* Evita que se aplaste demasiado */
+                }
+                .item-detalles-texto {
+                    font-size: 0.85rem;
+                    line-height: 1.4;
+                    display: flex;
+                    flex-wrap: wrap;
+                    gap: 5px 12px; /* Espaciado entre etiquetas */
+                    margin-top: 4px;
+                }
+                .item-vencimiento-block {
+                    display: flex;
+                    align-items: center;
+                    gap: 15px;
+                    justify-content: space-between;
+                }
                 .badge-vence {
                     padding: 4px 12px; border-radius: 99px; font-size: 0.75rem;
                     font-weight: 700; min-width: 100px; text-align: center;
@@ -190,24 +205,35 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
                                 }}
                                 onClick={() => onAlertClick(exp.id)}
                             >
-                                <div style={{ display: 'flex', flexDirection: 'column' }}>
-                                    <span style={{ fontWeight: '700', color: esVencido ? '#fff' : '#1e293b' }}>
+                                <div className="item-info-principal">
+                                    <span style={{ fontWeight: '800', fontSize: '1rem' }}>
                                         {esVencido && <i className="fa-solid fa-triangle-exclamation" style={{marginRight: '8px'}}></i>}
-                                        {exp.numero_destinacion}
+                                        Operación #{exp.id}
                                     </span>
-                                    <span style={{ fontSize: '0.85rem', color: esVencido ? '#fecaca' : '#475569' }}>
-                                        {exp.cliente_nombre || 'Sin cliente asignado'}
-                                    </span>
+                                    
+                                    <div className="item-detalles-texto">
+                                        <span><strong>Destinación:</strong> {exp.numero_destinacion || 'N/A'}</span>
+                                        <span><strong>Cliente:</strong> {exp.cliente_nombre || 'N/A'}</span>
+                                        <span><strong>Destino:</strong> {exp.pais_destino || 'N/A'}</span>
+                                    </div>
                                 </div>
                                 
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '15px' }}>
-                                    <div style={{ textAlign: 'right' }}>
-                                        <div style={{ fontSize: '0.7rem', color: esVencido ? '#fecaca' : '#64748b', textTransform: 'uppercase' }}>Vencimiento de Preimposicion</div>
-                                        <div style={{ fontSize: '0.85rem', fontWeight: '600' }}>
+                                <div className="item-vencimiento-block">
+                                    <div style={{ textAlign: 'left' }}>
+                                        <div style={{ fontSize: '0.65rem', opacity: 0.8, textTransform: 'uppercase' }}>Vence Preimp.</div>
+                                        <div style={{ fontSize: '0.85rem', fontWeight: '700' }}>
                                             {exp.vencimiento_preimposicion.split('-').reverse().join('/')}
                                         </div>
                                     </div>
-                                    <span className="badge-vence" style={{ backgroundColor: esVencido ? '#ef4444' : '#ffffff80', color: esVencido ? '#fff' : conf.text, border: `1px solid ${conf.border}` }}>
+                                    <span className="badge-vence" style={{ 
+                                        backgroundColor: esVencido ? '#ef4444' : '#ffffffcc', 
+                                        color: esVencido ? '#fff' : conf.text, 
+                                        border: `1px solid ${conf.border}`,
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 'bold'
+                                    }}>
                                         {conf.label}
                                     </span>
                                 </div>

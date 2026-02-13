@@ -76,7 +76,7 @@ const Home = () => {
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center', 
-            marginBottom: '25px',
+            marginBottom: '15px',
             backgroundColor: 'white',
             padding: '15px 25px',
             borderRadius: '12px',
@@ -122,7 +122,6 @@ const Home = () => {
         navTabs: (isOpen) => ({ 
             display: 'flex', 
             gap: '5px', 
-            marginBottom: '20px', 
             backgroundColor: '#e9ecef', 
             padding: '5px', 
             borderRadius: '10px',
@@ -146,11 +145,10 @@ const Home = () => {
         }),
         mainContent: { 
             backgroundColor: 'white', 
-            padding: '30px', 
+            padding: '10px', 
             borderRadius: '12px', 
             boxShadow: '0 4px 12px rgba(0,0,0,0.05)', 
             flex: 1, 
-            marginBottom: '40px',
             minHeight: '400px' 
         },
         dropdown: {
@@ -189,7 +187,7 @@ const Home = () => {
         },
         navContainer: {
             position: 'relative',
-            marginBottom: '20px',
+            marginBottom: '15px',
         },
         hamburger: {
             display: 'none', 
@@ -221,7 +219,6 @@ const Home = () => {
         cursor: pointer;
         font-weight: bold;
         width: 100%;
-        margin-bottom: 10px;
     }
     .tab-item:hover {
         color: #007bff !important;
