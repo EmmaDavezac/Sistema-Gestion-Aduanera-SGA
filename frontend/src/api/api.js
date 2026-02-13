@@ -182,4 +182,9 @@ export const createUsuario = async (data) =>
 export const updateUsuario = async (id, data) =>
   (await api.put(`/usuarios/${id}/`, data)).data;
 
+export const getCaptcha = async () => {
+  const response = await api.get("get-captcha/");
+  return response.data;
+};
 export default api;
+

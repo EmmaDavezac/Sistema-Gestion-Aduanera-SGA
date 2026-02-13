@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import { login } from '../api/auth';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'; 
+import { getCaptcha } from '../api/api';
+
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -16,7 +18,7 @@ const Login = () => {
 
     const fetchCaptcha = async () => {
         try {
-            const res = await axios.get('http://127.0.0.1:8000/api/get-captcha/');
+            const res = await getCaptcha();
             setCaptchaData({ key: res.data.key, url: res.data.image_url });
             setUserCaptcha(''); 
         } catch (err) {
