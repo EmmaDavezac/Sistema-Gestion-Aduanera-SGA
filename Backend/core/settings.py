@@ -7,11 +7,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-cambiame-en-produccion'
 DEBUG = True
 ALLOWED_HOSTS = [
-    'https://sistema-gestion-aduanera-sga-1.onrender.com',
+    'sistema-gestion-aduanera-sga-1.onrender.com', 
+    '.onrender.com',
     'localhost',
     '127.0.0.1'
 ]
-
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -78,18 +78,18 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "https://sistema-gestion-aduanera-1dj68uqmg-emmadavezacs-projects.vercel.app",
+]
 
-CORS_ALLOWED_ORIGINS = ["*"]
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    r"^https://sistema-gestion-aduanera-.*\.vercel\.app$",
+]
 
 CORS_ALLOW_CREDENTIALS = True
-
 CORS_ALLOW_METHODS = [
-    "DELETE",
-    "GET",
-    "OPTIONS",
-    "PATCH",
-    "POST",
-    "PUT",
+    "DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT",
 ]
 CORS_EXPOSE_HEADERS = [
     'Content-Disposition',
@@ -127,3 +127,11 @@ CAPTCHA_LETTER_ROTATION = (-5, 5)
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://sistema-gestion-aduanera-1dj68uqmg-emmadavezacs-projects.vercel.app",
+    "https://sistema-gestion-aduanera-sga-1.onrender.com"
+]
+
+# Esto ayuda a que el Captcha se genere con la URL correcta
+CAPTCHA_URL_PREFIX = 'captcha/'
