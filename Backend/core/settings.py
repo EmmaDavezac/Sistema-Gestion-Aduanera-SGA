@@ -7,10 +7,11 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-cambiame-en-produccion'
 DEBUG = False
 ALLOWED_HOSTS = [
-    'sistema-gestion-aduanera-sga-1.onrender.com', 
-    '.onrender.com',
+    'sistema-gestion-aduanera-sga-1.onrender.com',
+    'sistema-gestion-aduanera-1dj68uqmg-emmadavezacs-projects.vercel.app',
     'localhost',
     '127.0.0.1'
+
 ]
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -126,7 +127,6 @@ CAPTCHA_NOISE_FUNCTIONS = []
 CAPTCHA_LETTER_ROTATION = (-5, 5)               
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-USE_X_FORWARDED_HOST = True
 
 CSRF_TRUSTED_ORIGINS = [
     "https://sistema-gestion-aduanera-1dj68uqmg-emmadavezacs-projects.vercel.app",
@@ -140,8 +140,9 @@ CAPTCHA_URL_PREFIX = 'captcha/'
 CAPTCHA_DOMAIN = 'sistema-gestion-aduanera-sga-1.onrender.com'
 
 # Forzar HTTPS en las URLs generadas
-SECURE_SSL_REDIRECT = False # Manténlo en False si Render ya maneja el SSL
+SECURE_SSL_REDIRECT = False 
 USE_X_FORWARDED_HOST = True
+USE_X_FORWARDED_PORT= True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 
