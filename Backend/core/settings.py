@@ -135,3 +135,11 @@ CSRF_TRUSTED_ORIGINS = [
 
 # Esto ayuda a que el Captcha se genere con la URL correcta
 CAPTCHA_URL_PREFIX = 'captcha/'
+
+# Esto asegura que Django use la URL del servidor y no localhost
+CAPTCHA_DOMAIN = 'sistema-gestion-aduanera-sga-1.onrender.com'
+
+# Forzar HTTPS en las URLs generadas
+SECURE_SSL_REDIRECT = False # Manténlo en False si Render ya maneja el SSL
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
