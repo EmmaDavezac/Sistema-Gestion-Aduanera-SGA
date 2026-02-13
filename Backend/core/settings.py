@@ -5,7 +5,7 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-cambiame-en-produccion'
-DEBUG = True
+DEBUG = False
 ALLOWED_HOSTS = [
     'sistema-gestion-aduanera-sga-1.onrender.com', 
     '.onrender.com',
@@ -145,7 +145,10 @@ SECURE_SSL_REDIRECT = False # Manténlo en False si Render ya maneja el SSL
 USE_X_FORWARDED_HOST = True
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+
 SESSION_COOKIE_SAMESITE = 'None'
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SAMESITE = 'None'
 CSRF_COOKIE_SECURE = True
+
+SITE_ID = 1
