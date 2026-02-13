@@ -11,7 +11,7 @@ services:
       - EMAIL_HOST_PASSWORD=
     restart: always
 
-  Frontend:
+  frontend:
       build: 
         context: ./Frontend
       container_name: sga_frontend
