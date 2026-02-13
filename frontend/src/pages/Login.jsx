@@ -19,10 +19,12 @@ const Login = () => {
     const fetchCaptcha = async () => {
         try {
             const res = await getCaptcha();
-            setCaptchaData({ key: res.data.key, url: res.data.image_url });
+            const data = res.data || res; 
+            setCaptchaData({ key: data.key, url: data.image_url });
             setUserCaptcha(''); 
         } catch (err) {
             console.error("Error cargando captcha", err);
+            setError("Error de conexión con el servidor de seguridad.");
         }
     };
 

@@ -82,8 +82,17 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:5173", 
+    "https://sistema-gestion-aduanera-6tkia1ydf-emmadavezacs-projects.vercel.app", # URL de Vercel
 ]
 
+CORS_ALLOW_METHODS = [
+    "DELETE",
+    "GET",
+    "OPTIONS",
+    "PATCH",
+    "POST",
+    "PUT",
+]
 CORS_EXPOSE_HEADERS = [
     'Content-Disposition',
 ]
