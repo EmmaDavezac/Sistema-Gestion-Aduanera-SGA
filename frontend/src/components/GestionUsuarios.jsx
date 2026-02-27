@@ -74,18 +74,33 @@ const GestionUsuarios = ({ onNotification }) => {
     setView("form");
   };
 
+  const volverALista = (saltarConfirmacion) => {
+    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?"))
+   { setSelectedId(null);
+    setIsEditing(false);
+    setView("list");
+    setFormData({
+      username: "",
+      first_name: "",
+      last_name: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+      is_staff: false,
+      is_active: true,
+    });}
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const payload = {
       username: formData.username, 
       first_name: formData.first_name,
-      last_name: formData.last_name,
+      last_name: formData.last_name, 
       email: formData.email,
       is_staff: formData.is_staff,
       is_active: formData.is_active,
     };
-  
     const tienePassword = formData.password && formData.password.trim() !== "";
   
     if (!isEditing || tienePassword) {
@@ -109,7 +124,7 @@ const GestionUsuarios = ({ onNotification }) => {
         onNotification("Usuario creado con éxito", "success");
       }
   
-      setView("list");
+      volverALista(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
       cargarUsuarios();
     } catch (err) {
@@ -174,9 +189,9 @@ const GestionUsuarios = ({ onNotification }) => {
       padding: "10px",
       border: "1px solid #ddd",
       borderRadius: "6px",
-      width: "100%",
+      width: "100%", 
       marginTop: "5px",
-      boxSizing: "border-box",
+      boxSizing: "border-box", 
       backgroundColor: isReadOnly ? "#f8fafc" : "#fff",
       fontSize: "14px",
     },
@@ -274,6 +289,14 @@ const GestionUsuarios = ({ onNotification }) => {
       gap: "8px",
       marginBottom: "15px",
     },
+    passwordGroup: {
+      passwordGroup: {
+        display: "flex",
+        flexDirection: "column", 
+        gap: "15px",
+        width: "100%"
+      },
+    },
   };
 
   return (
@@ -288,7 +311,7 @@ const GestionUsuarios = ({ onNotification }) => {
               ></i>
               <input
                 style={styles.input}
-                placeholder="Buscar por usuario, nombre, apellido o email..."
+                placeholder="Buscar por username, nombre, apellido o email..."
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
@@ -302,8 +325,8 @@ const GestionUsuarios = ({ onNotification }) => {
                   email: "",
                   password: "",
                   confirmPassword: "",
-                  is_staff: false,
                   is_active: true,
+                  is_staff: false,
                 });
                 setIsEditing(false);
                 setIsReadOnly(false);
@@ -456,7 +479,7 @@ const GestionUsuarios = ({ onNotification }) => {
             }}
           >
             <button
-              onClick={() => setView("list")}
+             onClick={() => volverALista(false)}
               style={{
                 border: "none",
                 background: "none",
@@ -492,34 +515,18 @@ const GestionUsuarios = ({ onNotification }) => {
             )}
           </div>
           <div style={styles.card}>
-            <h2
-              style={{
-                marginTop: 0,
-                marginBottom: "20px",
-                color: "#2d3748",
-                borderBottom: "2px solid #f4f7f6",
-                paddingBottom: "10px",
-              }}
-            >
-              <i
-                className={
-                  isEditing ? "fa-solid fa-user-gear" : "fa-solid fa-user-plus"
-                }
-                style={{ marginRight: "10px", color: "#3182ce" }}
-              ></i>
-              {isEditing ? `Editar Usuario` : "Registrar Nuevo Usuario"}
-            </h2>
+           
 
             <form
               onSubmit={handleSubmit}
               style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
+                display: "flex", 
+                flexDirection: "column",
                 gap: "20px",
                 width: "100%",
               }}
             >
-              <div>
+             <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
                 <label
                   style={{
                     fontWeight: "600",
@@ -527,7 +534,7 @@ const GestionUsuarios = ({ onNotification }) => {
                     color: "#4a5568",
                   }}
                 >
-                  Nombre
+                  Nombre *
                 </label>
                 <input
                   name="first_name"
@@ -539,7 +546,7 @@ const GestionUsuarios = ({ onNotification }) => {
                   required
                 />
               </div>
-              <div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
                 <label
                   style={{
                     fontWeight: "600",
@@ -547,7 +554,7 @@ const GestionUsuarios = ({ onNotification }) => {
                     color: "#4a5568",
                   }}
                 >
-                  Apellido
+                  Apellido *
                 </label>
                 <input
                   name="last_name"
@@ -559,7 +566,7 @@ const GestionUsuarios = ({ onNotification }) => {
                   required
                 />
               </div>
-              <div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
                 <label
                   style={{
                     fontWeight: "600",
@@ -567,7 +574,7 @@ const GestionUsuarios = ({ onNotification }) => {
                     color: "#4a5568",
                   }}
                 >
-                  Nombre de Usuario
+                  Nombre de Usuario *
                 </label>
                 <input
                   name="username"
@@ -575,21 +582,19 @@ const GestionUsuarios = ({ onNotification }) => {
                   value={formData.username}
                   onChange={handleInputChange}
                   disabled={isEditing}
-                  placeholder="emma_admin"
+                  placeholder="user_123"
                   required
                 />
               </div>
-              <div>
+              <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
                 <label
                   style={{
-                    fontWeight: "600",
-                    fontSize: "13px",
-                    color: "#4a5568",
+                    fontWeight: "600", fontSize: "13px", color: "#4a5568"
                   }}
                 >
-                  Correo Electrónico
+                  Correo Electrónico *
                 </label>
-                <div style={{ display: "flex", flexDirection: "column" }}>
+              
                   <input
                     name="email"
                     type="email"
@@ -603,7 +608,7 @@ const GestionUsuarios = ({ onNotification }) => {
                   <span style={{ fontSize: "11px", color: "#a0aec0" }}>
                     Se utilizará para notificaciones del sistema.
                   </span>
-                </div>
+     
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label
@@ -615,12 +620,12 @@ const GestionUsuarios = ({ onNotification }) => {
                     marginBottom: "8px",
                   }}
                 >
-                  Seguridad y Acceso
+                  Contraseña *
                 </label>
 
                 {!isEditing ? (
-                    <>
-                  <div style={{ position: "relative" }}>
+                    <div style={styles.passwordGroup}>
+                 <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
                     <input
                       name="password"
                       type="password"
@@ -642,7 +647,7 @@ const GestionUsuarios = ({ onNotification }) => {
                       números.
                     </small>
                   </div>
-                  <div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
                   <input
                     name="confirmPassword"
                     type="password"
@@ -661,7 +666,7 @@ const GestionUsuarios = ({ onNotification }) => {
                     </small>
                   )}
                 </div>
-                </>
+                </div>
                 ) : (
                   <div
                     style={{
@@ -715,7 +720,7 @@ const GestionUsuarios = ({ onNotification }) => {
                 style={{
                   gridColumn: "1 / -1",
                   display: "flex",
-                  flexWrap: "wrap",
+                  flexWrap: "wrap", 
                   gap: "20px",
                   backgroundColor: "#f8fafc",
                   padding: "15px",
@@ -808,23 +813,32 @@ const GestionUsuarios = ({ onNotification }) => {
                 )}
               </div>
 
-              <div style={{ gridColumn: "1 / -1" }}>
-                {!isReadOnly && (
-                  <button
-                    type="submit"
-                    style={{
-                      ...styles.btnGreen,
-                      width: "100%",
-                      justifyContent: "center",
-                      fontSize: "16px",
-                      marginTop: "10px",
-                    }}
-                  >
-                    <i className="fa-solid fa-floppy-disk"></i>{" "}
-                    {isEditing ? "Actualizar Datos" : "Crear Usuario"}
-                  </button>
-                )}
-              </div>
+
+
+
+              {!isReadOnly && (
+  <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
+    <button type="submit"   style={{
+                    ...styles.btnGreen,
+                    width: "100%",
+                    justifyContent: "center",
+                    padding: "15px",
+                    fontSize: "16px",
+                  }}>
+      <i className="fa-solid fa-floppy-disk"></i> Guardar
+    </button>
+  </div>
+)}
+
+
+
+
+
+
+
+
+            
+               
             </form>
           </div>
         </div>

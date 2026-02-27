@@ -1,31 +1,40 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion"; 
+import api from "../api/api";
 
 const FEATURES = [
   {
-    icon: "fa-file-invoice",
-    title: "Gestión de Operaciones Aduaneras",
-    text: "Administración integral de operaciones de exportación e importación.",
+    icon: "fa-solid fa-ship",
+    title: "Gestión de Operaciones",
+    text: "Registra, controla y sigue tus importaciones y exportaciones en un solo lugar.",
     color: "#3182ce",
   },
   {
     icon: "fa-users",
     title: "Gestión de Clientes",
-    text: "Administracion integral de clientes.",
+    text: "Administra la información de tus clientes y mantené todo actualizado.",
     color: "#38a169",
   },
-  {
-    icon: "fa-building-columns",
-    title: "Gestión de Aduanas",
-    text: "Administración de aduanas.",
-    color: "#805ad5",
-  },
+ 
   {
     icon: "fa-file-lines",
     title: "Gestión de Documentos",
-    text: "Almacenamiento seguro y organizado de documentos relacionados con las operaciones aduaneras.",
+    text: "Guarda y consulta todos los documentos de cada operación cuando los necesites.",
     color: "#319795",
   },
+  {
+    icon: "fa-solid fa-calendar-days",
+    title: "Control de Vencimientos",
+    text: "Recibí alertas anticipadas para no perder fechas importantes de tus operaciones.",
+    color: "#e53e3e",
+  },
+  {
+    icon: "fa-solid fa-globe",
+    title: "Acceso Multiplataforma",
+    text: "Accede a tu información desde cualquier dispositivo con conexión a internet.",
+   color: "#f6ad55",
+  }
+  
 ];
 
 const containerVariants = {
@@ -48,6 +57,9 @@ const cardVariants = {
 };
 
 const HomeInfo = () => {
+
+
+
   return (
     <section style={styles.wrapper}>
       <motion.header
@@ -56,8 +68,8 @@ const HomeInfo = () => {
         transition={{ duration: 0.6 }}
         style={styles.header}
       >
-        <h1 style={styles.title}>Bienvenido al Sistema SGA</h1>
-        <p style={styles.subtitle}>Gestión Aduanera centralizada y eficiente</p>
+        <h1 style={styles.title}>SGA</h1>
+        <p style={styles.subtitle}>Hola, bienvenido a tu plataforma de Gestión Aduanera </p>
         <div style={styles.underline}></div>
       </motion.header>
 

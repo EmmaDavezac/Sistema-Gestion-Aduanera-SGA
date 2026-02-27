@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import { login } from '../api/auth';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios'; 
-import { getCaptcha } from '../api/api';
-
 
 const Login = () => {
     const [username, setUsername] = useState('');
@@ -15,16 +13,14 @@ const Login = () => {
     const [userCaptcha, setUserCaptcha] = useState('');
     
     const navigate = useNavigate();
-
+    const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000'
     const fetchCaptcha = async () => {
         try {
-            const res = await getCaptcha();
-            const data = res.data || res; 
-            setCaptchaData({ key: data.key, url: data.image_url });
+            const res = await axios.get(`${API_BASE_URL}/api/get-captcha/`);
+            setCaptchaData({ key: res.data.key, url: res.data.image_url });
             setUserCaptcha(''); 
         } catch (err) {
             console.error("Error cargando captcha", err);
-            setError("Error de conexión con el servidor de seguridad.");
         }
     };
 
@@ -40,7 +36,6 @@ const Login = () => {
             await login(username, password, captchaData.key, userCaptcha);
             navigate('/'); 
         } catch (err) {
-            console.error("Error en login:", err);
             setError(err.response?.data?.error || 'Usuario, contraseña o captcha incorrectos');
             fetchCaptcha(); 
         } finally {
@@ -139,7 +134,6 @@ const Login = () => {
                 }
                 .btn-login:hover { background-color: #0069d9 !important; }
                 .btn-login:active { transform: scale(0.98); }
-                /* Animación de sacudida para errores */
 @keyframes shake {
     0%, 100% { transform: translateX(0); }
     25% { transform: translateX(-8px); }
@@ -147,7 +141,6 @@ const Login = () => {
     75% { transform: translateX(-8px); }
 }
 
-/* Efecto suave para que el mensaje aparezca */
 @keyframes fadeInError {
     from { opacity: 0; transform: scale(0.95); }
     to { opacity: 1; transform: scale(1); }
@@ -155,7 +148,6 @@ const Login = () => {
             `}</style>
 
             <div style={styles.card}>
-                {/* Logo o Icono para dar identidad */}
                 <div style={{ textAlign: 'center', marginBottom: '20px' }}>
                     <div style={{ backgroundColor: '#e7f1ff', width: '60px', height: '60px', borderRadius: '12px', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
                         <i className="fa-solid fa-ship" style={{ color: '#007bff', fontSize: '24px' }}></i>
@@ -175,24 +167,24 @@ const Login = () => {
     </div>
 )}
                 
+            
                 <form onSubmit={handleSubmit}>
-                <div style={styles.inputGroup}>
-                    <label style={styles.label}>Usuario</label>   
-                <input 
-    disabled={loading}
-    type="text" 
-    value={username} 
-    placeholder='Ingresa tu usuario'
-    onChange={(e) => {
-        setUsername(e.target.value);
-        if(error) setError(''); 
-    }}
-    style={styles.input(loading)}
-    required
-/>
-                </div>
+                    <div style={styles.inputGroup}>
+                        <label style={styles.label}>Usuario</label>   
+                        <input 
+                            disabled={loading}
+                            type="text" 
+                            value={username} 
+                            placeholder='Ingresa tu usuario'
+                            onChange={(e) => {
+                                setUsername(e.target.value);
+                                if(error) setError(''); 
+                            }}
+                            style={styles.input(loading)}
+                            required
+                        />
+                    </div>
 
-                    
                     <div style={styles.inputGroup}>
                         <label style={styles.label}>Contraseña</label>
                         <input 
@@ -206,21 +198,29 @@ const Login = () => {
                         />
                         <button 
                             type="button" 
-                            placeholder='Ingresa tu contraseña'
                             onClick={() => setShowPassword(!showPassword)}
                             style={styles.eyeButton}
                         >
                             <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
                         </button>
                     </div>
+
                     <div style={styles.inputGroup}>
                         <label style={styles.label}>Verificación de seguridad</label>
                         <div style={{ display: 'flex', gap: '10px', marginBottom: '10px', alignItems: 'center' }}>
-                            <img 
-                                src={captchaData.url} 
-                                alt="captcha" 
-                                style={{ borderRadius: '8px', border: '1px solid #ddd', height: '50px' }} 
-                            />
+                            
+                            {captchaData.url ? (
+                                <img 
+                                    src={captchaData.url} 
+                                    alt="captcha" 
+                                    style={{ borderRadius: '8px', border: '1px solid #ddd' }} 
+                                />
+                            ) : (
+                                <div style={{ height: '50px', display: 'flex', alignItems: 'center', color: '#666', fontSize: '12px' }}>
+                                    Cargando captcha...
+                                </div>
+                            )}
+
                             <button 
                                 type="button" 
                                 onClick={fetchCaptcha}
@@ -229,16 +229,18 @@ const Login = () => {
                                 <i className="fa-solid fa-arrows-rotate"></i>
                             </button>
                         </div>
+
                         <input 
                             disabled={loading}
                             type="text" 
                             value={userCaptcha} 
-                            placeholder='Resuelva la ecuación de la imagen'
+                            placeholder='Resuelva la imagen'
                             onChange={(e) => setUserCaptcha(e.target.value)}
                             style={styles.input(loading)}
                             required
                         />
                     </div>
+
                     <button 
                         type="submit" 
                         disabled={loading}

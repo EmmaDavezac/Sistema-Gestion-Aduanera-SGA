@@ -17,7 +17,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . /app/
 #8 AM hora Argentina, 11 AM hora UTC
 RUN echo "0 11 * * * . /etc/environment; cd /app && /usr/local/bin/python manage.py enviar_alertas >> /var/log/cron.log 2>&1" > /etc/cron.d/sga-cron
-
+#EJECUTARSE CADA 5 MINUTOS PARA PRUEBAS
+#RUN echo "*/5 * * * * . /etc/environment; cd /app && /usr/local/bin/python manage.py enviar_alertas >> /var/log/cron.log 2>&1" > /etc/cron.d/sga-cron
 RUN chmod 0644 /etc/cron.d/sga-cron && crontab /etc/cron.d/sga-cron
 RUN touch /var/log/cron.log
 

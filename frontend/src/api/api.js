@@ -1,7 +1,6 @@
 import axios from "axios";
-
 const api = axios.create({
-  baseURL: "https://sistema-gestion-aduanera-sga-1.onrender.com/api/",
+  baseURL: "http://127.0.0.1:8000/api/",
 });
 
 api.interceptors.request.use(
@@ -19,16 +18,32 @@ api.interceptors.request.use(
 
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
     const originalRequest = error.config;
 
-    if (error.response && error.response.status === 401 && !originalRequest.url.includes("token/")) {
-      console.warn("Sesión expirada. Redirigiendo...");
-      localStorage.removeItem("token");
-      localStorage.removeItem("refresh");
-      localStorage.removeItem("isAdmin");
-      localStorage.removeItem("userName");
-      window.location.href = "/login";
+    if (error.response?.status === 401 && !originalRequest._retry && !originalRequest.url.includes("token/")) {
+      originalRequest._retry = true; 
+      
+      try {
+        const refreshToken = localStorage.getItem("refresh");
+        if (!refreshToken) throw new Error("No hay refresh token");
+
+        const res = await axios.post(`${api.defaults.baseURL}token/refresh/`, {
+          refresh: refreshToken,
+        });
+
+        if (res.status === 200) {
+          const newToken = res.data.access;
+          localStorage.setItem("token", newToken);
+          
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return api(originalRequest);
+        }
+      } catch (refreshError) {
+        console.warn("Sesión expirada definitivamente. Redirigiendo...");
+        localStorage.clear();
+        window.location.href = "/login";
+      }
     }
     
     return Promise.reject(error);
@@ -81,14 +96,8 @@ export const getArchivosByImportacion = async (importacionId) => {
 };
 
 export const uploadFile = async (formData) => {
-  const response = await api.post("documentos/", formData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
+  return await api.post("documentos/", formData); 
 };
-
 export const downloadFile = async (archivoId, nombreArchivo) => {
   try {
     const response = await api.get(`documentos/${archivoId}/descargar/`, {
@@ -137,7 +146,8 @@ export const getImportaciones = async () => {
 };
 
 export const createImportacion = async (data) => {
-  return await api.post("importaciones/", data);
+  const response = await api.post("importaciones/", data);
+  return response.data; 
 };
 
 export const updateImportacion = async (id, data) => {
@@ -182,9 +192,4 @@ export const createUsuario = async (data) =>
 export const updateUsuario = async (id, data) =>
   (await api.put(`/usuarios/${id}/`, data)).data;
 
-export const getCaptcha = async () => {
-  const response = await api.get("get-captcha/");
-  return response.data;
-};
 export default api;
-

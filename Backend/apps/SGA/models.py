@@ -33,6 +33,7 @@ class Cliente(models.Model):
         return self.nombre
 
 class Importacion(models.Model):
+    oficializacion = models.DateField(null=True, blank=True)
     numero_destinacion = models.CharField(max_length=50, unique=True)
     condicion_venta = models.CharField(max_length=50, blank=True, null=True)
     vendedor = models.CharField(max_length=100, blank=True, null=True)
@@ -48,11 +49,10 @@ class Importacion(models.Model):
     fob_total_en_dolar = models.DecimalField(max_digits=20, decimal_places=2, default=0.0)
     numeracion = models.CharField(max_length=50, blank=True, null=True)
     estado = models.CharField(max_length=50, default='Pendiente')
-    baja = models.BooleanField(default=False)
-    
+    via= models.CharField(max_length=20, blank=True, null=True)
     aduana = models.ForeignKey(Aduana, on_delete=models.PROTECT, related_name='importaciones')
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE, related_name='importaciones')
-
+    baja = models.BooleanField(default=False)
     class Meta:
             db_table = 'importaciones'
 
@@ -80,11 +80,11 @@ class Exportacion(models.Model):
     fob_total_en_dolar = models.DecimalField(max_digits=20, decimal_places=2, default=0.0)
     numeracion = models.CharField(max_length=50, null=True, blank=True)
     estado = models.CharField(max_length=50, default='Inicializada')
-    baja = models.BooleanField(default=False)
     
+    baja = models.BooleanField(default=False)
     aduana = models.ForeignKey(Aduana, on_delete=models.PROTECT)
     cliente = models.ForeignKey(Cliente, on_delete=models.CASCADE)
-
+    via= models.CharField(max_length=20, blank=True, null=True)
    
     class Meta:
         db_table = 'exportaciones'

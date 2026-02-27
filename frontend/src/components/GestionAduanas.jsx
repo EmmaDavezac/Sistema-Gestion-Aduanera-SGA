@@ -10,7 +10,21 @@ const GestionAduanas = ({ onNotification }) => {
   const [loading, setLoading] = useState(true);
 
   const cargadoRef = useRef(false);
+// Nuevo estado para el modal
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [selectedAduana, setSelectedAduana] = useState(null);
 
+// Función para abrir el detalle
+const handleVerDetalle = (aduana) => {
+  setSelectedAduana(aduana);
+  setIsModalOpen(true);
+};
+
+// Función para cerrar el modal
+const cerrarModal = () => {
+  setIsModalOpen(false);
+  setSelectedAduana(null);
+};
   const cargarAduanas = useCallback(async () => {
     setLoading(true);
     try {
@@ -30,12 +44,22 @@ const GestionAduanas = ({ onNotification }) => {
     }
   }, [cargarAduanas]);
 
+  const volverALista = (saltarConfirmacion) => {
+    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?"))
+   { 
+    setView("list");
+    setFormData({
+      id: "",
+      nombre: "",
+    });}
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       await createAduana(formData);
       onNotification("Aduana registrada con éxito", "success");
-      setView("list");
+      volverALista(true);
       setFormData({ id: "", nombre: "" });
       window.scrollTo({ top: 0, behavior: "smooth" });
       cargarAduanas();
@@ -50,8 +74,7 @@ const GestionAduanas = ({ onNotification }) => {
   const handleEliminar = async (id) => {
     if (
       window.confirm(
-        "¿Está seguro de eliminar esta aduana? Esta acción no se puede deshacer."
-      )
+        "¿Está seguro de eliminar esta aduana? Esta acción no se puede deshacer.")
     ) {
       try {
         await deleteAduana(id);
@@ -155,6 +178,47 @@ const GestionAduanas = ({ onNotification }) => {
       color: "#2d3748",
       fontWeight: "bold",
     },
+    modalOverlay: {
+      position: "fixed",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0, 0, 0, 0.5)",
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      zIndex: 1000,
+    },
+    modalContent: {
+      backgroundColor: "white",
+      padding: "30px",
+      borderRadius: "12px",
+      width: "90%",
+      maxWidth: "400px",
+      position: "relative",
+      boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
+    },
+    btnCloseModal: {
+      position: "absolute",
+      top: "15px",
+      right: "15px",
+      border: "none",
+      background: "none",
+      fontSize: "20px",
+      cursor: "pointer",
+      color: "#a0aec0",
+    },
+    btnView: {
+      padding: "8px 12px",
+      backgroundColor: "transparent",
+      color: "#3182ce",
+      border: "1px solid #3182ce",
+      borderRadius: "6px",
+      cursor: "pointer",
+      transition: "0.3s",
+      marginRight: "8px", // Espacio con el botón eliminar
+    },
   };
 
   return (
@@ -250,6 +314,14 @@ const GestionAduanas = ({ onNotification }) => {
                       </h3>
                     </div>
                   </div>
+                  <div style={{ display: "flex", alignItems: "center" }}>
+                  <button
+    style={styles.btnView}
+    onClick={() => handleVerDetalle(a)}
+    title="Ver Detalle"
+  >
+    <i className="fa-solid fa-magnifying-glass"></i>
+  </button>
                   <button
                     style={styles.btnDelete}
                     onClick={() => handleEliminar(a.id)}
@@ -257,6 +329,7 @@ const GestionAduanas = ({ onNotification }) => {
                   >
                     <i className="fa-solid fa-trash-can"></i>
                   </button>
+                  </div>
                 </div>
               </div>
             ))
@@ -265,7 +338,7 @@ const GestionAduanas = ({ onNotification }) => {
       ) : (
         <div style={{ maxWidth: "500px", margin: "0 auto" }}>
           <button
-            onClick={() => setView("list")}
+            onClick={() => volverALista(false)}
             style={{
               border: "none",
               background: "none",
@@ -275,11 +348,12 @@ const GestionAduanas = ({ onNotification }) => {
               fontWeight: "bold",
               display: "flex",
               alignItems: "center",
-              gap: "5px",
+              gap: "8px",
             }}
           >
-            <i className="fa-solid fa-arrow-left"></i> Cancelar y volver
+            <i className="fa-solid fa-arrow-left"></i> Volver al listado
           </button>
+
 
           <div style={styles.card}>
             <h2
@@ -290,7 +364,7 @@ const GestionAduanas = ({ onNotification }) => {
             <form onSubmit={handleSubmit}>
               <div style={{ marginBottom: "15px" }}>
                 <label style={styles.label}>
-                  Código Identificador (No modificable después)
+                  Código Identificador *
                 </label>
                 <input
                   style={styles.formInput}
@@ -306,7 +380,7 @@ const GestionAduanas = ({ onNotification }) => {
                 />
               </div>
               <div style={{ marginBottom: "20px" }}>
-                <label style={styles.label}>Nombre Oficial</label>
+                <label style={styles.label}>Nombre *</label>
                 <input
                   style={styles.formInput}
                   value={formData.nombre}
@@ -317,21 +391,67 @@ const GestionAduanas = ({ onNotification }) => {
                   placeholder="Ej: Concepción del Uruguay"
                 />
               </div>
-              <button
-                type="submit"
-                style={{
-                  ...styles.btnGreen,
-                  width: "100%",
-                  justifyContent: "center",
-                }}
-              >
-                <i className="fa-solid fa-check"></i> Confirmar Registro
-              </button>
+              <div style={{ gridColumn: "span 2", marginTop: "10px" }}>
+                <button
+                  type="submit"
+                  style={{
+                    ...styles.btnGreen,
+                    width: "100%",
+                    justifyContent: "center",
+                    padding: "15px",
+                    fontSize: "16px",
+                  }}
+                >
+                <i className="fa-solid fa-floppy-disk"></i> Guardar
+                </button>
+                </div>
             </form>
           </div>
         </div>
+        
       )}
+      {isModalOpen && selectedAduana && (
+  <div style={styles.modalOverlay} onClick={cerrarModal}>
+    <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+      <button style={styles.btnCloseModal} onClick={cerrarModal}>
+        <i className="fa-solid fa-xmark"></i>
+      </button>
+      
+      <div style={{ textAlign: "center", marginBottom: "20px" }}>
+        <div style={{
+          width: "60px", 
+          height: "60px", 
+          backgroundColor: "#ebf4ff", 
+          borderRadius: "50%", 
+          display: "inline-flex", 
+          alignItems: "center", 
+          justifyContent: "center",
+          color: "#3182ce",
+          fontSize: "24px",
+          marginBottom: "15px"
+        }}>
+          <i className="fa-solid fa-building-columns"></i>
+        </div>
+        <h2 style={{ margin: 0, color: "#2d3748" }}>Detalle de Aduana</h2>
+      </div>
+
+      <div style={{ borderTop: "1px solid #eee", paddingTop: "20px" }}>
+        <div style={{ marginBottom: "15px" }}>
+          <label style={{ ...styles.label, color: "#718096" }}>CÓDIGO IDENTIFICADOR</label>
+          <p style={{ margin: "5px 0", fontSize: "18px", fontWeight: "600" }}>{selectedAduana.id}</p>
+        </div>
+        <div style={{ marginBottom: "15px" }}>
+          <label style={{ ...styles.label, color: "#718096" }}>NOMBRE DE ADUANA</label>
+          <p style={{ margin: "5px 0", fontSize: "18px", fontWeight: "600" }}>{selectedAduana.nombre}</p>
+        </div>
+      </div>
+
+    
     </div>
+  </div>
+)}
+    </div>
+    
   );
 };
 

@@ -15,19 +15,18 @@ const Footer = () => {
                         <span style={styles.brandSubtitle}>Gestión Aduanera</span>
                     </div>
                     <p style={styles.description}>
-                        Optimización y control de operaciones de comercio exterior para Despachantes de Aduana.
+                        Simplificando el trabajo de los despachantes de aduana.
                     </p>
                 </div>
 
                 <div style={styles.column}>
                     <span style={styles.sectionTitle}>Recursos</span>
                     <a 
-                        href="#manual" 
-                        onClick={(e) => { e.preventDefault(); alert('El manual de usuario estará disponible próximamente.'); }}
+                        href="https://docs.google.com/document/d/12aJOwU3JYhX1uLXg5hehFBLtiAlmq7Fd/edit?usp=sharing&ouid=113096586242877299094&rtpof=true&sd=true" 
                         style={styles.resourceLink}
                     >
                         <i className="fa-solid fa-book-open" style={{ marginRight: '8px' }}></i>
-                        Manual de Usuario
+                        Documentación del proyecto
                     </a>
                 </div>
 
@@ -39,7 +38,7 @@ const Footer = () => {
                             href="mailto:lucianodavezac@gmail.com" 
                             style={styles.contactLink}
                         >
-                            <i className="fa-solid fa-envelope" style={styles.emailIcon}></i>
+                            <i className="fa-solid fa-envelope" ></i>
                             lucianodavezac@gmail.com
                         </motion.a>
                         
@@ -59,11 +58,11 @@ const Footer = () => {
 
             <div style={styles.bottomBar}>
                 <div style={styles.credits}>
-                    Desarrollado con precisión por <span style={styles.devName}>Emmanuel Davezac</span>
+                    Desarrollado con <i className="fa-solid fa-heart"></i> por <span style={styles.devName}>Emmanuel Davezac, Nicolas Villanueva y Franco Rodriguez</span>
                 </div>
                 <div style={styles.versionGroup}>
                     <span>© {year} Todos los derechos reservados</span>
-                    <span style={styles.versionBadge}>v1.0.2</span>
+                    <span style={styles.versionBadge}>v1.0.0</span>
                 </div>
             </div>
         </footer>
@@ -107,7 +106,6 @@ const styles = {
     resourceLink: { color: '#3182ce', textDecoration: 'none', fontSize: '14px', fontWeight: '500', transition: '0.2s' },
     contactGrid: { display: 'flex', flexDirection: 'column', gap: '10px' },
     contactLink: { display: 'flex', alignItems: 'center', gap: '10px', textDecoration: 'none', color: '#4a5568', fontSize: '14px', transition: '0.2s' },
-    emailIcon: { color: '#EA4335' },
     whatsappIcon: { color: '#25D366' },
     bottomBar: {
         borderTop: '1px solid #f1f5f9',

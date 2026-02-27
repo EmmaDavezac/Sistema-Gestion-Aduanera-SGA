@@ -25,11 +25,13 @@ from .serializers import (
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
 
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all() 
     serializer_class = ClienteSerializer
     lookup_field = 'cuit'
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['get'])
     def todos(self, request):
@@ -91,27 +93,32 @@ class ArchivoViewSet(viewsets.ModelViewSet):
 class AduanaViewSet(viewsets.ModelViewSet):
     queryset = Aduana.objects.all()
     serializer_class = AduanaSerializer
+    permission_classes = [IsAuthenticated]
 
 class ImportacionViewSet(viewsets.ModelViewSet):
     queryset = Importacion.objects.all()
     serializer_class = ImportacionSerializer
+    permission_classes = [IsAuthenticated]
 
 class ExportacionViewSet(viewsets.ModelViewSet):
     queryset = Exportacion.objects.all()
     serializer_class = ExportacionSerializer
+    permission_classes = [IsAuthenticated]
 
     @action(detail=False, methods=['get'])
     def proximas_a_vencer(self, request):
         hoy = date.today()
         proxima_semana = hoy + timedelta(days=7)
+        
         alertas = Exportacion.objects.filter(
-                vencimiento_preimposicion__lte=proxima_semana,
-                baja=False
-            ).exclude(
-                estado='Finalizada' 
-            ).order_by('vencimiento_preimposicion')
+            vencimiento_preimposicion__lte=proxima_semana,
+            baja=False,
+            oficializacion__isnull=True
+        ).order_by('vencimiento_preimposicion')
+        
         serializer = self.get_serializer(alertas, many=True)
         return Response(serializer.data)
+
     
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -152,11 +159,10 @@ class MyTokenObtainPairView(TokenObtainPairView):
 @api_view(['GET'])
 @permission_classes([AllowAny])
 def get_new_captcha(request):
-    hashkey = CaptchaStore.generate_key()
-    # Forzamos la URL usando el dominio de Render configurado en settings
-    image_url = f"https://{settings.CAPTCHA_DOMAIN}/captcha/image/{hashkey}/"
-    
-    return JsonResponse({
-        'key': hashkey,
-        'image_url': image_url
+    new_key = CaptchaStore.generate_key()
+    image_url = captcha_image_url(new_key)
+    full_url = request.build_absolute_uri(image_url)
+    return Response({
+        'key': new_key,
+        'image_url': full_url
     })

@@ -10,7 +10,7 @@ import {
     deleteArchivo,
   } from "../api/api";
 import SkeletonTable from './SkeletonTable';
-  const GestionExportaciones = ({ onUpdate }) => {
+  const GestionExportaciones = ({ onNotification }) => {
     const [exportaciones, setExportaciones] = useState([]);
     const [clientes, setClientes] = useState([]);
     const [aduanas, setAduanas] = useState([]);
@@ -39,16 +39,16 @@ import SkeletonTable from './SkeletonTable';
         fob_total_en_dolar: 0,
         numeracion: "",
         baja: false,
-        aduana: "",
-        cliente: "",
+        aduana_id: "",
+        cliente_id: "",
         codigo_afip: "",
         nombre_transporte: "",
         puerto_embarque: "",
-        vendedor: "",
         oficializacion: "",
         vencimiento_embarque: "",
         vencimiento_preimposicion: "",
         estado: "Pendiente",
+        via: "",
     };
 const [formData, setFormData] = useState({
     numero_destinacion: "",
@@ -72,6 +72,7 @@ const [formData, setFormData] = useState({
     vencimiento_embarque: "",
     vencimiento_preimposicion: "",
     estado: "Pendiente",
+    via: "",
   });
     const cargarDatos = useCallback(async () => {
       setLoading(true);
@@ -84,14 +85,13 @@ const [formData, setFormData] = useState({
             setExportaciones(dataExp);
             setClientes(dataCli);
             setAduanas(dataAdu);
-            if (onUpdate) onUpdate();
         } catch (err) {
             console.error("Error al cargar datos:", err);
         }
         finally {
           setLoading(false);
         }
-    }, [onUpdate]);
+    }, []);
 
     const cargarArchivos = useCallback(async (id) => {
         if (!id) return;
@@ -123,7 +123,7 @@ const [formData, setFormData] = useState({
     const { name, value } = e.target;
     setFormData({
       ...formData,
-      [name]: value === "" ? 0 : parseFloat(value),
+      [name]: value === "" ? "" : parseFloat(value),
     });
   };
   const formatSafeDate = (dateVal) => {
@@ -148,19 +148,21 @@ const [formData, setFormData] = useState({
             fob_total_en_divisa: parseFloat(formData.fob_total_en_divisa || 0),
             fob_total_en_dolar: parseFloat(formData.fob_total_en_dolar || 0),
         };
+      
 
       if (isEditing && selectedId) {
         await updateExportacion(selectedId, dataToSend);
-        alert("Exportación actualizada con éxito");
+        onNotification("Exportación actualizada con éxito", "success");
       } else {
+        dataToSend.estado = "Inicializada";
         await createExportacion(dataToSend);
-        alert("Exportación registrada con éxito");
+        onNotification("Exportación registrada con éxito", "success");
       }
       window.scrollTo({ top: 0, behavior: 'smooth' });
       await cargarDatos();
-      volverALista();
+      volverALista(true);
     } catch (err) {
-      alert("Error al guardar: " + (err.response?.data?.detail || "Verifique los datos"));
+      onNotification("Error al guardar exportación: " + (err.response?.data?.detail || "Verifique los datos"), "error");
     }
   };
 
@@ -175,6 +177,7 @@ const [formData, setFormData] = useState({
     data.append("id_exportacion", selectedId); 
     data.append("nombre", fileToUpload.name);
 
+
     try {
         await uploadFile(data);
         setFileToUpload(null);
@@ -182,10 +185,10 @@ const [formData, setFormData] = useState({
         if (fileInput) fileInput.value = "";
         
         await cargarArchivos(selectedId);
-        alert("Documento subido con éxito");
+        onNotification("Documento subido con éxito", "success");
     } catch (err) {
         console.error("Error detallado del servidor:", err.response?.data);
-        alert("Error al subir: " + JSON.stringify(err.response?.data));
+        onNotification("Error al subir documento: " + (err.response?.data?.detail || "Intente nuevamente"), "error");
     }
 };
 
@@ -195,7 +198,7 @@ const handleFileDelete = async (id) => {
       await deleteArchivo(id);
       cargarArchivos(selectedId);
     } catch (err) {
-      alert("Error al eliminar");
+      onNotification("Error al eliminar documento: " + (err.response?.data?.detail || "Intente nuevamente"), "error");
     }
   };
 
@@ -224,19 +227,21 @@ const handleFileDelete = async (id) => {
     cargarArchivos(exp.id);
 };
 
-  const volverALista = () => {
+const volverALista = (saltarConfirmacion) => {
+  if (saltarConfirmacion || window.confirm("¿Desea volver al listado?"))
+    {
     setView("list");
     setIsEditing(false);
     setSelectedId(null);
     setArchivos([]);
     setFormData({
-      numero_destinacion: "", condicion_venta: "", vendedor: "", puerto_embarque: "",
+      numero_destinacion: "", condicion_venta: "", puerto_embarque: "",
       numero_factura: "", pais_destino: "", divisa: "",
       unitario_en_divisa: 0.0, unidad: "", cantidad_unidades: 0, fob_total_en_divisa: 0.0,
       fob_total_en_dolar: 0.0, numeracion: "", estado: "Pendiente", baja: false,
       aduana: "", cliente: "", codigo_afip: "", nombre_transporte: "",
       oficializacion: "", vencimiento_embarque: "", vencimiento_preimposicion: "",
-    });
+    });}
   };
 
   const styles = {
@@ -245,10 +250,11 @@ const handleFileDelete = async (id) => {
     searchWrapper: { position: 'relative', width: '60%' },
     searchIcon: { position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#888' },
     card: { backgroundColor: '#fff', padding: '20px', borderRadius: '12px', boxShadow: '0 4px 6px rgba(0,0,0,0.05)', marginBottom: '15px', border: '1px solid #eee' },
-    input: { padding: '12px 12px 12px 40px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '14px' },
+    input: { padding: '12px 12px 12px 40px', border: '1px solid #ddd', borderRadius: '8px', width: '100%', fontSize: '14px',boxSizing: "border-box", },
     formInput: { 
       padding: '10px', border: '1px solid #ddd', borderRadius: '6px', width: '100%', marginTop: '5px',
-      backgroundColor: isReadOnly ? "#f8fafc" : "#fff", color: isReadOnly ? "#4a5568" : "#2d3748", transition: 'all 0.3s'
+      backgroundColor: isReadOnly ? "#f8fafc" : "#fff", color: isReadOnly ? "#4a5568" : "#2d3748", transition: 'all 0.3s',
+      boxSizing: "border-box",
     },
   
   btnGreen: {
@@ -307,7 +313,6 @@ const handleFileDelete = async (id) => {
     const termino = busqueda.toLowerCase();
     return (
       e.numero_destinacion?.toLowerCase().includes(termino) ||
-      e.vendedor?.toLowerCase().includes(termino) ||
       String(e.cliente || "").toLowerCase().includes(termino)
     );
   });
@@ -321,7 +326,7 @@ const handleFileDelete = async (id) => {
               <i className="fa-solid fa-magnifying-glass" style={styles.searchIcon}></i>
               <input 
                 style={styles.input} 
-                placeholder="Buscar exportación por Cliente o Vendedor..." 
+                placeholder="Buscar exportación por CUIT de Cliente o N° Destinacion..." 
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
@@ -341,13 +346,16 @@ const handleFileDelete = async (id) => {
                   <div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                       <strong style={{ fontSize: '16px', color: '#2d3748' }}>ID: {exp.id}</strong>
-                      <span style={styles.badge(exp.estado === 'Finalizado' ? '#f0fff4' : '#fffeb3', exp.estado === 'Finalizado' ? '#22543d' : '#856404')}>
+                      <span style={styles.badge(exp.estado === 'Finalizada' ? '#f0fff4' : '#fffeb3', exp.estado === 'Finalizada' ? '#22543d' : '#856404')}>
                         {exp.estado}
                       </span>
+                      <span style={{color: exp.baja ? "#c53030" : "#2f855a", fontWeight: "bold", fontSize: "12px"}}
+                        >
+                          {exp.baja ? "Dada de baja":""}
+                        </span>
                     </div>
                     <p style={{ margin: '4px 0 0 0', color: '#718096', fontSize: '13px' }}>
                       <i className="fa-solid fa-id-card" style={{ marginRight: '5px' }}></i>CUIT Cliente:  {exp.cliente || "No Cargado"} | 
-                      <i className="fa-solid fa-user-tie" style={{ marginLeft: '10px', marginRight: '5px' }}></i>Vendedor: {exp.vendedor || "No Cargado"} | 
                       <i className="fa-solid fa-plane-departure" style={{ marginLeft: '10px', marginRight: '5px' }}></i>Destino: {exp.pais_destino || "No Cargado"}
                     </p>
                   </div>
@@ -371,14 +379,14 @@ const handleFileDelete = async (id) => {
       }}>
         <i className="fa-solid fa-box-open" style={{ fontSize: '50px', marginBottom: '15px', color: '#cbd5e0' }}></i>
         <h3 style={{ margin: 0, fontSize: '18px', color: '#4a5568' }}>No hay coincidencias</h3>
-        <p style={{ marginTop: '8px' }}>Prueba con otro CUIT o vendedor .</p>
+        <p style={{ marginTop: '8px' }}>Prueba con otro CUIT  .</p>
       </div>
     )}
         </div>
       ) : (
         <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
           <div style={styles.header}>
-            <button onClick={volverALista} style={{ border: 'none', background: 'none', color: '#3182ce', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <button  onClick={() => volverALista(false)} style={{ border: 'none', background: 'none', color: '#3182ce', cursor: 'pointer', fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: '8px' }}>
               <i className="fa-solid fa-arrow-left"></i> Volver al listado
             </button>
             {isEditing && (
@@ -403,89 +411,10 @@ const handleFileDelete = async (id) => {
   }}
 >
 
-              <div style={styles.sectionTitle}>Datos Generales de Exportación</div>
+              <div style={styles.sectionTitle}>Datos Generales</div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>N° Destinación</label>
-                <input 
-  name="numero_destinacion" 
-  value={formData.numero_destinacion || ""} 
-  onChange={handleInputChange} 
-  style={styles.formInput} 
-  disabled={isReadOnly} 
-/>
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Vendedor</label>
-                <input 
-  name="vendedor" 
-  value={formData.vendedor || ""} 
-  onChange={handleInputChange} 
-  style={styles.formInput} 
-  disabled={isReadOnly} 
-/>
-
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>N° Factura</label>
-                <input name="numero_factura" value={formData.numero_factura} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Estado</label>
-                <select name="estado" value={formData.estado} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly}>
-                  <option value="Pendiente">Pendiente</option>
-                  <option value="En Proceso">En Proceso</option>
-                  <option value="Finalizado">Finalizado</option>
-                </select>
-              </div>
-              
-
-              <div style={styles.sectionTitle}>Valores Comerciales (FOB)</div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Condición de Venta</label>
-                <input name="condicion_venta" value={formData.condicion_venta} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} placeholder="Ej: FOB, CIF..." />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Divisa</label>
-                <input name="divisa" value={formData.divisa} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>FOB Total Divisa</label>
-                <input type="number" name="fob_total_en_divisa" value={formData.fob_total_en_divisa} onChange={handleNumericChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>FOB Total USD</label>
-                <input type="number" name="fob_total_en_dolar" value={formData.fob_total_en_dolar} onChange={handleNumericChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={styles.sectionTitle}>Logística de Salida</div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>País Destino</label>
-                <input name="pais_destino" value={formData.pais_destino} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Puerto Embarque</label>
-                <input name="puerto_embarque" value={formData.puerto_embarque} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Transporte</label>
-                <input name="nombre_transporte" value={formData.nombre_transporte} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={styles.sectionTitle}>Fechas y Plazos</div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Fecha Oficialización</label>
-                <input type="date" name="oficializacion" value={formData.oficializacion} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Vencimiento Embarque</label>
-                <input type="date" name="vencimiento_embarque" value={formData.vencimiento_embarque} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Vencimiento Preimposición</label>
-                <input type="date" name="vencimiento_preimposicion" value={formData.vencimiento_preimposicion} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
-              </div>
-              <div style={styles.sectionTitle}>Entidades e Identificación</div>
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Cliente</label>
-                <select name="cliente" value={formData.cliente} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly}>
+                <label style={styles.label}>Cliente *</label>
+                <select name="cliente" value={formData.cliente} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} required>
                   <option value="">Seleccione Cliente...</option>
                   {clientes.map(c => (
   <option key={`cli-${c.id || c.cuit}`} value={c.id || c.cuit}>
@@ -495,8 +424,24 @@ const handleFileDelete = async (id) => {
                 </select>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Aduana</label>
-                <select name="aduana" value={formData.aduana} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly}>
+                <label style={styles.label}>N° Destinación *</label>
+                <input 
+  name="numero_destinacion" 
+  value={formData.numero_destinacion || ""} 
+  onChange={handleInputChange} 
+  style={styles.formInput} 
+  disabled={isReadOnly} 
+  required
+/>
+              </div>
+              
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <label style={styles.label}>N° Factura *</label>
+                <input name="numero_factura" value={formData.numero_factura} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} required />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <label style={styles.label}>Aduana *</label>
+                <select name="aduana" value={formData.aduana} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} required>
                   <option value="">Seleccione Aduana...</option>
                   {aduanas.map(a => (
   <option key={`adu-${a.id}`} value={a.id}>
@@ -510,22 +455,181 @@ const handleFileDelete = async (id) => {
                 <input name="codigo_afip" value={formData.codigo_afip} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
               </div>
 
-              <div style={styles.sectionTitle}>Mercadería y Cantidades</div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Cantidad</label>
-                <input type="number" name="cantidad_unidades" value={formData.cantidad_unidades} onChange={handleNumericChange} style={styles.formInput} disabled={isReadOnly} />
+        <label style={styles.label}>Oficialización</label>
+        <input type="date" name="oficializacion" value={formData.oficializacion} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
+      </div>
+                {isEditing && (
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <label style={styles.label}>Estado</label>
+                <select name="estado" value={formData.estado} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly}>
+                <option value="Inicializada">Inicializada</option>
+                  <option value="En Proceso">En Proceso</option>
+                  <option value="Finalizada">Finalizado</option>
+                </select>
+              </div>
+                )}
+
+              
+              <div style={styles.sectionTitle}>Logística de Salida</div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <label style={styles.label}>Destino</label>
+                <input name="pais_destino" value={formData.pais_destino} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Unidad (UOM)</label>
-                <input name="unidad" value={formData.unidad} style={styles.formInput} disabled={isReadOnly} />
+                <label style={styles.label}>Puerto Embarque</label>
+                <input name="puerto_embarque" value={formData.puerto_embarque} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <label style={styles.label}>Unitario Divisa</label>
-                <input type="number" name="unitario_en_divisa" value={formData.unitario_en_divisa} onChange={handleNumericChange} style={styles.formInput} disabled={isReadOnly} />
+                <label style={styles.label}>Nombre Transporte</label>
+                <input name="nombre_transporte" value={formData.nombre_transporte} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <label style={styles.label}>Vía</label>
+                <select
+                  name="via"
+                  value={formData.via}
+                  onChange={handleInputChange}
+                  style={styles.formInput}
+                  disabled={isReadOnly}
+                >
+                  <option value="">Seleccione Vía...</option>
+                  <option value="Marítima">Marítima</option>
+                  <option value="Aérea">Aérea</option>
+                  <option value="Terrestre">Terrestre</option>
+                </select>
+              </div>
+              <div style={styles.sectionTitle}>Fechas y Plazos</div>
+             
+             
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <label style={styles.label}>Vencimiento Preimposición</label>
+                <input type="date" name="vencimiento_preimposicion" value={formData.vencimiento_preimposicion} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <label style={styles.label}>Vencimiento Embarque</label>
+                <input type="date" name="vencimiento_embarque" value={formData.vencimiento_embarque} onChange={handleInputChange} style={styles.formInput} disabled={isReadOnly} />
+              </div>
+            
+              
+              
+           
+              <div style={styles.sectionTitle}>Detalle de Mercadería</div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+  <label style={styles.label}>Cantidad de unidades *</label>
+  <input
+    type="number"
+    min="1"
+    step="1"
+    name="cantidad_unidades"
+    value={formData.cantidad_unidades}
+    onChange={handleNumericChange}
+    style={styles.formInput}
+    disabled={isReadOnly}
+    required
+  />
+</div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+  <label style={styles.label}>Unidad *</label>
+  <select
+    name="unidad"
+    value={formData.unidad}
+    onChange={handleInputChange}
+    placeholder="Ej: M, KG"
+    style={styles.formInput}
+    disabled={isReadOnly}
+    required
+  >
+    <option value="">Seleccione Unidad...</option>
+    <option value="KG">KG - Kilogramo</option>
+    <option value="L">L - Litro</option>
+    <option value="M">M - Metro</option>
+    <option value="PZA">PZA - Pieza</option>
+    <option value="TON">TON - Tonelada</option>
+    <option value="CBM">CBM - Metro Cúbico</option>
+    <option value="SET">SET - Set</option>
+    <option value="ROL">ROL - Rollo</option>
+    <option value="PAR">PAR - Par</option>
+    <option value="JUE">JUE - Juego</option>
+    <option value="BUL">BUL - Bulto</option>
+    <option value="SOB">SOB - Sobre</option>
+    <option value="CJA">CJA - Caja</option>
+    <option value="BAG">BAG - Bolsa</option>
+  </select>
+</div>
+<div style={{ display: "flex", flexDirection: "column" }}>
+  <label style={styles.label}>Unitario en Divisa *</label>
+  <input
+    type="number"
+    min="0"
+    name="unitario_en_divisa"
+    value={formData.unitario_en_divisa}
+    onChange={handleNumericChange}
+    style={styles.formInput}
+    disabled={isReadOnly}
+    required
+  />
+</div>
+              <div style={styles.sectionTitle}>Valores Comerciales</div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <label style={styles.label}>Divisa *</label>
+                <select
+                  name="divisa"
+                  value={formData.divisa}
+                  onChange={handleInputChange}
+                  style={styles.formInput}
+                  disabled={isReadOnly}
+                  required
+                >
+                  <option value="">Seleccione Divisa...</option>
+                  <option value="USD">USD</option>
+                  <option value="EUR">EUR</option>
+                  <option value="ARS">ARS</option>
+                  <option value="BRL">BRL</option>
+                  <option value="CNY">CNY</option>
+                  <option value="JPY">JPY</option>
+                  <option value="GBP">GBP</option>
+                  <option value="CAD">CAD</option>
+                  <option value="AUD">AUD</option>
+                </select>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <label style={styles.label}>FOB Total Divisa *</label>
+                <input type="number" name="fob_total_en_divisa" min="0" value={formData.fob_total_en_divisa} onChange={handleNumericChange} style={styles.formInput} disabled={isReadOnly} required />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <label style={styles.label}>FOB Total USD</label>
+                <input type="number" name="fob_total_en_dolar" min="0" value={formData.fob_total_en_dolar} onChange={handleNumericChange} style={styles.formInput} disabled={isReadOnly} required />
+              </div>
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <label style={styles.label}>Condición de Venta *</label>
+                <select
+                  name="condicion_venta"
+                  value={formData.condicion_venta}
+                  onChange={handleInputChange}
+                  style={styles.formInput}
+                  disabled={isReadOnly}
+                  required
+                >
+                  <option value="">Condición de Venta...</option>
+                  <option value="CFR">CFR</option>
+                  <option value="CIF">CIF</option>
+                  <option value="CIP">CIP</option>
+                  <option value="CPT">CPT</option>
+                  <option value="DAP">DAP</option>
+                  <option value="DAT">DAT</option>
+                  <option value="DDP">DDP</option>
+                  <option value="EXW">EXW</option>
+                  <option value="FAS">FAS</option>
+                  <option value="FCA">FCA</option>
+                  <option value="FOB">FOB</option>
+                  <option value="MUL">MUL</option>
+                </select>
               </div>
               {isAdmin && (
   <> 
-              <div style={styles.sectionTitle}>Estado de la Operación</div>
+              <div style={styles.sectionTitle}>Estado Lógico de la operación
+</div>
               <div style={{ 
     gridColumn: "1 / -1", 
     marginTop: '10px' 
@@ -572,7 +676,7 @@ const handleFileDelete = async (id) => {
 
             {isEditing && (
               <div style={{ marginTop: '40px', borderTop: '2px solid #eee', paddingTop: '20px' }}>
-                <h3 style={{ fontSize: '16px', marginBottom: '15px' }}><i className="fa-solid fa-folder-open" style={{ color: '#3182ce', marginRight: '10px' }}></i>Documentación de Exportación</h3>
+                <h3 style={{ fontSize: '16px', marginBottom: '15px' }}><i className="fa-solid fa-folder-open" style={{ color: '#3182ce', marginRight: '10px' }}></i>Documentación</h3>
                 {!isReadOnly && (
                   <div style={{ display: 'flex', gap: '10px', marginBottom: '20px', backgroundColor: '#f8fafc', padding: '15px', borderRadius: '8px' }}>
                     <input type="file" onChange={(e) => setFileToUpload(e.target.files[0])} style={{ flex: 1 }} />

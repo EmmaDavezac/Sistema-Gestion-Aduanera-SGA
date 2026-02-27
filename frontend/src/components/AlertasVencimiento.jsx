@@ -90,7 +90,7 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
 
     if (dias < 0) {
         return {
-            label: `VENCIDO (${Math.abs(dias)}d)`,
+            label: `VENCIDA (${Math.abs(dias)}d)`,
             bg: '#450a0a', text: '#ffffff', border: '#991b1b'
         };
     } else if (dias === 0) {
@@ -117,7 +117,7 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
                 }
                 .alertas-header { 
                     display: flex; 
-                    flex-wrap: wrap; /* Permite que el buscador baje en móvil */
+                    flex-wrap: wrap; 
                     flex-direction: row; 
                     justify-content: space-between; 
                     align-items: center; 
@@ -142,14 +142,14 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
                     display: flex;
                     flex-direction: column;
                     flex: 1;
-                    min-width: 250px; /* Evita que se aplaste demasiado */
+                    min-width: 250px; 
                 }
                 .item-detalles-texto {
                     font-size: 0.85rem;
                     line-height: 1.4;
                     display: flex;
                     flex-wrap: wrap;
-                    gap: 5px 12px; /* Espaciado entre etiquetas */
+                    gap: 5px 12px; 
                     margin-top: 4px;
                 }
                 .item-vencimiento-block {
@@ -171,7 +171,7 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
 <div className="alertas-header">
     <h4 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '10px', whiteSpace: 'nowrap' }}>
         <i className="fa-solid fa-bell"></i> 
-        EXPORTACIONES PROXIMAS A VENCER <span className="count-badge">{alertasFiltradas.length}</span>
+        VENCIMIENTO DE EXPORTACIONES <span className="count-badge">{alertasFiltradas.length}</span>
     </h4>
 
     <div style={{ display: 'flex', gap: '5px', background: '#f1f5f9', padding: '4px', borderRadius: '8px', flex: 1, maxWidth: '350px' }}>
@@ -192,7 +192,7 @@ const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
                 ) : (
                     alertasFiltradas.map((exp) => {
                         const conf = obtenerConfiguracionUrgencia(exp.vencimiento_preimposicion);
-                        const esVencido = conf.label.includes("VENCIDO");
+                        const esVencido = conf.label.includes("VENCIDA");
 
                         return (
                             <div 

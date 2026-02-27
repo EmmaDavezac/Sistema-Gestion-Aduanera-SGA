@@ -2,7 +2,9 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './pages/Login';
 import Home from './pages/Home'
 import '@fortawesome/fontawesome-free/css/all.min.css';
-// Componente para proteger rutas
+import { registerSW } from 'virtual:pwa-register'
+
+registerSW({ immediate: true })
 const PrivateRoute = ({ children }) => {
     const token = localStorage.getItem('token');
     return token ? children : <Navigate to="/login" />;

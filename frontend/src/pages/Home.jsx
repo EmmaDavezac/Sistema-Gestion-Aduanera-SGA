@@ -20,13 +20,16 @@ const Home = () => {
 
     const userName = localStorage.getItem('userName') || 'Usuario';
     const isAdmin = localStorage.getItem('isAdmin') === 'true'; 
+    const [toasts, setToasts] = useState([]); 
 
-    const [toast, setToast] = useState({ show: false, msg: '', type: 'success' });
-
-    const showToast = (msg, type = 'success') => {
-        setToast({ show: true, msg, type });
+    const showToast = (msg, type) => {
+        const id = Date.now(); 
+        setToasts(prevToasts => [...prevToasts, { id, msg, type }]);
     };
-   
+    
+    const removeToast = (id) => {
+        setToasts(prevToasts => prevToasts.filter(t => t.id !== id));
+    };
     useEffect(() => {
         const closeMenu = () => setShowUserMenu(false);
         if (showUserMenu) {
@@ -390,14 +393,24 @@ const Home = () => {
 
           
             <Footer />
-            {toast.show && (
-    <Toast 
-        msg={toast.msg} 
-        type={toast.type} 
-        onClose={() => setToast({ ...toast, show: false })} 
-    />
-    
-)} 
+<div style={{
+    position: 'fixed',
+    top: '20px',
+    right: '20px',
+    zIndex: 10000,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px' 
+}}>
+    {toasts.map((t) => (
+        <Toast 
+            key={t.id} 
+            msg={t.msg} 
+            type={t.type} 
+            onClose={() => removeToast(t.id)} 
+        />
+    ))}
+</div>
 
         </div>
         

@@ -20,6 +20,7 @@ const GestionClientes = ({ onNotification }) => {
   const [fileToUpload, setFileToUpload] = useState(null);
   const [loading, setLoading] = useState(true);
   const isAdmin = localStorage.getItem("isAdmin") === "true";
+  const today = new Date().toISOString().split('T')[0];
 
   const cargadoRef = useRef(false);
 
@@ -108,6 +109,13 @@ const GestionClientes = ({ onNotification }) => {
       onNotification("El CUIT no es válido. Verifique los dígitos.", "error");
       return;
     }
+    if (!esFechaValida(formData.fecha_inicio_actividad)) {
+      onNotification(
+        "La fecha de inicio de actividad no puede ser mayor a la fecha actual.", 
+        "error"
+      );
+      return;
+    }
 
     try {
       if (isEditing && clienteSeleccionado) {
@@ -121,7 +129,7 @@ const GestionClientes = ({ onNotification }) => {
         await createCliente(formData);
         onNotification("¡Cliente registrado con éxito!", "success");
         await cargarDatos();
-        volverALista();
+        volverALista(true);
       }
     } catch (err) {
       console.log("Estructura completa del error:", err.response?.data);
@@ -146,21 +154,36 @@ const GestionClientes = ({ onNotification }) => {
     setIsEditing(false);
   };
 
-  const volverALista = () => {
-    setClienteSeleccionado(null);
-    setIsEditing(false);
-    setView("list");
-    setFormData({
-      cuit: "",
-      nombre: "",
-      domicilio: "",
-      telefono_1: "",
-      telefono_2: "",
-      fecha_inicio_actividad: "",
-      observaciones: "",
-      baja: false,
-    });
+  const esFechaValida = (fechaInput) => {
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0); 
+    
+    const fechaSeleccionada = new Date(fechaInput);
+    fechaSeleccionada.setMinutes(fechaSeleccionada.getMinutes() + fechaSeleccionada.getTimezoneOffset());
+    fechaSeleccionada.setHours(0, 0, 0, 0);
+  
+    return fechaSeleccionada <= hoy;
   };
+
+  const volverALista = (saltarConfirmacion = false) => {
+    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?")) {
+        setClienteSeleccionado(null);
+        setIsEditing(false);
+        setView("list");
+        setFileToUpload(null);
+        setFormData({
+            cuit: "",
+            nombre: "",
+            domicilio: "",
+            telefono_1: "",
+            telefono_2: "",
+            fecha_inicio_actividad: "",
+            observaciones: "",
+            baja: false,
+        });
+        window.scrollTo(0, 0);
+    }
+};
 
   const styles = {
     container: {
@@ -200,6 +223,7 @@ const GestionClientes = ({ onNotification }) => {
       borderRadius: "8px",
       width: "100%",
       fontSize: "14px",
+      boxSizing: "border-box",
     },
     formInput: {
       padding: "10px",
@@ -208,6 +232,7 @@ const GestionClientes = ({ onNotification }) => {
       width: "100%",
       marginTop: "5px",
       transition: "all 0.3s",
+      boxSizing: "border-box",
     },
     btnGreen: {
       padding: "12px 24px",
@@ -448,7 +473,7 @@ const GestionClientes = ({ onNotification }) => {
       ) : view === "form" ? (
         <div style={{ maxWidth: "900px", margin: "0 auto" }}>
           <button
-            onClick={volverALista}
+            onClick={() => volverALista(false)}
             style={{
               border: "none",
               background: "none",
@@ -465,21 +490,7 @@ const GestionClientes = ({ onNotification }) => {
           </button>
 
           <div style={styles.card}>
-            <h2
-              style={{
-                marginTop: 0,
-                marginBottom: "20px",
-                color: "#2d3748",
-                borderBottom: "2px solid #f4f7f6",
-                paddingBottom: "10px",
-              }}
-            >
-              <i
-                className="fa-solid fa-user-plus"
-                style={{ marginRight: "10px", color: "#2ecc71" }}
-              ></i>
-              Registrar Nuevo Cliente
-            </h2>
+           
 
             <form
               onSubmit={handleSubmit}
@@ -492,12 +503,12 @@ const GestionClientes = ({ onNotification }) => {
               <div style={styles.sectionTitle}>Datos Identificatorios</div>
 
               <div style={{ gridColumn: "span 1" }}>
-                <label style={styles.label}>CUIT / Identificación</label>
+                <label style={styles.label}>CUIT *</label>
                 <input
                   type="text"
                   pattern="[0-9]{11}"
                   style={styles.formInput}
-                  placeholder="Ej: 20-12345678-9"
+                  placeholder="Ej: 20123456789"
                   value={formData.cuit}
                   onChange={(e) =>
                     setFormData({ ...formData, cuit: e.target.value })
@@ -507,7 +518,7 @@ const GestionClientes = ({ onNotification }) => {
               </div>
 
               <div style={{ gridColumn: "span 1" }}>
-                <label style={styles.label}>Razón Social / Nombre</label>
+                <label style={styles.label}>Razón Social / Nombre *</label>
                 <input
                   style={styles.formInput}
                   placeholder="Ej: Logística S.A."
@@ -522,7 +533,7 @@ const GestionClientes = ({ onNotification }) => {
               <div style={styles.sectionTitle}>Información de Contacto</div>
 
               <div style={{ gridColumn: "span 2" }}>
-                <label style={styles.label}>Domicilio</label>
+                <label style={styles.label}>Domicilio *</label>
                 <input
                   style={styles.formInput}
                   placeholder="Calle, Número, Localidad"
@@ -535,7 +546,7 @@ const GestionClientes = ({ onNotification }) => {
               </div>
 
               <div style={{ gridColumn: "span 1" }}>
-                <label style={styles.label}>Teléfono Principal</label>
+                <label style={styles.label}>Teléfono Principal *</label>
                 <input
                   type="number"
                   style={styles.formInput}
@@ -564,11 +575,12 @@ const GestionClientes = ({ onNotification }) => {
               <div style={styles.sectionTitle}>Otros Datos</div>
 
               <div style={{ gridColumn: "span 2" }}>
-                <label style={styles.label}>Fecha Inicio Actividad</label>
+                <label style={styles.label}>Fecha Inicio Actividad *</label>
                 <input
                   type="date"
                   style={styles.formInput}
                   value={formData.fecha_inicio_actividad}
+                  max={today}
                   onChange={(e) =>
                     setFormData({
                       ...formData,
@@ -615,7 +627,7 @@ const GestionClientes = ({ onNotification }) => {
         <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
           <div style={styles.header}>
             <button
-              onClick={volverALista}
+              onClick={() => volverALista(false)}
               style={{
                 border: "none",
                 background: "none",
@@ -675,7 +687,7 @@ const GestionClientes = ({ onNotification }) => {
               >
                 <div style={styles.sectionTitle}>Datos Identificatorios</div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={styles.label}>Nombre / Razón Social</label>
+                  <label style={styles.label}>Nombre / Razón Social *</label>
                   <input
                     style={styles.formInput}
                     value={formData.nombre}
@@ -683,19 +695,21 @@ const GestionClientes = ({ onNotification }) => {
                     onChange={(e) =>
                       setFormData({ ...formData, nombre: e.target.value })
                     }
+                    required
                   />
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={styles.label}>CUIT</label>
+                  <label style={styles.label}>CUIT *</label>
                   <input
                     style={{ ...styles.formInput, backgroundColor: "#f8fafc" }}
                     value={formData.cuit}
                     disabled={true}
+                    required
                   />
                 </div>
                 <div style={styles.sectionTitle}>Información de Contacto</div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={styles.label}>Domicilio</label>
+                  <label style={styles.label}>Domicilio *</label>
                   <input
                     style={styles.formInput}
                     value={formData.domicilio || ""}
@@ -707,7 +721,7 @@ const GestionClientes = ({ onNotification }) => {
                   />
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={styles.label}>Teléfono Principal</label>
+                  <label style={styles.label}>Teléfono Principal *</label>
                   <input
                     style={styles.formInput}
                     value={formData.telefono_1 || ""}
@@ -730,7 +744,7 @@ const GestionClientes = ({ onNotification }) => {
                   />
                 </div>
                 <div style={{ gridColumn: "1 / -1" }}>
-                  <label style={styles.label}>Fecha Inicio Actividad</label>
+                  <label style={styles.label}>Fecha Inicio Actividad *</label>
                   <input
                     type="date"
                     style={{
@@ -776,7 +790,7 @@ const GestionClientes = ({ onNotification }) => {
 
                 {isAdmin && (
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={styles.label}>Estado de la cuenta</label>
+                    <label style={styles.label}>Estado Lógico del Cliente</label>
                     <div
                       style={{
                         display: "flex",

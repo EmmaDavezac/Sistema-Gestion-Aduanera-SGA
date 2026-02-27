@@ -5,14 +5,9 @@ from datetime import timedelta
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 SECRET_KEY = 'django-insecure-cambiame-en-produccion'
-DEBUG = False
-ALLOWED_HOSTS = [
-    'sistema-gestion-aduanera-sga-1.onrender.com',
-    'sistema-gestion-aduanera-1dj68uqmg-emmadavezacs-projects.vercel.app',
-    'localhost',
-    '127.0.0.1'
+DEBUG = True
+ALLOWED_HOSTS = []
 
-]
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -57,7 +52,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'core.wsgi.application'
-# Configuración de la base de datos
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -78,21 +72,14 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "https://sistema-gestion-aduanera-1dj68uqmg-emmadavezacs-projects.vercel.app",
+    "http://localhost:5173", 
+    "http://localhost:4173",
 ]
 
-CORS_ALLOWED_ORIGIN_REGEXES = [
-    r"^https://sistema-gestion-aduanera-.*\.vercel\.app$",
-]
-
-CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOW_METHODS = [
-    "DELETE", "GET", "OPTIONS", "PATCH", "POST", "PUT",
-]
 CORS_EXPOSE_HEADERS = [
     'Content-Disposition',
 ]
@@ -104,13 +91,19 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=10),  
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),   
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    'AUTH_HEADER_TYPES': ('Bearer',),
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
-# Configuración para manejo de archivos 
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
-# Configuracion de correo electronico para alertas y recuperacion de contraseña
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -119,37 +112,9 @@ EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = f"SGA - Sistema de Gestión Aduanera <{EMAIL_HOST_USER}>"
 
-#Configuración de CAPTCHA
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge' 
 CAPTCHA_IMAGE_SIZE = (120, 45)      
 CAPTCHA_FONT_SIZE = 30               
-CAPTCHA_TIMEOUT = 5   
+CAPTCHA_TIMEOUT = 10  
 CAPTCHA_NOISE_FUNCTIONS = []  
 CAPTCHA_LETTER_ROTATION = (-5, 5)               
-
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://sistema-gestion-aduanera-1dj68uqmg-emmadavezacs-projects.vercel.app",
-    "https://sistema-gestion-aduanera-sga-1.onrender.com"
-]
-
-# Esto ayuda a que el Captcha se genere con la URL correcta
-CAPTCHA_URL_PREFIX = 'captcha/'
-
-# Esto asegura que Django use la URL del servidor y no localhost
-CAPTCHA_DOMAIN = 'sistema-gestion-aduanera-sga-1.onrender.com'
-
-# Forzar HTTPS en las URLs generadas
-SECURE_SSL_REDIRECT = False 
-USE_X_FORWARDED_HOST = True
-USE_X_FORWARDED_PORT= True
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-
-
-SESSION_COOKIE_SAMESITE = 'None'
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SAMESITE = 'None'
-CSRF_COOKIE_SECURE = True
-
-SITE_ID = 1
