@@ -1,53 +1,224 @@
-1. Estructura de "Repositorio Único"
-En este esquema, el backend y el frontend viven en la misma carpeta raíz pero en subdirectorios independientes. Esto facilita que un solo servidor (o proceso de CI/CD) gestione ambos.
-proyecto_total/
-├── backend/               # Todo lo de Django (la estructura anterior)
+# SGA — Sistema de Gestión de Operaciones Aduaneras
+
+![React](https://img.shields.io/badge/React-19.2-61DAFB?style=flat-square)
+![Django](https://img.shields.io/badge/Django-4+-092E20?style=flat-square&logo=django&logoColor=white)
+![DRF](https://img.shields.io/badge/DRF-3+-ff1709?style=flat-square&logo=django&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-7-646CFF?style=flat-square&logo=vite&logoColor=white)
+![SQLite](https://img.shields.io/badge/SQLite-3-003B57?style=flat-square&logo=sqlite&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?style=flat-square&logo=docker&logoColor=white)
+![JWT](https://img.shields.io/badge/Auth-JWT-black?style=flat-square&logo=jsonwebtokens&logoColor=white)
+![License](https://img.shields.io/badge/Licencia-MIT-brightgreen?style=flat-square)
+
+Sistema web desarrollado como proyecto final de carrera en la **Universidad Tecnológica Nacional — Facultad Regional Concepción del Uruguay**, para la gestión de operaciones de importación y exportación aduanera.
+
+> Habilitación Profesional — Ingeniería en Sistemas de Información — UTN FRCU — 2024
+
+---
+
+## 📋 Descripción
+
+SGA reemplaza el flujo manual (Google Sheets + Google Drive) de una empresa de comercio exterior con ~100 operaciones mensuales y 74+ clientes. Centraliza la gestión de importaciones, exportaciones, clientes y aduanas, con control de vencimientos y alertas automáticas por correo.
+
+### Funcionalidades principales
+
+- Registro y seguimiento de operaciones de **importación y exportación**
+- Gestión de **clientes** con adjuntos de documentación
+- Control de **vencimientos** con alertas visuales y notificaciones por email
+- **Roles de usuario**: Administrador y Usuario estándar
+- Autenticación segura con **JWT + CAPTCHA**
+- Adjuntar y descargar archivos por operación
+
+---
+
+## 🏗️ Arquitectura
+
+```
+┌─────────────────────┐        HTTP/JSON        ┌──────────────────────┐
+│   Frontend — React  │ ──────────────────────► │  Backend — Django    │
+│   Vite + Axios      │ ◄────────────────────── │  REST Framework      │
+│   Puerto 5173       │        JWT Auth          │  Puerto 8000         │
+└─────────────────────┘                          └──────────┬───────────┘
+                                                            │
+                                                    ┌───────▼───────┐
+                                                    │   SQLite 3    │
+                                                    │  (desarrollo) │
+                                                    └───────────────┘
+```
+
+---
+
+## 🚀 Inicio rápido (Docker)
+
+### Requisitos previos
+
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) instalado y en ejecución
+
+### Pasos
+
+**1. Clonar el repositorio**
+
+```bash
+git clone https://github.com/tu-usuario/Sistema-Gestion-Aduanera-SGA.git
+cd Sistema-Gestion-Aduanera-SGA
+```
+
+**2. Configurar variables de entorno**
+
+```bash
+cp .env.example .env
+```
+
+Editar `.env` con los valores reales:
+
+```env
+# Backend
+SECRET_KEY=tu_clave_secreta_django
+DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+EMAIL_HOST_USER=tu_correo@gmail.com
+EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicacion
+
+# Frontend
+VITE_API_URL=http://localhost:8000
+```
+
+> Para `EMAIL_HOST_PASSWORD` usar una [contraseña de aplicación de Gmail](https://support.google.com/accounts/answer/185833), no la contraseña personal. Sin esta configuración el sistema funciona normalmente pero no envía alertas por correo.
+
+**3. Construir e iniciar los contenedores**
+
+```bash
+docker-compose up --build
+```
+
+**4. Aplicar migraciones**
+
+```bash
+docker exec -it sga_backend python manage.py migrate
+```
+
+**5. Acceder a la aplicación**
+
+| | |
+|---|---|
+| URL | http://localhost:5173 |
+| Usuario | `emma` |
+| Contraseña | `1234` |
+
+---
+
+## 🖼️ Capturas
+
+> _Agregar capturas de pantalla del sistema aquí._
+>
+> Sugerencia: Login, Dashboard, Gestión de Importaciones, Panel de Alertas de Vencimiento.
+
+---
+
+## 🗂️ Estructura del proyecto
+
+```
+Sistema-Gestion-Aduanera-SGA/
+├── Backend/
 │   ├── apps/
+│   │   └── SGA/
+│   │       ├── models.py
+│   │       ├── serializers.py
+│   │       ├── views.py
+│   │       └── urls.py
 │   ├── core/
-│   ├── media/             # Archivos subidos por clientes
+│   │   └── settings.py
 │   ├── manage.py
-│   └── requirements.txt
-├── frontend/              # Todo lo de React (creado con Vite o Create React App)
+│   ├── requirements.txt
+│   └── Dockerfile
+├── frontend/
 │   ├── src/
-│   │   ├── components/    # Componentes como Uploader.jsx, FileList.jsx
-│   │   ├── services/      # Archivos para llamadas a la API (Axios/Fetch)
-│   │   ├── App.js
-│   │   └── main.jsx
-│   ├── public/            # Archivos estáticos del front (favicon, logos)
+│   │   ├── api/         # Axios + JWT interceptor
+│   │   ├── components/  # Componentes de gestión
+│   │   ├── pages/       # Login, Home/Dashboard
+│   │   └── utils/       # Validaciones CUIT y fechas
 │   ├── package.json
-│   ├── node_modules/
-│   └── .env               # Aquí guardas la URL de la API: http://localhost:8000
-├── docker-compose.yml     # (Opcional) Para levantar ambos servicios a la vez
-└── .gitignore             # Para ignorar venv/, node_modules/ y media/
-
-1. Preparación del Entorno
-Desde la carpeta backend/, ejecuta:
+│   └── Dockerfile
+├── .env.example
+├── docker-compose.yml
+└── README.md
 ```
+
+---
+
+## ⚙️ Instalación manual
+
+<details>
+<summary>Ver instrucciones sin Docker</summary>
+
+### Backend
+
+```bash
+cd Backend/
 python -m venv venv
-```
-Activamos el entorno
-```
-venv\Scripts\activate
-```
-Una vez activado, verás (venv) al inicio de la línea de comandos, indicando que estás trabajando en un entorno aislado.
+source venv/bin/activate      # Linux/Mac
+venv\Scripts\activate         # Windows
 
-2. Instalar Dependencias
-```python
 pip install -r requirements.txt
-```
-3. Crea la base de datos (SQLite):
-```
-python manage.py makemigrations
+cp .env.example .env          # completar con valores reales
+
 python manage.py migrate
-```
-4. Crea tu usuario administrador:
-```
 python manage.py createsuperuser
-```
-5. Inicia el servidor:
-```python
 python manage.py runserver
 ```
-6. En la carpeta frontend, corre el comando: `npm run dev`.
 
-Abre la URL que te de Vite (ej. http://localhost:5173).
+### Frontend
+
+```bash
+cd frontend/
+npm install
+cp .env.example .env          # completar VITE_API_URL si es necesario
+npm run dev
+```
+
+</details>
+
+---
+
+## 🔐 Roles y permisos
+
+| Funcionalidad | Administrador | Usuario estándar |
+|---------------|:---:|:---:|
+| Ver importaciones/exportaciones | ✅ | ✅ |
+| Registrar/modificar operaciones | ✅ | ✅ |
+| Gestión de clientes | ✅ | ✅ |
+| Gestión de aduanas | ✅ | ❌ |
+| Gestión de usuarios | ✅ | ❌ |
+| Alertas de vencimiento | ✅ | ✅ |
+
+---
+
+## 🛠️ Stack tecnológico
+
+| Capa | Tecnología |
+|------|-----------|
+| Frontend | React 19 + Vite 7 |
+| Backend | Django 4 + Django REST Framework |
+| Autenticación | SimpleJWT + django-simple-captcha |
+| Base de datos (dev) | SQLite 3 |
+| Base de datos (prod) | MySQL 8+ |
+| Animaciones | Framer Motion |
+| Contenedores | Docker + Docker Compose |
+| Correo | SMTP Gmail |
+
+---
+
+## 👥 Autor
+
+**Luciano Emmanuel Davezac**
+
+**Profesores:** Ing. Miriam Kloster — Ing. Adrian Callejas
+
+**Institución:** Universidad Tecnológica Nacional — Facultad Regional Concepción del Uruguay  
+**Carrera:** Ingeniería en Sistemas de Información — Habilitación Profesional  
+**Año:** 2024
+
+---
+
+## 📄 Licencia
+
+Este proyecto está bajo la licencia [MIT](LICENSE).
