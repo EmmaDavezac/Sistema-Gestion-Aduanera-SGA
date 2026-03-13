@@ -101,18 +101,49 @@ docker exec -it sga_backend python manage.py migrate
 | | |
 |---|---|
 | URL | http://localhost:5173 |
-| Usuario | `emma` |
-| Contraseña | `1234` |
+| Usuario | `admin` |
+| Contraseña | `123456789` |
 
+> ⚠️ Cambiá la contraseña del usuario `admin` inmediatamente después del primer inicio de sesión.
+ 
 ---
-
+ 
 ## 🖼️ Capturas
-
-> _Agregar capturas de pantalla del sistema aquí._
->
-> Sugerencia: Login, Dashboard, Gestión de Importaciones, Panel de Alertas de Vencimiento.
-
+ 
+### Panel Principal
+ 
+![Home](docs/screenshots/Home.png)
+ 
+### Importaciones
+ 
+![Listado de Importaciones](docs/screenshots/Importaciones.png)
+ 
+![Formulario de Importación](docs/screenshots/ImportacionesForm.png)
+ 
+### Exportaciones
+ 
+![Listado de Exportaciones](docs/screenshots/Exportaciones.png)
+ 
+![Formulario de Exportación](docs/screenshots/ExportacionesForm.png)
+ 
+### Clientes
+ 
+![Listado de Clientes](docs/screenshots/Clientes.png)
+ 
+![Formulario de Cliente](docs/screenshots/ClientesForm.png)
+ 
+### Aduanas
+ 
+![Aduanas](docs/screenshots/Aduanas.png)
+ 
+### Usuarios
+ 
+![Usuarios](docs/screenshots/Usuarios.png)
+ 
 ---
+ 
+
+
 
 ## 🗂️ Estructura del proyecto
 
@@ -219,6 +250,3 @@ npm run dev
 
 ---
 
-## 📄 Licencia
-
-Este proyecto está bajo la licencia [MIT](LICENSE).
