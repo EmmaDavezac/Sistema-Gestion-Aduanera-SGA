@@ -161,7 +161,7 @@ Sistema-Gestion-Aduanera-SGA/
 │   ├── manage.py
 │   ├── requirements.txt
 │   └── Dockerfile
-├── frontend/
+├── Frontend/
 │   ├── src/
 │   │   ├── api/         # Axios + JWT interceptor
 │   │   ├── components/  # Componentes de gestión
@@ -200,7 +200,7 @@ python manage.py runserver
 ### Frontend
 
 ```bash
-cd frontend/
+cd Frontend/
 npm install
 cp .env.example .env         
 npm run dev
