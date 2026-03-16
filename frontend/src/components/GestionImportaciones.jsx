@@ -10,7 +10,8 @@ import {
   deleteArchivo,
 } from "../api/api";
 import SkeletonTable from "./SkeletonTable";
-const GestionImportaciones = ({ onNotification }) => {
+import { verificarDestinacionDuplicada } from "../utils/validaciones";
+const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  => {
   const [importaciones, setImportaciones] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [aduanas, setAduanas] = useState([]);
@@ -26,6 +27,8 @@ const GestionImportaciones = ({ onNotification }) => {
   const isAdmin = localStorage.getItem("isAdmin") === "true";
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [filtroNombreCliente, setFiltroNombreCliente] = useState("");
+  const [mostrarBaja, setMostrarBaja] = useState(false);
+  const [filtroEstado, setFiltroEstado] = useState("Todas");
   const [formData, setFormData] = useState({
     numero_destinacion: "",
     condicion_venta: "",
@@ -81,6 +84,15 @@ const GestionImportaciones = ({ onNotification }) => {
       console.error("Error al cargar archivos:", err);
     }
   }, []);
+ 
+  useEffect(() => {
+    if (autoOpenForm) {
+      setView("form");
+      setIsEditing(false);
+      setIsReadOnly(false);
+      onFormOpened?.();
+    }
+  }, [autoOpenForm]);
 
   useEffect(() => {
     if (!cargadoRef.current) {
@@ -129,11 +141,14 @@ const GestionImportaciones = ({ onNotification }) => {
       
       return;
     }
-    if (verificarDestinacionDuplicada(formData.numero_destinacion)) {
-onNotification(`El número de destinación "${formData.numero_destinacion}" ya está registrado en otra operación.`, "error");
-    
-      return;
-    }
+    const esDuplicado = await verificarDestinacionDuplicada(
+    formData.numero_destinacion, 
+    isEditing ? selectedId : null 
+  );
+
+  if (esDuplicado) {
+    onNotification("El número de destinación ya pertenece a otra operación", "error");
+    return; }
     if (
       !window.confirm(
         `¿Desea ${isEditing ? "actualizar" : "registrar"} esta importación?`
@@ -158,7 +173,7 @@ onNotification(`El número de destinación "${formData.numero_destinacion}" ya e
         onNotification("Importación actualizada con éxito", "success");
       } else {
         dataToSend.estado= "Inicializada"; 
-        formData.baja = false;
+        dataToSend.baja = false;
         const nuevaImportacion = await createImportacion(dataToSend);
         importacionId = nuevaImportacion?.id || nuevaImportacion?.data?.id;
         onNotification("Importación registrada con éxito", "success");
@@ -413,27 +428,19 @@ onNotification(`El número de destinación "${formData.numero_destinacion}" ya e
       letterSpacing: "0.5px",
     }),
   };
-  const impFiltradas = importaciones.filter((i) => {
-    const t = busqueda.toLowerCase();
-    
-    const porDestinacion = i.numero_destinacion?.toLowerCase().includes(t);
-    
-    const porCliente = i.cliente_nombre?.toLowerCase().includes(t) || 
-                       i.cliente?.toLowerCase().includes(t);
-    
-    const porOficializacion = i.oficializacion?.toLowerCase().includes(t);
+const impFiltradas = importaciones.filter(i => {
+  const t = busqueda.toLowerCase();
+  const coincideBusqueda = 
+    i.numero_destinacion?.toLowerCase().includes(t) ||
+    i.cliente_nombre?.toLowerCase().includes(t) ||
+    i.cliente?.toLowerCase().includes(t) ||
+    i.oficializacion?.toLowerCase().includes(t);
 
-    return porDestinacion || porCliente || porOficializacion;
-  });
+  const coincideEstado =
+    filtroEstado === "Todas" ? true : i.estado === filtroEstado;
 
-  const verificarDestinacionDuplicada = (numero) => {
-    return importaciones.some(
-      (imp) =>
-        imp.numero_destinacion?.toLowerCase() === numero.toLowerCase() &&
-        imp.id !== selectedId
-    );
-  };
-  
+  return coincideBusqueda && coincideEstado && (mostrarBaja ? true : !i.baja);
+});
 
   return (
     <div style={styles.container}>
@@ -463,7 +470,72 @@ onNotification(`El número de destinación "${formData.numero_destinacion}" ya e
               <i className="fa-solid fa-plus"></i>Registrar
             </button>
           </div>
+          <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "15px", flexWrap: "wrap" }}>
+          <div
+          
+  onClick={() => setMostrarBaja(!mostrarBaja)}
+ style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", userSelect: "none" }}
+>
+  <div style={{
+    width: "44px",
+    height: "24px",
+    backgroundColor: mostrarBaja ? "#3182ce" : "#cbd5e0",
+    borderRadius: "12px",
+    position: "relative",
+    transition: "background-color 0.3s ease",
+    border: `2px solid ${mostrarBaja ? "#2b6cb0" : "#a0aec0"}`,
+    flexShrink: 0,
+  }}>
+    <div style={{
+      width: "16px",
+      height: "16px",
+      backgroundColor: "white",
+      borderRadius: "50%",
+      position: "absolute",
+      top: "2px",
+      left: mostrarBaja ? "22px" : "2px",
+      transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+    }}/>
+  </div>
+  <span style={{
+    fontSize: "13px",
+    color: mostrarBaja ? "#2b6cb0" : "#718096",
+    fontWeight: mostrarBaja ? "600" : "400",
+    transition: "color 0.3s",
+  }}>
+    Mostrar dadas de baja
+  </span>
 
+</div>
+<div style={{ display: "flex", gap: "8px" }}>
+            {[
+              { value: "Todas", label: "Todas" },
+              { value: "Inicializada", label: "Inicializadas" },
+              { value: "En Proceso", label: "En Proceso" },
+              { value: "Finalizada", label: "Finalizadas" },
+            ].map((op) => (
+              <button
+                key={op.value}
+                onClick={() => setFiltroEstado(op.value)}
+                style={{
+                  padding: "6px 14px",
+                  borderRadius: "20px",
+                  border: `1px solid ${filtroEstado === op.value ? "#3182ce" : "#cbd5e0"}`,
+                  backgroundColor:
+                    filtroEstado === op.value ? "#ebf4ff" : "transparent",
+                  color: filtroEstado === op.value ? "#2b6cb0" : "#718096",
+                  fontWeight: filtroEstado === op.value ? "600" : "400",
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "all 0.2s",
+                }}
+              >
+                {op.label}
+              </button>
+            ))}
+          </div>
+</div>
           {impFiltradas.map((imp) => (
             <div key={imp.id} style={styles.card}>
               <div
@@ -551,7 +623,7 @@ onNotification(`El número de destinación "${formData.numero_destinacion}" ya e
                   style={styles.btnAction("#3182ce")}
                   onClick={() => handleVerDetalle(imp)}
                 >
-                  <i className="fa-solid fa-magnifying-glass"></i>
+                  <i className="fa-solid fa-eye"></i>
                 </button>
               </div>
             </div>
@@ -1113,14 +1185,14 @@ onNotification(`El número de destinación "${formData.numero_destinacion}" ya e
                 {!isReadOnly && (
                   <div
                     onDragOver={(e) => e.preventDefault()}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const file = e.dataTransfer.files[0];
-                      if (file) {
-                        setFilesToUpload(prev => [...prev, ...droppedFiles]);
-                        onNotification(`Archivo "${file.name}" preparado para subir.`, "success");
-                      }
-                    }}
+                   onDrop={(e) => {
+  e.preventDefault();
+  const droppedFiles = Array.from(e.dataTransfer.files); 
+  if (droppedFiles.length > 0) {
+    setFilesToUpload(prev => [...prev, ...droppedFiles]);
+    onNotification(`${droppedFiles.length} archivo(s) preparado(s).`, "success");
+  }
+}}
                     style={{
                       display: "flex",
                       flexDirection: "column",

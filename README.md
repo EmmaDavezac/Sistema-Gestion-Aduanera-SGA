@@ -202,7 +202,7 @@ python manage.py runserver
 ```bash
 cd frontend/
 npm install
-cp .env.example .env          # completar VITE_API_URL si es necesario
+cp .env.example .env         
 npm run dev
 ```
 

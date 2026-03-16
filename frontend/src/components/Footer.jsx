@@ -22,7 +22,7 @@ const Footer = () => {
                 <div style={styles.column}>
                     <span style={styles.sectionTitle}>Recursos</span>
                     <a 
-                        href="https://docs.google.com/document/d/12aJOwU3JYhX1uLXg5hehFBLtiAlmq7Fd/edit?usp=sharing&ouid=113096586242877299094&rtpof=true&sd=true" 
+                        href="https://github.com/EmmaDavezac/Sistema-Gestion-Aduanera-SGA/tree/ffa1d45fd0cc6811aa1b8cd39e8e03cd728854b3/Docs" 
                         style={styles.resourceLink}
                     >
                         <i className="fa-solid fa-book-open" style={{ marginRight: '8px' }}></i>
@@ -41,7 +41,14 @@ const Footer = () => {
                             <i className="fa-solid fa-envelope" ></i>
                             lucianodavezac@gmail.com
                         </motion.a>
-                        
+                        <motion.a 
+                            whileHover={ {x: 5, color: '#333'} }
+                            href="https://github.com/EmmaDavezac" 
+                            style={styles.contactLink}
+                        >
+                            <i className="fa-brands fa-github" ></i>
+                            EmmaDavezac
+                        </motion.a>
                         <motion.a 
                             whileHover={{ x: 5, color: '#25D366' }}
                             href="https://wa.me/543438471858" 
@@ -58,7 +65,7 @@ const Footer = () => {
 
             <div style={styles.bottomBar}>
                 <div style={styles.credits}>
-                    Desarrollado con <i className="fa-solid fa-heart"></i> por <span style={styles.devName}>Emmanuel Davezac, Nicolas Villanueva y Franco Rodriguez</span>
+                    Desarrollado con <i className="fa-solid fa-heart"></i> por <span style={styles.devName}>Emmanuel Davezac</span>
                 </div>
                 <div style={styles.versionGroup}>
                     <span>© {year} Todos los derechos reservados</span>

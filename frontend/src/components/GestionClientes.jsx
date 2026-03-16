@@ -10,7 +10,7 @@ import {
 } from "../api/api";
 import validarCUIT from "../utils/validaciones";
 import SkeletonTable from "./SkeletonTable";
-const GestionClientes = ({ onNotification }) => {
+const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened })  => {
   const [clientes, setClientes] = useState([]);
   const [archivos, setArchivos] = useState([]);
   const [busqueda, setBusqueda] = useState("");
@@ -20,8 +20,8 @@ const GestionClientes = ({ onNotification }) => {
   const [fileToUpload, setFileToUpload] = useState(null);
   const [loading, setLoading] = useState(true);
   const isAdmin = localStorage.getItem("isAdmin") === "true";
-  const today = new Date().toISOString().split('T')[0];
-
+  const today = new Date().toISOString().split("T")[0];
+  const [mostrarBaja, setMostrarBaja] = useState(false);
   const cargadoRef = useRef(false);
 
   const [formData, setFormData] = useState({
@@ -44,7 +44,7 @@ const GestionClientes = ({ onNotification }) => {
 
       if (clienteSeleccionado) {
         const actualizado = c.find(
-          (item) => item.cuit === clienteSeleccionado.cuit
+          (item) => item.cuit === clienteSeleccionado.cuit,
         );
         if (actualizado) {
           setClienteSeleccionado(actualizado);
@@ -59,7 +59,13 @@ const GestionClientes = ({ onNotification }) => {
       setLoading(false);
     }
   }, [clienteSeleccionado?.cuit]);
-
+useEffect(() => {
+  if (autoOpenForm) {
+    setView("form");
+    setIsEditing(false);
+    onFormOpened?.();
+  }
+}, [autoOpenForm]);
   useEffect(() => {
     if (!cargadoRef.current) {
       cargarDatos();
@@ -96,11 +102,12 @@ const GestionClientes = ({ onNotification }) => {
     }
   };
 
-  const clientesFiltrados = clientes.filter(
-    (c) =>
+  const clientesFiltrados = clientes.filter((c) => {
+    const coincideBusqueda =
       c.cuit.toLowerCase().includes(busqueda.toLowerCase()) ||
-      c.nombre.toLowerCase().includes(busqueda.toLowerCase())
-  );
+      c.nombre.toLowerCase().includes(busqueda.toLowerCase());
+    return coincideBusqueda && (mostrarBaja ? true : !c.baja);
+  });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -111,8 +118,8 @@ const GestionClientes = ({ onNotification }) => {
     }
     if (!esFechaValida(formData.fecha_inicio_actividad)) {
       onNotification(
-        "La fecha de inicio de actividad no puede ser mayor a la fecha actual.", 
-        "error"
+        "La fecha de inicio de actividad no puede ser mayor a la fecha actual.",
+        "error",
       );
       return;
     }
@@ -156,34 +163,36 @@ const GestionClientes = ({ onNotification }) => {
 
   const esFechaValida = (fechaInput) => {
     const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0); 
-    
+    hoy.setHours(0, 0, 0, 0);
+
     const fechaSeleccionada = new Date(fechaInput);
-    fechaSeleccionada.setMinutes(fechaSeleccionada.getMinutes() + fechaSeleccionada.getTimezoneOffset());
+    fechaSeleccionada.setMinutes(
+      fechaSeleccionada.getMinutes() + fechaSeleccionada.getTimezoneOffset(),
+    );
     fechaSeleccionada.setHours(0, 0, 0, 0);
-  
+
     return fechaSeleccionada <= hoy;
   };
 
   const volverALista = (saltarConfirmacion = false) => {
     if (saltarConfirmacion || window.confirm("¿Desea volver al listado?")) {
-        setClienteSeleccionado(null);
-        setIsEditing(false);
-        setView("list");
-        setFileToUpload(null);
-        setFormData({
-            cuit: "",
-            nombre: "",
-            domicilio: "",
-            telefono_1: "",
-            telefono_2: "",
-            fecha_inicio_actividad: "",
-            observaciones: "",
-            baja: false,
-        });
-        window.scrollTo(0, 0);
+      setClienteSeleccionado(null);
+      setIsEditing(false);
+      setView("list");
+      setFileToUpload(null);
+      setFormData({
+        cuit: "",
+        nombre: "",
+        domicilio: "",
+        telefono_1: "",
+        telefono_2: "",
+        fecha_inicio_actividad: "",
+        observaciones: "",
+        baja: false,
+      });
+      window.scrollTo(0, 0);
     }
-};
+  };
 
   const styles = {
     container: {
@@ -360,6 +369,48 @@ const GestionClientes = ({ onNotification }) => {
               <i className="fa-solid fa-plus"></i>Registrar
             </button>
           </div>
+     <div
+  onClick={() => setMostrarBaja(!mostrarBaja)}
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    cursor: "pointer",
+    userSelect: "none",
+    marginBottom: "15px",
+  }}
+>
+  <div style={{
+    width: "44px",
+    height: "24px",
+    backgroundColor: mostrarBaja ? "#3182ce" : "#cbd5e0",
+    borderRadius: "12px",
+    position: "relative",
+    transition: "background-color 0.3s ease",
+    border: `2px solid ${mostrarBaja ? "#2b6cb0" : "#a0aec0"}`,
+    flexShrink: 0,
+  }}>
+    <div style={{
+      width: "16px",
+      height: "16px",
+      backgroundColor: "white",
+      borderRadius: "50%",
+      position: "absolute",
+      top: "2px",
+      left: mostrarBaja ? "22px" : "2px",
+      transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+    }}/>
+  </div>
+  <span style={{
+    fontSize: "13px",
+    color: mostrarBaja ? "#2b6cb0" : "#718096",
+    fontWeight: mostrarBaja ? "600" : "400",
+    transition: "color 0.3s",
+  }}>
+    Mostrar inactivos
+  </span>
+</div>
 
           {clientesFiltrados.map((c) => (
             <div key={c.cuit} style={styles.card}>
@@ -433,7 +484,7 @@ const GestionClientes = ({ onNotification }) => {
                   style={styles.btnAction("#3182ce")}
                   onClick={() => verMasInfo(c)}
                 >
-                  <i className="fa-solid fa-magnifying-glass"></i>
+                  <i className="fa-solid fa-eye"></i>
                 </button>
               </div>
             </div>
@@ -490,8 +541,6 @@ const GestionClientes = ({ onNotification }) => {
           </button>
 
           <div style={styles.card}>
-           
-
             <form
               onSubmit={handleSubmit}
               style={{
@@ -617,7 +666,7 @@ const GestionClientes = ({ onNotification }) => {
                     fontSize: "16px",
                   }}
                 >
-                <i className="fa-solid fa-floppy-disk"></i> Guardar
+                  <i className="fa-solid fa-floppy-disk"></i> Guardar
                 </button>
               </div>
             </form>
@@ -790,7 +839,9 @@ const GestionClientes = ({ onNotification }) => {
 
                 {isAdmin && (
                   <div style={{ gridColumn: "1 / -1" }}>
-                    <label style={styles.label}>Estado Lógico del Cliente</label>
+                    <label style={styles.label}>
+                      Estado Lógico del Cliente
+                    </label>
                     <div
                       style={{
                         display: "flex",

@@ -320,7 +320,7 @@ const cerrarModal = () => {
     onClick={() => handleVerDetalle(a)}
     title="Ver Detalle"
   >
-    <i className="fa-solid fa-magnifying-glass"></i>
+    <i className="fa-solid fa-eye"></i>
   </button>
                   <button
                     style={styles.btnDelete}

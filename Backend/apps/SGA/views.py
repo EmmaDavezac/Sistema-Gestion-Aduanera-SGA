@@ -6,7 +6,7 @@ from captcha.models import CaptchaStore
 from captcha.helpers import captcha_image_url
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework_simplejwt.views import TokenObtainPairView
-
+from .permissions import SoloAdminBajaAlta, SoloAdmin, SoloAdminEscritura
 from datetime import date, timedelta
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -25,13 +25,37 @@ from .serializers import (
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [SoloAdmin] 
+    
 
 class ClienteViewSet(viewsets.ModelViewSet):
     queryset = Cliente.objects.all() 
     serializer_class = ClienteSerializer
     lookup_field = 'cuit'
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SoloAdminBajaAlta] 
+    
+    def partial_update(self, request, *args, **kwargs):
+        if 'baja' in request.data and request.data['baja'] == True:
+            cliente = self.get_object()
+            
+            tiene_importaciones = Importacion.objects.filter(
+                cliente=cliente,
+                baja=False
+            ).exists()
+            
+            tiene_exportaciones = Exportacion.objects.filter(
+                cliente=cliente,
+                baja=False
+            ).exists()
+            
+            if tiene_importaciones or tiene_exportaciones:
+                return Response(
+                    {"error": "No se puede dar de baja al cliente porque tiene operaciones activas."},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+        
+        kwargs['partial'] = True
+        return super().update(request, *args, **kwargs)
 
     @action(detail=False, methods=['get'])
     def todos(self, request):
@@ -89,21 +113,21 @@ class ArchivoViewSet(viewsets.ModelViewSet):
             {"error": "El archivo físico no se encuentra en el servidor"}, 
             status=status.HTTP_404_NOT_FOUND
         )
-
+  
 class AduanaViewSet(viewsets.ModelViewSet):
     queryset = Aduana.objects.all()
     serializer_class = AduanaSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SoloAdminEscritura]
 
 class ImportacionViewSet(viewsets.ModelViewSet):
     queryset = Importacion.objects.all()
     serializer_class = ImportacionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SoloAdminBajaAlta]
 
 class ExportacionViewSet(viewsets.ModelViewSet):
     queryset = Exportacion.objects.all()
     serializer_class = ExportacionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated, SoloAdminBajaAlta]
 
     @action(detail=False, methods=['get'])
     def proximas_a_vencer(self, request):

@@ -216,8 +216,7 @@ const Profile = ({ onNotification }) => {
           ) : (
             <>
               <button onClick={handleSave} style={styles.btnSave}>
-              <i className="fa-solid fa-floppy-disk"></i> Guardar Todos
-                    los Cambios
+              <i className="fa-solid fa-floppy-disk"></i> Guardar
               </button>
               <button onClick={handleCancel} style={styles.btnCancel}>
                 Cancelar

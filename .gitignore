@@ -1,1 +1,75 @@
+# ── Variables de entorno ───────────────────────────────────────────────────────
 .env
+.env.local
+.env.*.local
+
+# ── Python / Django ────────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Entorno virtual
+venv/
+env/
+ENV/
+.venv/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+
+# Migraciones (opcional — comentar si querés versionar las migraciones)
+# */migrations/
+
+# ── Node / React / Vite ────────────────────────────────────────────────────────
+node_modules/
+dist/
+dist-ssr/
+*.local
+.cache/
+
+# Vite
+vite.config.js.timestamp-*
+
+# ── Docker ─────────────────────────────────────────────────────────────────────
+# No ignorar docker-compose.yml ni Dockerfile
+# Solo ignorar overrides locales
+docker-compose.override.yml
+
+# ── IDEs y editores ────────────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Testing ────────────────────────────────────────────────────────────────────
+.coverage
+htmlcov/
+.pytest_cache/
+.tox/
+
+# ── Logs ───────────────────────────────────────────────────────────────────────
+*.log
+logs/

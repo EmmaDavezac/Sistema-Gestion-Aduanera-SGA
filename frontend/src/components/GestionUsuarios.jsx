@@ -9,6 +9,8 @@ const GestionUsuarios = ({ onNotification }) => {
   const [selectedId, setSelectedId] = useState(null);
   const [busqueda, setBusqueda] = useState("");
   const [isReadOnly, setIsReadOnly] = useState(true);
+  const [mostrarInactivos, setMostrarInactivos] = useState(false);
+  const [filtroRol, setFiltroRol] = useState("todos");
   const [formData, setFormData] = useState({
     username: "",
     first_name: "",
@@ -41,16 +43,23 @@ const GestionUsuarios = ({ onNotification }) => {
     }
   }, [cargarUsuarios]);
 
-  const usuariosFiltrados = usuarios.filter((u) => {
-    const termino = busqueda.toLowerCase();
-    
-    const porUsername = u.username?.toLowerCase().includes(termino);
-    const porNombre = u.first_name?.toLowerCase().includes(termino);
-    const porApellido = u.last_name?.toLowerCase().includes(termino);
-    const porEmail = u.email?.toLowerCase().includes(termino);
+ const usuariosFiltrados = usuarios.filter((u) => {
+  const termino = busqueda.toLowerCase();
+  const coincideBusqueda =
+    u.username?.toLowerCase().includes(termino) ||
+    u.first_name?.toLowerCase().includes(termino) ||
+    u.last_name?.toLowerCase().includes(termino) ||
+    u.email?.toLowerCase().includes(termino);
 
-    return porUsername || porNombre || porApellido || porEmail;
-  });
+  const coincideEstado = mostrarInactivos ? true : u.is_active;
+
+  const coincideRol =
+    filtroRol === "todos" ? true :
+    filtroRol === "admin" ? u.is_staff :
+    !u.is_staff;
+
+  return coincideBusqueda && coincideEstado && coincideRol;
+});
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -75,34 +84,35 @@ const GestionUsuarios = ({ onNotification }) => {
   };
 
   const volverALista = (saltarConfirmacion) => {
-    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?"))
-   { setSelectedId(null);
-    setIsEditing(false);
-    setView("list");
-    setFormData({
-      username: "",
-      first_name: "",
-      last_name: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      is_staff: false,
-      is_active: true,
-    });}
+    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?")) {
+      setSelectedId(null);
+      setIsEditing(false);
+      setView("list");
+      setFormData({
+        username: "",
+        first_name: "",
+        last_name: "",
+        email: "",
+        password: "",
+        confirmPassword: "",
+        is_staff: false,
+        is_active: true,
+      });
+    }
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     const payload = {
-      username: formData.username, 
+      username: formData.username,
       first_name: formData.first_name,
-      last_name: formData.last_name, 
+      last_name: formData.last_name,
       email: formData.email,
       is_staff: formData.is_staff,
       is_active: formData.is_active,
     };
     const tienePassword = formData.password && formData.password.trim() !== "";
-  
+
     if (!isEditing || tienePassword) {
       if (formData.password !== formData.confirmPassword) {
         onNotification("Las contraseñas no coinciden", "error");
@@ -110,41 +120,46 @@ const GestionUsuarios = ({ onNotification }) => {
       }
       payload.password = formData.password;
     }
-  
+
     try {
       if (isEditing) {
         await updateUsuario(selectedId, payload);
         onNotification("Usuario actualizado con éxito", "success");
       } else {
         if (!payload.password) {
-          onNotification("La contraseña es obligatoria para nuevos usuarios", "error");
+          onNotification(
+            "La contraseña es obligatoria para nuevos usuarios",
+            "error",
+          );
           return;
         }
         await createUsuario(payload);
         onNotification("Usuario creado con éxito", "success");
       }
-  
+
       volverALista(true);
       window.scrollTo({ top: 0, behavior: "smooth" });
       cargarUsuarios();
     } catch (err) {
       console.error("Error del servidor:", err.response?.data);
-      const serverMsg = err.response?.data?.username?.[0] || "Error al guardar el usuario.";
+      const serverMsg =
+        err.response?.data?.username?.[0] || "Error al guardar el usuario.";
       onNotification(serverMsg, "error");
     }
   };
 
   const handleResetPassword = () => {
     try {
-        onNotification(
-            "Solicitud de restablecimiento enviada (ESTA ALERTA SOLO ES DE DEMOSTRACION)",
-            "success"
-          );
+      onNotification(
+        "Solicitud de restablecimiento enviada (ESTA ALERTA SOLO ES DE DEMOSTRACION)",
+        "success",
+      );
+    } catch (err) {
+      onNotification(
+        "No se pudo enviar la solicitud de restablecimiento.",
+        "error",
+      );
     }
-    catch (err) {
-        onNotification("No se pudo enviar la solicitud de restablecimiento.", "error");
-    }
-   
   };
 
   const styles = {
@@ -189,9 +204,9 @@ const GestionUsuarios = ({ onNotification }) => {
       padding: "10px",
       border: "1px solid #ddd",
       borderRadius: "6px",
-      width: "100%", 
+      width: "100%",
       marginTop: "5px",
-      boxSizing: "border-box", 
+      boxSizing: "border-box",
       backgroundColor: isReadOnly ? "#f8fafc" : "#fff",
       fontSize: "14px",
     },
@@ -245,7 +260,7 @@ const GestionUsuarios = ({ onNotification }) => {
     switchTrack: (
       active,
       colorActive = "#38a169",
-      colorInactive = "#cbd5e0"
+      colorInactive = "#cbd5e0",
     ) => ({
       width: "50px",
       height: "26px",
@@ -259,7 +274,7 @@ const GestionUsuarios = ({ onNotification }) => {
     switchThumb: (
       active,
       colorActive = "#38a169",
-      colorInactive = "#718096"
+      colorInactive = "#718096",
     ) => ({
       width: "18px",
       height: "18px",
@@ -292,9 +307,9 @@ const GestionUsuarios = ({ onNotification }) => {
     passwordGroup: {
       passwordGroup: {
         display: "flex",
-        flexDirection: "column", 
+        flexDirection: "column",
         gap: "15px",
-        width: "100%"
+        width: "100%",
       },
     },
   };
@@ -336,7 +351,66 @@ const GestionUsuarios = ({ onNotification }) => {
               <i className="fa-solid fa-plus"></i> Registrar
             </button>
           </div>
+<div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "15px", flexWrap: "wrap" }}>
+  
+  <div
+    onClick={() => setMostrarInactivos(!mostrarInactivos)}
+    style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", userSelect: "none" }}
+  >
+    <div style={{
+      width: "44px", height: "24px",
+      backgroundColor: mostrarInactivos ? "#3182ce" : "#cbd5e0",
+      borderRadius: "12px", position: "relative",
+      transition: "background-color 0.3s ease",
+      border: `2px solid ${mostrarInactivos ? "#2b6cb0" : "#a0aec0"}`,
+      flexShrink: 0,
+    }}>
+      <div style={{
+        width: "16px", height: "16px",
+        backgroundColor: "white", borderRadius: "50%",
+        position: "absolute", top: "2px",
+        left: mostrarInactivos ? "22px" : "2px",
+        transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+      }}/>
+    </div>
+    <span style={{
+      fontSize: "13px",
+      color: mostrarInactivos ? "#2b6cb0" : "#718096",
+      fontWeight: mostrarInactivos ? "600" : "400",
+      transition: "color 0.3s",
+    }}>
+      Mostrar inactivos
+    </span>
+  </div>
 
+  <div style={{ display: "flex", gap: "8px" }}>
+    {[
+      { value: "todos", label: "Todos" },
+      { value: "admin", label: "Administradores" },
+      { value: "usuario", label: "Usuarios" },
+    ].map((op) => (
+      <button
+        key={op.value}
+        onClick={() => setFiltroRol(op.value)}
+        style={{
+          padding: "6px 14px",
+          borderRadius: "20px",
+          border: `1px solid ${filtroRol === op.value ? "#3182ce" : "#cbd5e0"}`,
+          backgroundColor: filtroRol === op.value ? "#ebf4ff" : "transparent",
+          color: filtroRol === op.value ? "#2b6cb0" : "#718096",
+          fontWeight: filtroRol === op.value ? "600" : "400",
+          fontSize: "13px",
+          cursor: "pointer",
+          transition: "all 0.2s",
+        }}
+      >
+        {op.label}
+      </button>
+    ))}
+  </div>
+
+</div>
           {loading ? (
             <SkeletonTable rows={4} />
           ) : usuariosFiltrados.length === 0 ? (
@@ -439,8 +513,8 @@ const GestionUsuarios = ({ onNotification }) => {
                           className="fa-solid fa-id-card"
                           style={{ marginRight: "5px" }}
                         ></i>
-                       {u.first_name || "Sin Nombre"} {" "}
-                       {u.last_name || "Sin Apellido"} 
+                        {u.first_name || "Sin Nombre"}{" "}
+                        {u.last_name || "Sin Apellido"}
                       </p>
                     </div>
                   </div>
@@ -450,7 +524,7 @@ const GestionUsuarios = ({ onNotification }) => {
                       style={styles.btnAction("#3182ce")}
                       onClick={() => handleVerDetalle(u)}
                     >
-                      <i className="fa-solid fa-magnifying-glass"></i>
+                      <i className="fa-solid fa-eye"></i>
                     </button>
                   </div>
                 </div>
@@ -479,7 +553,7 @@ const GestionUsuarios = ({ onNotification }) => {
             }}
           >
             <button
-             onClick={() => volverALista(false)}
+              onClick={() => volverALista(false)}
               style={{
                 border: "none",
                 background: "none",
@@ -515,18 +589,23 @@ const GestionUsuarios = ({ onNotification }) => {
             )}
           </div>
           <div style={styles.card}>
-           
-
             <form
               onSubmit={handleSubmit}
               style={{
-                display: "flex", 
+                display: "flex",
                 flexDirection: "column",
                 gap: "20px",
                 width: "100%",
               }}
             >
-             <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "5px",
+                  width: "100%",
+                }}
+              >
                 <label
                   style={{
                     fontWeight: "600",
@@ -546,7 +625,9 @@ const GestionUsuarios = ({ onNotification }) => {
                   required
                 />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+              <div
+                style={{ display: "flex", flexDirection: "column", gap: "5px" }}
+              >
                 <label
                   style={{
                     fontWeight: "600",
@@ -566,7 +647,14 @@ const GestionUsuarios = ({ onNotification }) => {
                   required
                 />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "5px",
+                  width: "100%",
+                }}
+              >
                 <label
                   style={{
                     fontWeight: "600",
@@ -586,29 +674,37 @@ const GestionUsuarios = ({ onNotification }) => {
                   required
                 />
               </div>
-              <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "5px",
+                  width: "100%",
+                }}
+              >
                 <label
                   style={{
-                    fontWeight: "600", fontSize: "13px", color: "#4a5568"
+                    fontWeight: "600",
+                    fontSize: "13px",
+                    color: "#4a5568",
                   }}
                 >
                   Correo Electrónico *
                 </label>
-              
-                  <input
-                    name="email"
-                    type="email"
-                    style={styles.formInput}
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    placeholder="correo@ejemplo.com"
-                    disabled={isReadOnly}
-                    required
-                  />
-                  <span style={{ fontSize: "11px", color: "#a0aec0" }}>
-                    Se utilizará para notificaciones del sistema.
-                  </span>
-     
+
+                <input
+                  name="email"
+                  type="email"
+                  style={styles.formInput}
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  placeholder="correo@ejemplo.com"
+                  disabled={isReadOnly}
+                  required
+                />
+                <span style={{ fontSize: "11px", color: "#a0aec0" }}>
+                  Se utilizará para notificaciones del sistema.
+                </span>
               </div>
               <div style={{ gridColumn: "1 / -1" }}>
                 <label
@@ -624,49 +720,75 @@ const GestionUsuarios = ({ onNotification }) => {
                 </label>
 
                 {!isEditing ? (
-                    <div style={styles.passwordGroup}>
-                 <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
-                    <input
-                      name="password"
-                      type="password"
-                      style={styles.formInput}
-                      value={formData.password}
-                      onChange={handleInputChange}
-                      required
-                      placeholder="Definir contraseña de acceso..."
-                    />
-                    <small
+                  <div style={styles.passwordGroup}>
+                    <div
                       style={{
-                        color: "#718096",
-                        fontSize: "11px",
-                        marginTop: "4px",
-                        display: "block",
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "5px",
+                        width: "100%",
                       }}
                     >
-                      Mínimo 8 caracteres. Se recomienda combinar letras y
-                      números.
-                    </small>
+                      <input
+                        name="password"
+                        type="password"
+                        style={styles.formInput}
+                        value={formData.password}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="Definir contraseña de acceso..."
+                      />
+                      <small
+                        style={{
+                          color: "#718096",
+                          fontSize: "11px",
+                          marginTop: "4px",
+                          display: "block",
+                        }}
+                      >
+                        Mínimo 8 caracteres. Se recomienda combinar letras y
+                        números.
+                      </small>
+                    </div>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "5px",
+                        width: "100%",
+                      }}
+                    >
+                      <input
+                        name="confirmPassword"
+                        type="password"
+                        style={{
+                          ...styles.formInput,
+                          borderColor:
+                            formData.password !== formData.confirmPassword &&
+                            formData.confirmPassword
+                              ? "#e53e3e"
+                              : "#ddd",
+                        }}
+                        value={formData.confirmPassword}
+                        onChange={handleInputChange}
+                        required
+                        placeholder="Repetir contraseña..."
+                      />
+                      {formData.password !== formData.confirmPassword &&
+                        formData.confirmPassword && (
+                          <small
+                            style={{
+                              color: "#e53e3e",
+                              fontSize: "11px",
+                              display: "block",
+                              marginTop: "4px",
+                            }}
+                          >
+                            Las contraseñas no coinciden.
+                          </small>
+                        )}
+                    </div>
                   </div>
-                  <div style={{ display: "flex", flexDirection: "column", gap: "5px", width: "100%" }}>
-                  <input
-                    name="confirmPassword"
-                    type="password"
-                    style={{
-                      ...styles.formInput,
-                      borderColor: formData.password !== formData.confirmPassword && formData.confirmPassword ? "#e53e3e" : "#ddd"
-                    }}
-                    value={formData.confirmPassword}
-                    onChange={handleInputChange}
-                    required
-                    placeholder="Repetir contraseña..."
-                  />
-                  {formData.password !== formData.confirmPassword && formData.confirmPassword && (
-                    <small style={{ color: "#e53e3e", fontSize: "11px", display: "block", marginTop: "4px" }}>
-                      Las contraseñas no coinciden.
-                    </small>
-                  )}
-                </div>
-                </div>
                 ) : (
                   <div
                     style={{
@@ -720,7 +842,7 @@ const GestionUsuarios = ({ onNotification }) => {
                 style={{
                   gridColumn: "1 / -1",
                   display: "flex",
-                  flexWrap: "wrap", 
+                  flexWrap: "wrap",
                   gap: "20px",
                   backgroundColor: "#f8fafc",
                   padding: "15px",
@@ -785,13 +907,13 @@ const GestionUsuarios = ({ onNotification }) => {
                       <div
                         style={styles.switchTrack(
                           formData.is_active,
-                          "#38a169"
+                          "#38a169",
                         )}
                       >
                         <div
                           style={styles.switchThumb(
                             formData.is_active,
-                            "#38a169"
+                            "#38a169",
                           )}
                         ></div>
                       </div>
@@ -799,7 +921,7 @@ const GestionUsuarios = ({ onNotification }) => {
                         <span
                           style={styles.statusLabel(
                             formData.is_active,
-                            "#2f855a"
+                            "#2f855a",
                           )}
                         >
                           {formData.is_active ? "Activo" : "Inactivo"}
@@ -813,32 +935,22 @@ const GestionUsuarios = ({ onNotification }) => {
                 )}
               </div>
 
-
-
-
               {!isReadOnly && (
-  <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
-    <button type="submit"   style={{
-                    ...styles.btnGreen,
-                    width: "100%",
-                    justifyContent: "center",
-                    padding: "15px",
-                    fontSize: "16px",
-                  }}>
-      <i className="fa-solid fa-floppy-disk"></i> Guardar
-    </button>
-  </div>
-)}
-
-
-
-
-
-
-
-
-            
-               
+                <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
+                  <button
+                    type="submit"
+                    style={{
+                      ...styles.btnGreen,
+                      width: "100%",
+                      justifyContent: "center",
+                      padding: "15px",
+                      fontSize: "16px",
+                    }}
+                  >
+                    <i className="fa-solid fa-floppy-disk"></i> Guardar
+                  </button>
+                </div>
+              )}
             </form>
           </div>
         </div>

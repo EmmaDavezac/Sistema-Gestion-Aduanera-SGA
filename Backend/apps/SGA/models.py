@@ -119,5 +119,12 @@ class Archivo(models.Model):
 
     def __str__(self):
         return self.nombre
-    
+
+from django.db.models.signals import post_delete
+from django.dispatch import receiver
+
+@receiver(post_delete, sender=Archivo)
+def eliminar_archivo_fisico(sender, instance, **kwargs):
+    if instance.archivo and os.path.exists(instance.archivo.path):
+        os.remove(instance.archivo.path)
   
