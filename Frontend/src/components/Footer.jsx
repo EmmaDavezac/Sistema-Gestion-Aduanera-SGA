@@ -22,7 +22,7 @@ const Footer = () => {
                 <div style={styles.column}>
                     <span style={styles.sectionTitle}>Recursos</span>
                     <a 
-                        href="https://github.com/EmmaDavezac/Sistema-Gestion-Aduanera-SGA/tree/ffa1d45fd0cc6811aa1b8cd39e8e03cd728854b3/Docs" 
+                        href="https://github.com/EmmaDavezac/Sistema-Gestion-Aduanera-SGA/blob/main/Docs/ManualUsuario.pdf" 
                         style={styles.resourceLink}
                     >
                         <i className="fa-solid fa-book-open" style={{ marginRight: '8px' }}></i>
@@ -65,7 +65,7 @@ const Footer = () => {
 
             <div style={styles.bottomBar}>
                 <div style={styles.credits}>
-                    Desarrollado con <i className="fa-solid fa-heart"></i> por <span style={styles.devName}>Emmanuel Davezac</span>
+                    Desarrollahttps://github.com/EmmaDavezac/Sistema-Gestion-Aduanera-SGA/blob/main/Docs/ManualUsuario.pdfdo con <i className="fa-solid fa-heart"></i> por <span style={styles.devName}>Emmanuel Davezac</span>
                 </div>
                 <div style={styles.versionGroup}>
                     <span>© {year} Todos los derechos reservados</span>
