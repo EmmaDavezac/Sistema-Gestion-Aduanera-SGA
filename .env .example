@@ -1,3 +1,24 @@
-EMAIL_HOST_USER= 
-EMAIL_HOST_PASSWORD=
-VITE_API_URL=http://localhost:8000
+//Este archivo es un ejemplo de cómo debe ser el archivo .env para que la aplicación funcione correctamente. 
+//No debe ser renombrado a .env, ya que el archivo .env es ignorado por git y no se subirá al repositorio. 
+//En su lugar, cada desarrollador debe crear su propio archivo .env basado en este ejemplo 
+// Para usar Gmail: habilita "Verificación en 2 pasos" y crea una contraseña de aplicación en Google Account > Seguridad > Contraseñas de aplicaciones.
+// Pon el email completo en EMAIL_HOST_USER y la contraseña de aplicación en EMAIL_HOST_PASSWORD.
+EMAIL_HOST_USER=tu_usuario@gmail.com
+EMAIL_HOST_PASSWORD=tu_contraseña_de_aplicación
+//URL del backend
+VITE_API_URL=http://localhost:8000  
+//Url del frontend
+FRONTEND_URL=http://localhost:5173
+//
+SECRET_KEY= SECRET_KEY
+DEBUG='True'
+CORS_ALLOWED_ORIGINS=http://localhost:5173
+
+
+// Configuración de la base de datos (ejemplo para sqlite, puedes cambiarlo a PostgreSQL o MySQL según tus necesidades)
+DB_ENGINE= django.db.backends.sqlite3
+DB_NAME= db.sqlite3
+DB_USER=
+DB_PASSWORD=
+DB_HOST=
+DB_PORT=

@@ -92,7 +92,7 @@ class Command(BaseCommand):
                                 </table>
                                 
                                 <div style="margin-top: 30px; text-align: center;">
-                                    <a href="http://localhost:5173" 
+                                    <a href="{settings.FRONTEND_URL}" 
                                        style="background-color: #0284c7; color: white; padding: 12px 25px; text-decoration: none; font-weight: bold; border-radius: 6px; display: inline-block;">
                                         Ir al Sistema de Gestión
                                     </a>

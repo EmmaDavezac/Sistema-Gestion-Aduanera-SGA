@@ -1,12 +1,15 @@
 import os
 from pathlib import Path
 from datetime import timedelta
-
+from dotenv import load_dotenv
+load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = 'django-insecure-cambiame-en-produccion'
-DEBUG = True
-ALLOWED_HOSTS = []
+SECRET_KEY = os.environ.get('SECRET_KEY')
+if not SECRET_KEY:
+    raise ValueError("SECRET_KEY no está definida en las variables de entorno")
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -23,7 +26,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware', 
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -54,16 +57,20 @@ TEMPLATES = [
 WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+        'ENGINE': os.environ.get('DB_ENGINE') or 'django.db.backends.sqlite3',
+        'NAME': os.environ.get('DB_NAME') or os.path.join(BASE_DIR, 'db.sqlite3'),
+        'USER': os.environ.get('DB_USER') or '',
+        'PASSWORD': os.environ.get('DB_PASSWORD') or '',
+        'HOST': os.environ.get('DB_HOST') or '',
+        'PORT': os.environ.get('DB_PORT') or '',
     }
 }
 
 AUTH_PASSWORD_VALIDATORS = [
-    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator',},
-    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',},
+    {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator', },
+    {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator', },
 ]
 
 LANGUAGE_CODE = 'es-es'
@@ -75,10 +82,7 @@ STATIC_URL = 'static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173", 
-    "http://localhost:4173",
-]
+CORS_ALLOWED_ORIGINS = os.environ.get('CORS_ALLOWED_ORIGINS', '').split(',')
 
 CORS_EXPOSE_HEADERS = [
     'Content-Disposition',
@@ -91,8 +95,8 @@ REST_FRAMEWORK = {
 }
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(hours=10),  
-    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),   
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=10),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'ROTATE_REFRESH_TOKENS': False,
     'BLACKLIST_AFTER_ROTATION': False,
     'ALGORITHM': 'HS256',
@@ -111,10 +115,11 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = f"SGA - Sistema de Gestión Aduanera <{EMAIL_HOST_USER}>"
+FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 
-CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge' 
-CAPTCHA_IMAGE_SIZE = (120, 45)      
-CAPTCHA_FONT_SIZE = 30               
-CAPTCHA_TIMEOUT = 10  
-CAPTCHA_NOISE_FUNCTIONS = []  
-CAPTCHA_LETTER_ROTATION = (-5, 5)               
+CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'
+CAPTCHA_IMAGE_SIZE = (120, 45)
+CAPTCHA_FONT_SIZE = 30
+CAPTCHA_TIMEOUT = 10
+CAPTCHA_NOISE_FUNCTIONS = []
+CAPTCHA_LETTER_ROTATION = (-5, 5)

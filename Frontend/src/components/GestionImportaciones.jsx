@@ -10,7 +10,7 @@ import {
   deleteArchivo,
 } from "../api/api";
 import SkeletonTable from "./SkeletonTable";
-import { verificarDestinacionDuplicada } from "../utils/validaciones";
+
 const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  => {
   const [importaciones, setImportaciones] = useState([]);
   const [clientes, setClientes] = useState([]);
@@ -35,11 +35,11 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
     divisa: "",
     numero_factura: "",
     pais_destino: "",
-    unitario_en_divisa: "",
+    unitario_en_divisa: 0,
     unidad: "",
-    cantidad_unidades: "",
-    fob_total_en_divisa: "",
-    fob_total_en_dolar: "",
+    cantidad_unidades: 0,
+    fob_total_en_divisa: 0,
+    fob_total_en_dolar: 0,
     numeracion: "",
     baja: false,
     aduana: "",
@@ -82,6 +82,7 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
       setArchivos(data);
     } catch (err) {
       console.error("Error al cargar archivos:", err);
+      onNotification("Error al cargar archivos: " + (err.response?.data?.detail || "Intente nuevamente"), "error");
     }
   }, []);
  
@@ -141,20 +142,22 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
       
       return;
     }
-    const esDuplicado = await verificarDestinacionDuplicada(
-    formData.numero_destinacion, 
-    isEditing ? selectedId : null 
-  );
+  const esDuplicado = importaciones.some(
+        (imp) =>
+          imp.numero_destinacion === formData.numero_destinacion &&
+          String(imp.id) !== String(selectedId),
+      );
 
   if (esDuplicado) {
     onNotification("El número de destinación ya pertenece a otra operación", "error");
     return; }
-    if (
-      !window.confirm(
-        `¿Desea ${isEditing ? "actualizar" : "registrar"} esta importación?`
-      )
-    )
-      return;
+     if (
+        !window.confirm(
+          `¿Desea ${isEditing ? "actualizar" : "registrar"} esta importación?`,
+        )
+      ) {
+        return;
+      }
     try {
       const dataToSend = {
         ...formData,
@@ -193,6 +196,7 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
           setFilesToUpload([]);
           onNotification(`${filesToUpload.length} archivos subidos con éxito`, "success");
         } catch (fileErr) {
+          console.error("Error al subir archivos:", fileErr);
           onNotification("Error al subir algunos archivos", "error");
         }
       }
@@ -224,6 +228,7 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
       cargarArchivos(selectedId);
       onNotification("Archivos subidos con éxito", "success");
     } catch (err) {
+      console.error("Error al subir archivos:", err.response?.data);
       onNotification("Error al subir archivos", "error");
     }
   };
@@ -234,6 +239,7 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
       await deleteArchivo(id);
       cargarArchivos(selectedId);
     } catch (err) {
+      console.error("Error al eliminar archivo:", err.response?.data);
       onNotification("Error al eliminar archivo: " + (err.response?.data?.detail || "Intente nuevamente"), "error");
     }
   };
@@ -253,6 +259,7 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
       setArchivos(data);
     } catch (err) {
       console.error(err);
+      onNotification("Error al cargar la información de la importación", "error");
     }
   };
 
@@ -757,23 +764,24 @@ const impFiltradas = importaciones.filter(i => {
                 <label style={styles.label}>N° Destinación *</label>
                 <input
                   name="numero_destinacion"
-                  value={formData.numero_destinacion}
+                  value={formData.numero_destinacion || ""}
                   onChange={handleInputChange}
                   style={styles.formInput}
                   disabled={isReadOnly}
                   required
+                  placeholder="Ej: 12345678"
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <label style={styles.label}>N° Factura *</label>
                 <input
-                  
                   name="numero_factura"
                   value={formData.numero_factura}
                   onChange={handleInputChange}
                   style={styles.formInput}
                   disabled={isReadOnly}
                   required
+                  placeholder="Ej: F123-45678"
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -784,6 +792,7 @@ const impFiltradas = importaciones.filter(i => {
                   onChange={handleInputChange}
                   style={styles.formInput}
                   disabled={isReadOnly}
+                  placeholder="Ej: Empresa XYZ S.A."
                 />
               </div>
 
@@ -842,6 +851,7 @@ const impFiltradas = importaciones.filter(i => {
                   onChange={handleInputChange}
                   style={styles.formInput}
                   disabled={isReadOnly}
+                  placeholder="Ej: Argentina, Buenos Aires"
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -852,6 +862,7 @@ const impFiltradas = importaciones.filter(i => {
                   onChange={handleInputChange}
                   style={styles.formInput}
                   disabled={isReadOnly}
+                  placeholder="Ej: Brasil"
                 />
               </div>
               <div style={{ display: "flex", flexDirection: "column" }}>
@@ -862,6 +873,7 @@ const impFiltradas = importaciones.filter(i => {
                   onChange={handleInputChange}
                   style={styles.formInput}
                   disabled={isReadOnly}
+                  placeholder="Ej: Buenos Aires"
                 />
               </div>
              
@@ -952,7 +964,7 @@ const impFiltradas = importaciones.filter(i => {
                   min="0"
                   name="fob_total_en_divisa"
                   value={formData.fob_total_en_divisa}
-                  onChange={handleInputChange}
+                  onChange={handleNumericChange}
                   style={styles.formInput}
                   disabled={isReadOnly}
                   required
@@ -965,7 +977,7 @@ const impFiltradas = importaciones.filter(i => {
                   min="0"
                   name="fob_total_en_dolar"
                   value={formData.fob_total_en_dolar}
-                  onChange={handleInputChange}
+                  onChange={handleNumericChange}
                   style={styles.formInput}
                   disabled={isReadOnly}
                   required
@@ -981,7 +993,7 @@ const impFiltradas = importaciones.filter(i => {
                   disabled={isReadOnly}
                   required
                 >
-                  <option value="">Condición de Venta...</option>
+                  <option value="">Seleccione Condición de Venta</option>
                   <option value="CFR">CFR</option>
                   <option value="CIF">CIF</option>
                   <option value="CIP">CIP</option>
@@ -1050,100 +1062,150 @@ const impFiltradas = importaciones.filter(i => {
                 </>
               )}
               {!isEditing && (
-  <div 
-    style={{ 
-      gridColumn: "1 / -1", 
-      marginTop: '20px',
-      marginBottom: '30px', 
-    }}
-  >
-    <div
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.currentTarget.style.backgroundColor = "#ebf4ff";
-        e.currentTarget.style.borderColor = "#3182ce";
-      }}
-      onDragLeave={(e) => {
-        e.currentTarget.style.backgroundColor = "#f8fafc";
-        e.currentTarget.style.borderColor = "#cbd5e0";
-      }}
-      onDrop={(e) => {
-        e.preventDefault();
-        const droppedFiles = Array.from(e.dataTransfer.files); 
-        if (droppedFiles.length > 0) {
-          setFilesToUpload(prev => [...prev, ...droppedFiles]);
-          onNotification(`${droppedFiles.length} archivo(s) preparado(s).`, "success");
-        }
-      }}
-      onClick={() => document.getElementById('file-input-main').click()}
-      style={{
-        display: 'flex', 
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '15px', 
-        backgroundColor: '#f8fafc', 
-        padding: '40px 20px', 
-        borderRadius: '12px',
-        border: '2px dashed #cbd5e0',
-        textAlign: 'center',
-        transition: 'all 0.2s ease',
-        cursor: 'pointer',
-        position: 'relative' 
-      }}
-    >
-      <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: '48px', color: '#3182ce' }}></i>
-      <div>
-        <p style={{ fontSize: '16px', fontWeight: '600', color: '#2d3748', margin: '0' }}>
-          Arrastra la documentación aquí
-        </p>
-        <p style={{ fontSize: '13px', color: '#718096', marginTop: '5px' }}>
-          O haz clic para seleccionar un archivo
-        </p>
-      </div>
+   <div
+                  style={{
+                    gridColumn: "1 / -1",
+                    marginBottom: "30px",
+                  }}
+                >
+                  <div style={styles.sectionTitle}>Documentación</div>
+                  <div
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = "#ebf4ff";
+                      e.currentTarget.style.borderColor = "#3182ce";
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f8fafc";
+                      e.currentTarget.style.borderColor = "#cbd5e0";
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const droppedFiles = Array.from(e.dataTransfer.files);
+                      if (droppedFiles.length > 0) {
+                        setFilesToUpload((prev) => [...prev, ...droppedFiles]);
+                        onNotification(
+                          `${droppedFiles.length} archivo(s) preparado(s).`,
+                          "success",
+                        );
+                      }
+                    }}
+                    onClick={() =>
+                      document.getElementById("file-input-main").click()
+                    }
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "15px",
+                      backgroundColor: "#f8fafc",
+                      padding: "40px 20px",
+                      borderRadius: "12px",
+                      border: "2px dashed #cbd5e0",
+                      textAlign: "center",
+                      transition: "all 0.2s ease",
+                      cursor: "pointer",
+                      position: "relative",
+                      marginTop: "20px",
+                    }}
+                  >
+                    <i
+                      className="fa-solid fa-cloud-arrow-up"
+                      style={{ fontSize: "48px", color: "#3182ce" }}
+                    ></i>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          color: "#2d3748",
+                          margin: "0",
+                        }}
+                      >
+                        Arrastra la documentación aquí
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "13px",
+                          color: "#718096",
+                          marginTop: "5px",
+                        }}
+                      >
+                        O haz clic para seleccionar un archivo
+                      </p>
+                    </div>
 
-      <input 
-  id="file-input-main"
-  type="file" 
-  multiple
-  onChange={(e) => {
-    const nuevosArchivos = Array.from(e.target.files);
-    setFilesToUpload((prev) => [...prev, ...nuevosArchivos]);
-  }} 
-  style={{ display: 'none' }} 
-/>
+                    <input
+                      id="file-input-main"
+                      type="file"
+                      multiple
+                      onChange={(e) => {
+                        const nuevosArchivos = Array.from(e.target.files);
+                        setFilesToUpload((prev) => [
+                          ...prev,
+                          ...nuevosArchivos,
+                        ]);
+                      }}
+                      style={{ display: "none" }}
+                    />
 
-{filesToUpload.length > 0 && (
-  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '15px', justifyContent: 'center' }}>
-    {filesToUpload.map((file, index) => (
-      <div 
-        key={index}
-        style={{ 
-          display: 'flex', alignItems: 'center', gap: '10px',
-          backgroundColor: '#fff', padding: '5px 15px', borderRadius: '20px',
-          border: '1px solid #e2e8f0', boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
-        }}
-      >
-        <span style={{ fontSize: '13px', color: '#2d3748' }}>
-          <i className="fa-solid fa-file-pdf" style={{ color: '#e53e3e', marginRight: '5px' }}></i> 
-          {file.name}
-        </span>
-        <button 
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            setFilesToUpload(filesToUpload.filter((_, i) => i !== index));
-          }} 
-          style={{ border: 'none', background: 'none', color: '#a0aec0', cursor: 'pointer' }}
-        >
-          <i className="fa-solid fa-circle-xmark"></i>
-        </button>
-      </div>
-    ))}
-  </div>
-)}
-    </div>
-  </div>
+                    {filesToUpload.length > 0 && (
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "10px",
+                          marginTop: "15px",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {filesToUpload.map((file, index) => (
+                          <div
+                            key={index}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              backgroundColor: "#fff",
+                              padding: "5px 15px",
+                              borderRadius: "20px",
+                              border: "1px solid #e2e8f0",
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                            }}
+                          >
+                            <span
+                              style={{ fontSize: "13px", color: "#2d3748" }}
+                            >
+                              <i
+                                className="fa-solid fa-file-pdf"
+                                style={{ color: "#e53e3e", marginRight: "5px" }}
+                              ></i>
+                              {file.name}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFilesToUpload(
+                                  filesToUpload.filter((_, i) => i !== index),
+                                );
+                              }}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                color: "#a0aec0",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <i className="fa-solid fa-circle-xmark"></i>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
 )}
               {!isReadOnly && (
                 <div
@@ -1168,77 +1230,166 @@ const impFiltradas = importaciones.filter(i => {
             </form>
 
             {isEditing && (
-              <div
+   <div
                 style={{
                   marginTop: "40px",
                   borderTop: "2px solid #eee",
                   paddingTop: "20px",
                 }}
               >
-                <h3 style={{ fontSize: "16px", marginBottom: "15px" }}>
-                  <i
-                    className="fa-solid fa-folder-open"
-                    style={{ color: "#3182ce", marginRight: "10px" }}
-                  ></i>
-                  Documentación
-                </h3>
+                <div style={styles.sectionTitle}>Documentación</div>
+                
                 {!isReadOnly && (
                   <div
-                    onDragOver={(e) => e.preventDefault()}
-                   onDrop={(e) => {
-  e.preventDefault();
-  const droppedFiles = Array.from(e.dataTransfer.files); 
-  if (droppedFiles.length > 0) {
-    setFilesToUpload(prev => [...prev, ...droppedFiles]);
-    onNotification(`${droppedFiles.length} archivo(s) preparado(s).`, "success");
-  }
-}}
+                    onDragOver={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.style.backgroundColor = "#ebf4ff";
+                      e.currentTarget.style.borderColor = "#3182ce";
+                    }}
+                    onDragLeave={(e) => {
+                      e.currentTarget.style.backgroundColor = "#f8fafc";
+                      e.currentTarget.style.borderColor = "#cbd5e0";
+                    }}
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      const droppedFiles = Array.from(e.dataTransfer.files);
+                      if (droppedFiles.length > 0) {
+                        setFilesToUpload((prev) => [...prev, ...droppedFiles]);
+                        onNotification(
+                          `${droppedFiles.length} archivo(s) preparado(s).`,
+                          "success",
+                        );
+                      }
+                    }}
+                    onClick={() =>
+                      document.getElementById("file-input-main").click()
+                    }
                     style={{
                       display: "flex",
                       flexDirection: "column",
-                      gap: "10px",
-                      marginBottom: "20px",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "15px",
                       backgroundColor: "#f8fafc",
-                      padding: "20px",
-                      borderRadius: "8px",
+                      padding: "40px 20px",
+                      borderRadius: "12px",
                       border: "2px dashed #cbd5e0",
                       textAlign: "center",
+                      transition: "all 0.2s ease",
+                      cursor: "pointer",
+                      position: "relative",
+                      marginBottom: "20px",
+                      marginTop: "20px",
                     }}
                   >
                     <i
                       className="fa-solid fa-cloud-arrow-up"
-                      style={{ fontSize: "24px", color: "#718096" }}
+                      style={{ fontSize: "48px", color: "#3182ce" }}
                     ></i>
-                    <p
-                      style={{
-                        fontSize: "12px",
-                        color: "#718096",
-                        margin: "5px 0",
-                      }}
-                    >
-                      Arrastra un archivo aquí o selecciona uno
-                    </p>
+                    <div>
+                      <p
+                        style={{
+                          fontSize: "16px",
+                          fontWeight: "600",
+                          color: "#2d3748",
+                          margin: "0",
+                        }}
+                      >
+                        Arrastra la documentación aquí
+                      </p>
+                      <p
+                        style={{
+                          fontSize: "13px",
+                          color: "#718096",
+                          marginTop: "5px",
+                        }}
+                      >
+                        O haz clic para seleccionar un archivo
+                      </p>
+                    </div>
                     <input
-  type="file"
-  multiple
-  onChange={(e) => setFilesToUpload(prev => [...prev, ...Array.from(e.target.files)])}
-/>
+                      id="file-input-main"
+                      type="file"
+                      multiple
+                      onChange={(e) =>
+                        setFilesToUpload((prev) => [
+                          ...prev,
+                          ...Array.from(e.target.files),
+                        ])
+                      }
+                      style={{ display: "none" }}
+                    />
                     {filesToUpload.length > 0 && (
-  <div style={{ marginTop: '10px', fontSize: '13px', color: '#4a5568' }}>
-    <strong>Archivos listos para subir:</strong>
-    <ul style={{ listStyle: 'none', padding: 0 }}>
-      {filesToUpload.map((file, idx) => (
-        <li key={idx}>
-          <i className="fa-solid fa-file-circle-check" style={{ color: '#48bb78', marginRight: '5px' }}></i>
-          {file.name}
-        </li>
-      ))}
-    </ul>
-  </div>
-)}
+                      <div
+                        style={{
+                          display: "flex",
+                          flexWrap: "wrap",
+                          gap: "10px",
+                          marginTop: "15px",
+                          justifyContent: "center",
+                        }}
+                      >
+                        {filesToUpload.map((file, index) => (
+                          <div
+                            key={index}
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "10px",
+                              backgroundColor: "#fff",
+                              padding: "5px 15px",
+                              borderRadius: "20px",
+                              border: "1px solid #e2e8f0",
+                              boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+                            }}
+                          >
+                            <span
+                              style={{ fontSize: "13px", color: "#2d3748" }}
+                            >
+                              <i
+                                className="fa-solid fa-file-pdf"
+                                style={{ color: "#e53e3e", marginRight: "5px" }}
+                              ></i>
+                              {file.name}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setFilesToUpload(
+                                  filesToUpload.filter((_, i) => i !== index),
+                                );
+                              }}
+                              style={{
+                                border: "none",
+                                background: "none",
+                                color: "#a0aec0",
+                                cursor: "pointer",
+                              }}
+                            >
+                              <i className="fa-solid fa-circle-xmark"></i>
+                            </button>
+                          </div>
+                        ))}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleFileUpload();
+                          }}
+                          style={{
+                            ...styles.btnGreen,
+                            marginTop: "10px",
+                            width: "100%",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <i className="fa-solid fa-cloud-arrow-up"></i> Subir
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
-                
                 <div
                   style={{
                     display: "flex",
@@ -1255,6 +1406,7 @@ const impFiltradas = importaciones.filter(i => {
                         padding: "10px",
                         border: "1px solid #eee",
                         borderRadius: "8px",
+                         marginTop: "15px",
                       }}
                     >
                       <span style={{ fontSize: "13px" }}>
@@ -1273,8 +1425,6 @@ const impFiltradas = importaciones.filter(i => {
                         >
                           <i className="fa-solid fa-download"></i>
                         </a>
-                        
-
                         {!isReadOnly && (
                           <button
                             onClick={() => handleFileDelete(arch.id)}

@@ -27,16 +27,21 @@ class UserSerializer(serializers.ModelSerializer):
         return user
     
     def update(self, instance, validated_data):
-            password = validated_data.pop('password', None)
-            
-            for attr, value in validated_data.items():
-                setattr(instance, attr, value)
+        request = self.context.get('request')
+        
+        if request and request.user == instance:
+            validated_data.pop('is_staff', None)
+            validated_data.pop('is_active', None)
 
-            if password and password.strip():
-                instance.set_password(password) 
-                
-            instance.save()
-            return instance
+        password = validated_data.pop('password', None)
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+
+        if password and password.strip():
+            instance.set_password(password)
+        
+        instance.save()
+        return instance
 
 class AduanaSerializer(serializers.ModelSerializer):
     class Meta:

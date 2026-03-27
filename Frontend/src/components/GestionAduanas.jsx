@@ -6,25 +6,12 @@ const GestionAduanas = ({ onNotification }) => {
   const [aduanas, setAduanas] = useState([]);
   const [view, setView] = useState("list");
   const [busqueda, setBusqueda] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedAduana, setSelectedAduana] = useState(null);
   const [formData, setFormData] = useState({ id: "", nombre: "" });
   const [loading, setLoading] = useState(true);
-
   const cargadoRef = useRef(false);
-// Nuevo estado para el modal
-const [isModalOpen, setIsModalOpen] = useState(false);
-const [selectedAduana, setSelectedAduana] = useState(null);
 
-// Función para abrir el detalle
-const handleVerDetalle = (aduana) => {
-  setSelectedAduana(aduana);
-  setIsModalOpen(true);
-};
-
-// Función para cerrar el modal
-const cerrarModal = () => {
-  setIsModalOpen(false);
-  setSelectedAduana(null);
-};
   const cargarAduanas = useCallback(async () => {
     setLoading(true);
     try {
@@ -44,14 +31,14 @@ const cerrarModal = () => {
     }
   }, [cargarAduanas]);
 
-  const volverALista = (saltarConfirmacion) => {
-    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?"))
-   { 
-    setView("list");
-    setFormData({
-      id: "",
-      nombre: "",
-    });}
+  const volverALista = (saltarConfirmacion = false) => {
+    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?")) {
+      setView("list");
+      setIsEditing(false);
+      setSelectedAduana(null);
+      setFormData({ id: "", nombre: "" });
+      window.scrollTo(0, 0);
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -59,34 +46,29 @@ const cerrarModal = () => {
     try {
       await createAduana(formData);
       onNotification("Aduana registrada con éxito", "success");
+      await cargarAduanas();
       volverALista(true);
-      setFormData({ id: "", nombre: "" });
-      window.scrollTo({ top: 0, behavior: "smooth" });
-      cargarAduanas();
     } catch (err) {
-      onNotification(
-        "Error: El código (ID) ya existe o los datos son inválidos.",
-        "error"
-      );
+      onNotification("Error: El código (ID) ya existe o los datos son inválidos.", "error");
     }
   };
 
   const handleEliminar = async (id) => {
-    if (
-      window.confirm(
-        "¿Está seguro de eliminar esta aduana? Esta acción no se puede deshacer.")
-    ) {
-      try {
-        await deleteAduana(id);
-        cargarAduanas();
-        onNotification("Aduana eliminada exitosamente.", "success");
-      } catch (err) {
-        onNotification(
-          "Error al eliminar la aduana. Intente nuevamente.",
-          "error"
-        );
-      }
+    if (!window.confirm("¿Está seguro de eliminar esta aduana? Esta acción no se puede deshacer.")) return;
+    try {
+      await deleteAduana(id);
+      await cargarAduanas();
+      onNotification("Aduana eliminada exitosamente.", "success");
+    } catch (err) {
+      onNotification("Error al eliminar la aduana. Intente nuevamente.", "error");
     }
+  };
+
+  const verDetalle = (aduana) => {
+    setSelectedAduana(aduana);
+    setFormData({ id: aduana.id, nombre: aduana.nombre });
+    setIsEditing(true);
+    setView("form");
   };
 
   const aduanasFiltradas = aduanas.filter(
@@ -122,7 +104,7 @@ const cerrarModal = () => {
       backgroundColor: "#fff",
       padding: "20px",
       borderRadius: "12px",
-      boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
+      boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
       marginBottom: "15px",
       border: "1px solid #eee",
     },
@@ -134,20 +116,33 @@ const cerrarModal = () => {
       fontSize: "14px",
       boxSizing: "border-box",
     },
-    label: {
-      display: "block",
-      marginBottom: "5px",
-      fontWeight: "bold",
-      fontSize: "12px",
-      color: "#4a5568",
-    },
     formInput: {
-      padding: "12px",
+      padding: "10px",
       border: "1px solid #ddd",
       borderRadius: "6px",
       width: "100%",
       marginTop: "5px",
       boxSizing: "border-box",
+      transition: "all 0.3s",
+    },
+    label: {
+      fontWeight: "600",
+      fontSize: "13px",
+      color: "#4a5568",
+      marginBottom: "5px",
+      display: "inline-block",
+    },
+    sectionTitle: {
+      gridColumn: "1 / -1",
+      fontWeight: "700",
+      marginTop: "25px",
+      marginBottom: "10px",
+      paddingBottom: "8px",
+      borderBottom: "2px solid #3182ce",
+      color: "#2d3748",
+      fontSize: "16px",
+      textTransform: "uppercase",
+      letterSpacing: "1px",
     },
     btnGreen: {
       padding: "12px 24px",
@@ -161,15 +156,16 @@ const cerrarModal = () => {
       alignItems: "center",
       gap: "8px",
     },
-    btnDelete: {
+    btnAction: (color) => ({
       padding: "8px 12px",
       backgroundColor: "transparent",
-      color: "#e53e3e",
-      border: "1px solid #e53e3e",
+      color: color,
+      border: `1px solid ${color}`,
       borderRadius: "6px",
       cursor: "pointer",
       transition: "0.3s",
-    },
+      marginLeft: "8px",
+    }),
     badge: {
       padding: "4px 10px",
       borderRadius: "12px",
@@ -177,47 +173,6 @@ const cerrarModal = () => {
       backgroundColor: "#edf2f7",
       color: "#2d3748",
       fontWeight: "bold",
-    },
-    modalOverlay: {
-      position: "fixed",
-      top: 0,
-      left: 0,
-      right: 0,
-      bottom: 0,
-      backgroundColor: "rgba(0, 0, 0, 0.5)",
-      display: "flex",
-      justifyContent: "center",
-      alignItems: "center",
-      zIndex: 1000,
-    },
-    modalContent: {
-      backgroundColor: "white",
-      padding: "30px",
-      borderRadius: "12px",
-      width: "90%",
-      maxWidth: "400px",
-      position: "relative",
-      boxShadow: "0 4px 15px rgba(0,0,0,0.2)",
-    },
-    btnCloseModal: {
-      position: "absolute",
-      top: "15px",
-      right: "15px",
-      border: "none",
-      background: "none",
-      fontSize: "20px",
-      cursor: "pointer",
-      color: "#a0aec0",
-    },
-    btnView: {
-      padding: "8px 12px",
-      backgroundColor: "transparent",
-      color: "#3182ce",
-      border: "1px solid #3182ce",
-      borderRadius: "6px",
-      cursor: "pointer",
-      transition: "0.3s",
-      marginRight: "8px", // Espacio con el botón eliminar
     },
   };
 
@@ -227,17 +182,22 @@ const cerrarModal = () => {
         <div>
           <div style={styles.header}>
             <div style={styles.searchWrapper}>
-              <i
-                className="fa-solid fa-magnifying-glass"
-                style={styles.searchIcon}
-              ></i>
+              <i className="fa-solid fa-magnifying-glass" style={styles.searchIcon}></i>
               <input
                 style={styles.input}
                 placeholder="Buscar por nombre o código..."
+                value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
-            <button style={styles.btnGreen} onClick={() => setView("form")}>
+            <button
+              style={styles.btnGreen}
+              onClick={() => {
+                setIsEditing(false);
+                setFormData({ id: "", nombre: "" });
+                setView("form");
+              }}
+            >
               <i className="fa-solid fa-plus"></i> Registrar
             </button>
           </div>
@@ -245,90 +205,33 @@ const cerrarModal = () => {
           {loading ? (
             <SkeletonTable rows={4} />
           ) : aduanasFiltradas.length === 0 ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "60px 20px",
-                color: "#a0aec0",
-                backgroundColor: "#fff",
-                borderRadius: "12px",
-                border: "2px dashed #e2e8f0",
-              }}
-            >
-              <i
-                className="fa-solid fa-box-open"
-                style={{
-                  fontSize: "50px",
-                  marginBottom: "15px",
-                  color: "#cbd5e0",
-                }}
-              ></i>
-              <h3 style={{ margin: 0, fontSize: "18px", color: "#4a5568" }}>
-                No hay coincidencias
-              </h3>
-              <p style={{ marginTop: "8px" }}>
-                Prueba con otro código u otro nombre.
-              </p>
+            <div style={{ textAlign: "center", padding: "60px 20px", color: "#a0aec0", backgroundColor: "#fff", borderRadius: "12px", border: "2px dashed #e2e8f0" }}>
+              <i className="fa-solid fa-box-open" style={{ fontSize: "50px", marginBottom: "15px", color: "#cbd5e0" }}></i>
+              <h3 style={{ margin: 0, fontSize: "18px", color: "#4a5568" }}>No hay coincidencias</h3>
+              <p style={{ marginTop: "8px" }}>Prueba con otro código u otro nombre.</p>
             </div>
           ) : (
             aduanasFiltradas.map((a) => (
               <div key={a.id} style={styles.card}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "15px",
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: "40px",
-                        height: "40px",
-                        borderRadius: "8px",
-                        backgroundColor: "#ebf4ff",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#3182ce",
-                      }}
-                    >
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
+                    <div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#ebf4ff", display: "flex", alignItems: "center", justifyContent: "center", color: "#3182ce" }}>
                       <i className="fa-solid fa-building-columns"></i>
                     </div>
                     <div>
-                      <span style={styles.badge}>ID: {a.id}</span>
-                      <h3
-                        style={{
-                          margin: "4px 0 0 0",
-                          fontSize: "16px",
-                          color: "#2d3748",
-                        }}
-                      >
-                        {a.nombre}
-                      </h3>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <strong style={{ fontSize: "16px", color: "#2d3748" }}>{a.nombre}</strong>
+                        <span style={styles.badge}>ID: {a.id}</span>
+                      </div>
                     </div>
                   </div>
-                  <div style={{ display: "flex", alignItems: "center" }}>
-                  <button
-    style={styles.btnView}
-    onClick={() => handleVerDetalle(a)}
-    title="Ver Detalle"
-  >
-    <i className="fa-solid fa-eye"></i>
-  </button>
-                  <button
-                    style={styles.btnDelete}
-                    onClick={() => handleEliminar(a.id)}
-                    title="Eliminar Aduana"
-                  >
-                    <i className="fa-solid fa-trash-can"></i>
-                  </button>
+                  <div style={{ display: "flex" }}>
+                    <button style={styles.btnAction("#3182ce")} onClick={() => verDetalle(a)} title="Ver Detalle">
+                      <i className="fa-solid fa-eye"></i>
+                    </button>
+                    <button style={styles.btnAction("#e53e3e")} onClick={() => handleEliminar(a.id)} title="Eliminar Aduana">
+                      <i className="fa-solid fa-trash-can"></i>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -336,122 +239,62 @@ const cerrarModal = () => {
           )}
         </div>
       ) : (
-        <div style={{ maxWidth: "500px", margin: "0 auto" }}>
-          <button
-            onClick={() => volverALista(false)}
-            style={{
-              border: "none",
-              background: "none",
-              color: "#3182ce",
-              cursor: "pointer",
-              marginBottom: "20px",
-              fontWeight: "bold",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-            }}
-          >
-            <i className="fa-solid fa-arrow-left"></i> Volver al listado
-          </button>
-
+        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
+          <div style={styles.header}>
+            <button
+              onClick={() => volverALista(false)}
+              style={{ border: "none", background: "none", color: "#3182ce", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}
+            >
+              <i className="fa-solid fa-arrow-left"></i> Volver al listado
+            </button>
+          </div>
 
           <div style={styles.card}>
-            <h2
-              style={{ marginTop: 0, marginBottom: "20px", fontSize: "20px" }}
+            <form
+              onSubmit={handleSubmit}
+              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}
             >
-              Registrar Aduana
-            </h2>
-            <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: "15px" }}>
-                <label style={styles.label}>
-                  Código Identificador *
-                </label>
+              <div style={styles.sectionTitle}>Datos de la Aduana</div>
+
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <label style={styles.label}>Código Identificador *</label>
                 <input
-                  style={styles.formInput}
+                  style={{ ...styles.formInput, backgroundColor: isEditing ? "#f8fafc" : "#fff" }}
                   value={formData.id}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      id: e.target.value.toUpperCase().slice(0, 4),
-                    })
-                  }
+                  disabled={isEditing}
+                  onChange={(e) => setFormData({ ...formData, id: e.target.value.toUpperCase().slice(0, 4) })}
                   required
                   placeholder="Ej: 015"
                 />
               </div>
-              <div style={{ marginBottom: "20px" }}>
+
+              <div style={{ display: "flex", flexDirection: "column" }}>
                 <label style={styles.label}>Nombre *</label>
                 <input
                   style={styles.formInput}
                   value={formData.nombre}
-                  onChange={(e) =>
-                    setFormData({ ...formData, nombre: e.target.value })
-                  }
+                  disabled={isEditing}
+                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   required
                   placeholder="Ej: Concepción del Uruguay"
                 />
               </div>
-              <div style={{ gridColumn: "span 2", marginTop: "10px" }}>
-                <button
-                  type="submit"
-                  style={{
-                    ...styles.btnGreen,
-                    width: "100%",
-                    justifyContent: "center",
-                    padding: "15px",
-                    fontSize: "16px",
-                  }}
-                >
-                <i className="fa-solid fa-floppy-disk"></i> Guardar
-                </button>
+
+              {!isEditing && (
+                <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
+                  <button
+                    type="submit"
+                    style={{ ...styles.btnGreen, width: "100%", justifyContent: "center", padding: "15px", fontSize: "16px" }}
+                  >
+                    <i className="fa-solid fa-floppy-disk"></i> Guardar
+                  </button>
                 </div>
+              )}
             </form>
           </div>
         </div>
-        
       )}
-      {isModalOpen && selectedAduana && (
-  <div style={styles.modalOverlay} onClick={cerrarModal}>
-    <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-      <button style={styles.btnCloseModal} onClick={cerrarModal}>
-        <i className="fa-solid fa-xmark"></i>
-      </button>
-      
-      <div style={{ textAlign: "center", marginBottom: "20px" }}>
-        <div style={{
-          width: "60px", 
-          height: "60px", 
-          backgroundColor: "#ebf4ff", 
-          borderRadius: "50%", 
-          display: "inline-flex", 
-          alignItems: "center", 
-          justifyContent: "center",
-          color: "#3182ce",
-          fontSize: "24px",
-          marginBottom: "15px"
-        }}>
-          <i className="fa-solid fa-building-columns"></i>
-        </div>
-        <h2 style={{ margin: 0, color: "#2d3748" }}>Detalle de Aduana</h2>
-      </div>
-
-      <div style={{ borderTop: "1px solid #eee", paddingTop: "20px" }}>
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ ...styles.label, color: "#718096" }}>CÓDIGO IDENTIFICADOR</label>
-          <p style={{ margin: "5px 0", fontSize: "18px", fontWeight: "600" }}>{selectedAduana.id}</p>
-        </div>
-        <div style={{ marginBottom: "15px" }}>
-          <label style={{ ...styles.label, color: "#718096" }}>NOMBRE DE ADUANA</label>
-          <p style={{ margin: "5px 0", fontSize: "18px", fontWeight: "600" }}>{selectedAduana.nombre}</p>
-        </div>
-      </div>
-
-    
     </div>
-  </div>
-)}
-    </div>
-    
   );
 };
 

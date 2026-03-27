@@ -155,6 +155,7 @@ const GestionUsuarios = ({ onNotification }) => {
         "success",
       );
     } catch (err) {
+      console.error("Error al enviar solicitud de restablecimiento:", err);
       onNotification(
         "No se pudo enviar la solicitud de restablecimiento.",
         "error",
@@ -312,6 +313,7 @@ const GestionUsuarios = ({ onNotification }) => {
         width: "100%",
       },
     },
+    
   };
 
   return (
@@ -351,40 +353,30 @@ const GestionUsuarios = ({ onNotification }) => {
               <i className="fa-solid fa-plus"></i> Registrar
             </button>
           </div>
-<div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "15px", flexWrap: "wrap" }}>
-  
+<div className="flex items-center gap-4 mb-4 flex-wrap p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+
+  {/* Toggle mostrar inactivos */}
   <div
     onClick={() => setMostrarInactivos(!mostrarInactivos)}
-    style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", userSelect: "none" }}
+    className="flex items-center gap-2 cursor-pointer select-none"
   >
-    <div style={{
-      width: "44px", height: "24px",
-      backgroundColor: mostrarInactivos ? "#3182ce" : "#cbd5e0",
-      borderRadius: "12px", position: "relative",
-      transition: "background-color 0.3s ease",
-      border: `2px solid ${mostrarInactivos ? "#2b6cb0" : "#a0aec0"}`,
-      flexShrink: 0,
-    }}>
-      <div style={{
-        width: "16px", height: "16px",
-        backgroundColor: "white", borderRadius: "50%",
-        position: "absolute", top: "2px",
-        left: mostrarInactivos ? "22px" : "2px",
-        transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-        boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-      }}/>
+    <div className={`w-11 h-6 rounded-full relative transition-all duration-300 border-2 flex-shrink-0
+      ${mostrarInactivos ? "bg-blue-500 border-blue-600" : "bg-gray-300 border-gray-400"}`}
+    >
+      <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-300 shadow
+        ${mostrarInactivos ? "left-5" : "left-0.5"}`}
+      />
     </div>
-    <span style={{
-      fontSize: "13px",
-      color: mostrarInactivos ? "#2b6cb0" : "#718096",
-      fontWeight: mostrarInactivos ? "600" : "400",
-      transition: "color 0.3s",
-    }}>
+    <span className={`text-sm font-semibold transition-colors duration-300
+      ${mostrarInactivos ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
       Mostrar inactivos
     </span>
   </div>
 
-  <div style={{ display: "flex", gap: "8px" }}>
+  <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 hidden sm:block" />
+
+  {/* Pills de rol */}
+  <div className="flex gap-2 flex-wrap">
     {[
       { value: "todos", label: "Todos" },
       { value: "admin", label: "Administradores" },
@@ -393,23 +385,16 @@ const GestionUsuarios = ({ onNotification }) => {
       <button
         key={op.value}
         onClick={() => setFiltroRol(op.value)}
-        style={{
-          padding: "6px 14px",
-          borderRadius: "20px",
-          border: `1px solid ${filtroRol === op.value ? "#3182ce" : "#cbd5e0"}`,
-          backgroundColor: filtroRol === op.value ? "#ebf4ff" : "transparent",
-          color: filtroRol === op.value ? "#2b6cb0" : "#718096",
-          fontWeight: filtroRol === op.value ? "600" : "400",
-          fontSize: "13px",
-          cursor: "pointer",
-          transition: "all 0.2s",
-        }}
+        className={`px-4 py-1.5 rounded-full text-sm font-semibold border transition-all duration-200
+          ${filtroRol === op.value
+            ? "border-blue-500 bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-400"
+            : "border-gray-300 text-gray-500 dark:border-gray-600 dark:text-gray-400 hover:border-gray-400"
+          }`}
       >
         {op.label}
       </button>
     ))}
   </div>
-
 </div>
           {loading ? (
             <SkeletonTable rows={4} />
@@ -536,7 +521,7 @@ const GestionUsuarios = ({ onNotification }) => {
         <div
           style={{
             width: "100%",
-            maxWidth: "900px",
+            maxWidth: "1000px",
             margin: "0 auto",
             boxSizing: "border-box",
             padding: "0 10px",

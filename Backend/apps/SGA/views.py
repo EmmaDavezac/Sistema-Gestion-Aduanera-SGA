@@ -25,7 +25,12 @@ from .serializers import (
 class UserViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
-    permission_classes = [SoloAdmin] 
+    permission_classes = [SoloAdmin]
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
     
 
 class ClienteViewSet(viewsets.ModelViewSet):

@@ -65,7 +65,7 @@ const Footer = () => {
 
             <div style={styles.bottomBar}>
                 <div style={styles.credits}>
-                    Desarrollahttps://github.com/EmmaDavezac/Sistema-Gestion-Aduanera-SGA/blob/main/Docs/ManualUsuario.pdfdo con <i className="fa-solid fa-heart"></i> por <span style={styles.devName}>Emmanuel Davezac</span>
+                    Desarrollado con <i className="fa-solid fa-heart"></i> por <span style={styles.devName}><a href="http://github.com/EmmaDavezac" target="_blank" rel="noopener noreferrer" style={styles.devName}>Emmanuel Davezac</a></span>
                 </div>
                 <div style={styles.versionGroup}>
                     <span>© {year} Todos los derechos reservados</span>
@@ -126,7 +126,7 @@ const styles = {
         gap: '15px'
     },
     credits: { fontSize: '13px', color: '#718096' },
-    devName: { color: '#2d3748', fontWeight: '700' },
+    devName: { color: '#2d3748', fontWeight: '700' , textDecoration: 'none'},
     versionGroup: { display: 'flex', alignItems: 'center', gap: '15px', color: '#a0aec0', fontSize: '12px' },
     versionBadge: { backgroundColor: '#f1f5f9', padding: '2px 8px', borderRadius: '6px', fontWeight: '600', color: '#4a5568' }
 };
