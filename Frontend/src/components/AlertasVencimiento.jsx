@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { getExportacionesVencer } from "../api/api";
 
 const AlertasVencimiento = ({ onAlertClick }) => {
@@ -6,44 +6,38 @@ const AlertasVencimiento = ({ onAlertClick }) => {
   const [loading, setLoading] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
   const [filtroTab, setFiltroTab] = useState("todas");
+  const cargadoRef = useRef(false);
 
   const normalizarFechaUTC = (fechaStr) => {
     if (!fechaStr) return 0;
     const [y, m, d] = fechaStr.split("-").map(Number);
     return Date.UTC(y, m - 1, d);
   };
-  const tabStyle = (active, activeColor = "#1e293b") => ({
-    flex: 1,
-    padding: "8px",
-    border: "none",
-    borderRadius: "6px",
-    fontSize: "0.8rem",
-    fontWeight: "600",
-    transition: "all 0.2s",
-    backgroundColor: active ? activeColor : "transparent",
-    color: active ? "#fff" : "#64748b",
-  });
+
+  const obtenerDiasDiferencia = (fechaStr) => {
+    const fechaVenc = normalizarFechaUTC(fechaStr);
+    const t = new Date();
+    const hoy = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
+    return Math.round((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+  };
+
+  const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
+    if (!fechaVencimiento) return { label: "Sin fecha", bg: "#f1f5f9", text: "#64748b", border: "#cbd5e0" };
+    const dias = obtenerDiasDiferencia(fechaVencimiento);
+    if (dias < 0)  return { label: `VENCIDA (${Math.abs(dias)}d)`, bg: "#450a0a", text: "#ffffff", border: "#991b1b" };
+    if (dias === 0) return { label: "Vence hoy",     bg: "#fee2e2", text: "#991b1b", border: "#ef4444" };
+    if (dias === 1) return { label: "Vence mañana",  bg: "#ffedd5", text: "#9a3412", border: "#f97316" };
+    if (dias <= 3)  return { label: `Faltan ${dias} días`, bg: "#fff7ed", text: "#c2410c", border: "#fb923c" };
+    return { label: `Faltan ${dias} días`, bg: "#f0f9ff", text: "#075985", border: "#0ea5e9" };
+  };
 
   const cargarAlertas = useCallback(async () => {
     try {
       const data = await getExportacionesVencer();
       const dataOrdenada = data.sort(
-        (a, b) =>
-          normalizarFechaUTC(a.vencimiento_preimposicion) -
-          normalizarFechaUTC(b.vencimiento_preimposicion),
+        (a, b) => normalizarFechaUTC(a.vencimiento_preimposicion) - normalizarFechaUTC(b.vencimiento_preimposicion)
       );
-
       setAlertas((prev) => {
-        const idsPrevios = new Set(prev.map((a) => a.id));
-        const t = new Date();
-        const hoyUTC = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
-
-        const nuevasAlertas = dataOrdenada.filter((a) => !idsPrevios.has(a.id));
-
-        const tieneNuevosCriticos = nuevasAlertas.some(
-          (exp) => normalizarFechaUTC(exp.vencimiento_preimposicion) <= hoyUTC,
-        );
-
         if (JSON.stringify(prev) === JSON.stringify(dataOrdenada)) return prev;
         return dataOrdenada;
       });
@@ -54,8 +48,6 @@ const AlertasVencimiento = ({ onAlertClick }) => {
     }
   }, []);
 
-  const cargadoRef = useRef(false);
-
   useEffect(() => {
     if (!cargadoRef.current) {
       cargarAlertas();
@@ -65,296 +57,122 @@ const AlertasVencimiento = ({ onAlertClick }) => {
     return () => clearInterval(interval);
   }, [cargarAlertas]);
 
-  const obtenerDiasDiferencia = (fechaStr) => {
-    const fechaVenc = normalizarFechaUTC(fechaStr);
-    const t = new Date();
-    const fechaHoy = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
-    return Math.round((fechaVenc - fechaHoy) / (1000 * 60 * 60 * 24));
-  };
   const alertasFiltradas = alertas.filter((exp) => {
     const dias = obtenerDiasDiferencia(exp.vencimiento_preimposicion);
     if (filtroTab === "vencidas") return dias < 0;
     if (filtroTab === "proximas") return dias >= 0;
     return true;
   });
-  const obtenerConfiguracionUrgencia = (fechaVencimiento) => {
-    if (!fechaVencimiento)
-      return {
-        label: "Sin fecha",
-        bg: "#f1f5f9",
-        text: "#64748b",
-        border: "#cbd5e0",
-      };
-
-    const fechaVenc = normalizarFechaUTC(fechaVencimiento);
-    const t = new Date();
-    const fechaHoy = Date.UTC(t.getFullYear(), t.getMonth(), t.getDate());
-
-    const milisegundosPorDia = 1000 * 60 * 60 * 24;
-    const dias = Math.round((fechaVenc - fechaHoy) / milisegundosPorDia);
-
-    if (dias < 0) {
-      return {
-        label: `VENCIDA (${Math.abs(dias)}d)`,
-        bg: "#450a0a",
-        text: "#ffffff",
-        border: "#991b1b",
-      };
-    } else if (dias === 0) {
-      return {
-        label: "Vence hoy",
-        bg: "#fee2e2",
-        text: "#991b1b",
-        border: "#ef4444",
-      };
-    } else if (dias === 1) {
-      return {
-        label: "Vence mañana",
-        bg: "#ffedd5",
-        text: "#9a3412",
-        border: "#f97316",
-      };
-    } else if (dias <= 3) {
-      return {
-        label: `Faltan ${dias} días`,
-        bg: "#fff7ed",
-        text: "#c2410c",
-        border: "#fb923c",
-      };
-    } else {
-      return {
-        label: `Faltan ${dias} días`,
-        bg: "#f0f9ff",
-        text: "#075985",
-        border: "#0ea5e9",
-      };
-    }
-  };
 
   if (loading || alertas.length === 0 || !isVisible) return null;
 
-  return (
-    <div className="alertas-container">
-      <style>{`
-                .alertas-container {
-                    background: #fff; border: 1px solid #e2e8f0; border-radius: 12px;
-                    padding: 1.5rem; margin-bottom: 15px;
-                    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
-                    animation: slideIn 0.4s ease-out;
-                }
-                .alertas-header { 
-                    display: flex; 
-                    flex-wrap: wrap; 
-                    flex-direction: row; 
-                    justify-content: space-between; 
-                    align-items: center; 
-                    gap: 1rem; 
-                    margin-bottom: 1rem; 
-                }
-                .alertas-title { display: flex; align-items: center; gap: 10px; color: #1e293b; font-weight: 700; margin: 0; }
-                .count-badge {
-                    background: #ef4444; color: white; padding: 2px 8px; border-radius: 6px; font-size: 0.8rem;
-                }
-                .btn-close {
-                    background: none; border: none; color: #94a3b8; cursor: pointer; padding: 5px;
-                }
-                .alerta-item {
-                    display: flex; justify-content: space-between; align-items: center;
-                    padding: 12px 16px; border-radius: 8px; margin-bottom: 8px;
-                    cursor: pointer; transition: all 0.2s ease; border: 1px solid transparent;
-                    flex-wrap: wrap;
-                }
-                .alerta-item:hover { transform: translateX(4px); filter: brightness(0.98); }
-                .item-info-principal {
-                    display: flex;
-                    flex-direction: column;
-                    flex: 1;
-                    min-width: 250px; 
-                }
-                .item-detalles-texto {
-                    font-size: 0.85rem;
-                    line-height: 1.4;
-                    display: flex;
-                    flex-wrap: wrap;
-                    gap: 5px 12px; 
-                    margin-top: 4px;
-                }
-                .item-vencimiento-block {
-                    display: flex;
-                    align-items: center;
-                    gap: 15px;
-                    justify-content: space-between;
-                }
-                .badge-vence {
-                    padding: 4px 12px; border-radius: 99px; font-size: 0.75rem;
-                    font-weight: 700; min-width: 100px; text-align: center;
-                }
-                @keyframes slideIn {
-                    from { opacity: 0; transform: translateY(-10px); }
-                    to { opacity: 1; transform: translateY(0); }
-                }
-            `}</style>
+  const TABS = [
+    { value: "todas",   label: "Todas",    activeColor: "#1e293b" },
+    { value: "vencidas", label: "Vencidas", activeColor: "#ef4444" },
+    { value: "proximas", label: "Próximas", activeColor: "#3b82f6" },
+  ];
 
-      <div className="alertas-header">
-        <h4
-          style={{
-            margin: 0,
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            whiteSpace: "nowrap",
-          }}
-        >
-          <i className="fa-solid fa-bell"></i>
-          VENCIMIENTO DE EXPORTACIONES{" "}
-          <span className="count-badge">{alertasFiltradas.length}</span>
+  return (
+    <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl p-6 mb-4 shadow-sm animate-[slideIn_0.4s_ease-out]">
+      <style>{`
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to   { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+
+      {/* Header */}
+      <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+        <h4 className="m-0 flex items-center gap-2.5 text-gray-800 dark:text-gray-100 font-bold whitespace-nowrap">
+          <i className="fa-solid fa-bell text-yellow-500"></i>
+          VENCIMIENTO DE EXPORTACIONES
+          <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-md font-bold">
+            {alertasFiltradas.length}
+          </span>
         </h4>
 
-        <div
-          style={{
-            display: "flex",
-            gap: "5px",
-            background: "#f1f5f9",
-            padding: "4px",
-            borderRadius: "8px",
-            flex: 1,
-            maxWidth: "350px",
-          }}
-        >
-          <button
-            onClick={() => setFiltroTab("todas")}
-            style={tabStyle(filtroTab === "todas")}
-          >
-            Todas
-          </button>
-          <button
-            onClick={() => setFiltroTab("vencidas")}
-            style={tabStyle(filtroTab === "vencidas", "#ef4444")}
-          >
-            Vencidas
-          </button>
-          <button
-            onClick={() => setFiltroTab("proximas")}
-            style={tabStyle(filtroTab === "proximas", "#3b82f6")}
-          >
-            Próximas
-          </button>
+        {/* Tabs filtro */}
+        <div className="flex gap-1.5 bg-gray-100 dark:bg-gray-700 p-1 rounded-lg flex-1 max-w-[350px]">
+          {TABS.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => setFiltroTab(tab.value)}
+              style={filtroTab === tab.value ? { backgroundColor: tab.activeColor } : {}}
+              className={`flex-1 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer border-none
+                ${filtroTab === tab.value
+                  ? "text-white"
+                  : "bg-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200"
+                }`}
+            >
+              {tab.label}
+            </button>
+          ))}
         </div>
 
-        <button className="btn-close" onClick={() => setIsVisible(false)}>
+        <button
+          onClick={() => setIsVisible(false)}
+          className="bg-none border-none text-gray-400 dark:text-gray-500 cursor-pointer p-1 hover:text-gray-600 dark:hover:text-gray-300 transition-colors text-lg"
+        >
           <i className="fa-solid fa-xmark"></i>
         </button>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column" }}>
+      {/* Lista */}
+      <div className="flex flex-col gap-2">
         {alertasFiltradas.length === 0 ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "20px",
-              color: "#94a3b8",
-              fontSize: "0.9rem",
-            }}
-          >
+          <div className="text-center py-5 text-gray-400 dark:text-gray-500 text-sm">
             No hay registros en esta categoría
           </div>
         ) : (
           alertasFiltradas.map((exp) => {
-            const conf = obtenerConfiguracionUrgencia(
-              exp.vencimiento_preimposicion,
-            );
+            const conf = obtenerConfiguracionUrgencia(exp.vencimiento_preimposicion);
             const esVencido = conf.label.includes("VENCIDA");
 
             return (
               <div
                 key={exp.id}
-                className={`alerta-item ${esVencido ? "vencido-pulse" : ""}`}
-                style={{
-                  backgroundColor: conf.bg,
-                  borderLeft: `5px solid ${conf.border}`,
-                  color: esVencido ? "#fff" : "inherit",
-                }}
+                style={{ backgroundColor: conf.bg, borderLeftColor: conf.border, color: esVencido ? "#fff" : "inherit" }}
+                className="flex justify-between items-center px-4 py-3 rounded-lg border-l-4 border border-transparent flex-wrap gap-2 cursor-pointer hover:brightness-95 transition-all"
               >
-                <div className="item-info-principal">
-                  <span style={{ fontWeight: "800", fontSize: "1rem" }}>
-                    {esVencido && (
-                      <i
-                        className="fa-solid fa-triangle-exclamation"
-                        style={{ marginRight: "8px" }}
-                      ></i>
-                    )}
+                {/* Info principal */}
+                <div className="flex flex-col flex-1 min-w-[200px]">
+                  <span className="font-extrabold text-base">
+                    {esVencido && <i className="fa-solid fa-triangle-exclamation mr-2"></i>}
                     Operación #{exp.id}
                   </span>
-
-                  <div className="item-detalles-texto">
-                    <span>
-                      <strong>Destinación:</strong>{" "}
-                      {exp.numero_destinacion || "N/A"}
-                    </span>
-                    <span>
-                      <strong>Cliente:</strong> {exp.cliente_nombre || "N/A"}
-                    </span>
-                    <span>
-                      <strong>Destino:</strong> {exp.pais_destino || "N/A"}
-                    </span>
+                  <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-1 text-sm opacity-90">
+                    <span><strong>Destinación:</strong> {exp.numero_destinacion || "N/A"}</span>
+                    <span><strong>Cliente:</strong> {exp.cliente_nombre || "N/A"}</span>
+                    <span><strong>Destino:</strong> {exp.pais_destino || "N/A"}</span>
                   </div>
                 </div>
 
-                <div className="item-vencimiento-block">
-                  <div style={{ textAlign: "left" }}>
-                    <div
-                      style={{
-                        fontSize: "0.65rem",
-                        opacity: 0.8,
-                        textTransform: "uppercase",
-                      }}
-                    >
-                      Vence Preimp.
-                    </div>
-                    <div style={{ fontSize: "0.85rem", fontWeight: "700" }}>
-                      {exp.vencimiento_preimposicion
-                        .split("-")
-                        .reverse()
-                        .join("/")}
+                {/* Vencimiento + badge + botón */}
+                <div className="flex items-center gap-4">
+                  <div className="text-left">
+                    <div className="text-[11px] opacity-70 uppercase">Vence Preimp.</div>
+                    <div className="text-sm font-bold">
+                      {exp.vencimiento_preimposicion.split("-").reverse().join("/")}
                     </div>
                   </div>
+
                   <span
-                    className="badge-vence"
-                    style={{
-                      backgroundColor: esVencido ? "#ef4444" : "#ffffffcc",
-                      color: esVencido ? "#fff" : conf.text,
-                      border: `1px solid ${conf.border}`,
-                      padding: "4px 10px",
-                      borderRadius: "6px",
-                      fontSize: "0.75rem",
-                      fontWeight: "bold",
-                    }}
+                    style={{ color: conf.text, borderColor: conf.border, backgroundColor: esVencido ? "#ef4444" : "#ffffffcc" }}
+                    className="px-2.5 py-1 rounded-md text-xs font-bold border min-w-[100px] text-center"
                   >
                     {conf.label}
                   </span>
+
                   <button
                     onClick={() => {
                       if (window.confirm("¿Desea ver los detalles de esta operación?")) {
                         onAlertClick(exp.id);
                       }
                     }}
-                    style={{
-                      padding: "5px 12px",
-                      backgroundColor: esVencido ? "#ffffff22" : "#3182ce",
-                      color: esVencido ? "#fff" : "#fff",
-                      border: `1px solid ${esVencido ? "#ffffff55" : "#2b6cb0"}`,
-                      borderRadius: "6px",
-                      cursor: "pointer",
-                      fontSize: "0.75rem",
-                      fontWeight: "600",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "5px",
-                      whiteSpace: "nowrap",
-                    }}
+                    style={{ backgroundColor: esVencido ? "#ffffff22" : "#3182ce", borderColor: esVencido ? "#ffffff55" : "#2b6cb0" }}
+                    className="px-3 py-1.5 text-white border rounded-md text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap cursor-pointer hover:opacity-90 transition-opacity"
                   >
-                    <i className="fa-solid fa-arrow-up-right-from-square"></i>{" "}
-                    Ver más
+                    <i className="fa-solid fa-arrow-up-right-from-square"></i> Ver más
                   </button>
                 </div>
               </div>

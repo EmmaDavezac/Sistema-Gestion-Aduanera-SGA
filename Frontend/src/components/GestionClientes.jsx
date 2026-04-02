@@ -1,14 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  getClientes,
-  createCliente,
-  updateCliente,
-  getArchivos,
-  uploadFile,
-  downloadFile,
-  deleteArchivo,
-  getImportaciones,
-  getExportaciones,
+  getClientes, createCliente, updateCliente, getArchivos,
+  uploadFile, downloadFile, deleteArchivo, getImportaciones, getExportaciones,
 } from "../api/api";
 import { validarCUIT } from "../utils/validaciones";
 import SkeletonTable from "./SkeletonTable";
@@ -25,103 +18,44 @@ const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened }) => {
   const [clienteSeleccionado, setClienteSeleccionado] = useState(null);
   const [filesToUpload, setFilesToUpload] = useState([]);
   const [loading, setLoading] = useState(true);
-  const isAdmin = localStorage.getItem("isAdmin") === "true";
-  const today = new Date().toISOString().split("T")[0];
   const [mostrarBaja, setMostrarBaja] = useState(false);
   const [filtroOperaciones, setFiltroOperaciones] = useState("Todos");
+  const isAdmin = localStorage.getItem("isAdmin") === "true";
+  const today = new Date().toISOString().split("T")[0];
   const cargadoRef = useRef(false);
 
   const [formData, setFormData] = useState({
-    cuit: "",
-    nombre: "",
-    domicilio: "",
-    telefono_1: "",
-    telefono_2: "",
-    fecha_inicio_actividad: "",
-    observaciones: "",
-    baja: false,
+    cuit: "", nombre: "", domicilio: "", telefono_1: "", telefono_2: "",
+    fecha_inicio_actividad: "", observaciones: "", baja: false,
   });
 
   const cargarDatos = useCallback(async () => {
     setLoading(true);
     try {
-      const [c, a, imp, exp] = await Promise.all([
-        getClientes(),
-        getArchivos(),
-        getImportaciones(),
-        getExportaciones(),
-      ]);
-      setClientes(c);
-      setArchivos(a);
-      setImportaciones(imp);
-      setExportaciones(exp);
+      const [c, a, imp, exp] = await Promise.all([getClientes(), getArchivos(), getImportaciones(), getExportaciones()]);
+      setClientes(c); setArchivos(a); setImportaciones(imp); setExportaciones(exp);
       if (clienteSeleccionado) {
         const actualizado = c.find((item) => item.cuit === clienteSeleccionado.cuit);
-        if (actualizado) {
-          setClienteSeleccionado(actualizado);
-          setFormData(actualizado);
-        }
+        if (actualizado) { setClienteSeleccionado(actualizado); setFormData(actualizado); }
       }
     } catch (err) {
       onNotification("Error cargando datos", "error");
-      console.error("Error detallado:", err.response?.data);
     } finally {
       setLoading(false);
     }
   }, [clienteSeleccionado?.cuit]);
 
   useEffect(() => {
-    if (autoOpenForm) {
-      setView("form");
-      setIsEditing(false);
-      setIsReadOnly(false);
-      onFormOpened?.();
-    }
+    if (autoOpenForm) { setView("form"); setIsEditing(false); setIsReadOnly(false); onFormOpened?.(); }
   }, [autoOpenForm]);
 
   useEffect(() => {
-    if (!cargadoRef.current) {
-      cargarDatos();
-      cargadoRef.current = true;
-    }
+    if (!cargadoRef.current) { cargarDatos(); cargadoRef.current = true; }
   }, [cargarDatos]);
 
   const tieneOperacionesActivas = (cuit) =>
     importaciones.some((i) => i.cliente === cuit && !i.baja) ||
     exportaciones.some((e) => e.cliente === cuit && !e.baja);
-
-  const handleFileUpload = async () => {
-    if (filesToUpload.length === 0 || !clienteSeleccionado) return;
-    const uploadPromises = filesToUpload.map((file) => {
-      const fData = new FormData();
-      fData.append("archivo", file);
-      fData.append("tipo", 1);
-      fData.append("cuit_cliente", clienteSeleccionado.cuit);
-      fData.append("nombre", file.name);
-      return uploadFile(fData);
-    });
-    try {
-      await Promise.all(uploadPromises);
-      setFilesToUpload([]);
-      await cargarDatos();
-      onNotification("Archivos subidos con éxito", "success");
-    } catch (err) {
-      console.error("Error al subir archivos:", err.response?.data);
-      onNotification("Error al subir archivos", "error");
-    }
-  };
-
-  const handleEliminarArchivo = async (id) => {
-    if (!window.confirm("¿Estás seguro de eliminar este archivo?")) return;
-    try {
-      await deleteArchivo(id);
-      await cargarDatos();
-      onNotification("Archivo eliminado", "success");
-    } catch (err) {
-      console.error("Error al eliminar archivo:", err.response?.data);
-      onNotification("Error al eliminar", "error");
-    }
-  };
 
   const clientesFiltrados = clientes.filter((c) => {
     const coincideBusqueda =
@@ -136,276 +70,112 @@ const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened }) => {
   });
 
   const esFechaValida = (fechaInput) => {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    const hoy = new Date(); hoy.setHours(0, 0, 0, 0);
     const fechaSeleccionada = new Date(fechaInput);
-    fechaSeleccionada.setMinutes(
-      fechaSeleccionada.getMinutes() + fechaSeleccionada.getTimezoneOffset()
-    );
+    fechaSeleccionada.setMinutes(fechaSeleccionada.getMinutes() + fechaSeleccionada.getTimezoneOffset());
     fechaSeleccionada.setHours(0, 0, 0, 0);
     return fechaSeleccionada <= hoy;
   };
 
+  const handleFileUpload = async () => {
+    if (filesToUpload.length === 0 || !clienteSeleccionado) return;
+    const uploadPromises = filesToUpload.map((file) => {
+      const fData = new FormData();
+      fData.append("archivo", file); fData.append("tipo", 1);
+      fData.append("cuit_cliente", clienteSeleccionado.cuit); fData.append("nombre", file.name);
+      return uploadFile(fData);
+    });
+    try {
+      await Promise.all(uploadPromises);
+      setFilesToUpload([]); await cargarDatos();
+      onNotification("Archivos subidos con éxito", "success");
+    } catch { onNotification("Error al subir archivos", "error"); }
+  };
+
+  const handleEliminarArchivo = async (id) => {
+    if (!window.confirm("¿Eliminar este archivo?")) return;
+    try { await deleteArchivo(id); await cargarDatos(); onNotification("Archivo eliminado", "success"); }
+    catch { onNotification("Error al eliminar", "error"); }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!validarCUIT(formData.cuit)) {
-      onNotification("El CUIT no es válido. Verifique los dígitos.", "error");
-      return;
-    }
-    if (!esFechaValida(formData.fecha_inicio_actividad)) {
-      onNotification("La fecha de inicio de actividad no puede ser mayor a la fecha actual.", "error");
-      return;
-    }
+    if (!validarCUIT(formData.cuit)) { onNotification("El CUIT no es válido.", "error"); return; }
+    if (!esFechaValida(formData.fecha_inicio_actividad)) { onNotification("La fecha no puede ser mayor a hoy.", "error"); return; }
     try {
       if (isEditing && clienteSeleccionado) {
         const datosParaEnviar = { ...formData };
         delete datosParaEnviar.cuit;
         await updateCliente(clienteSeleccionado.cuit, datosParaEnviar);
         onNotification("¡Actualizado con éxito!", "success");
-        await cargarDatos();
-        setIsReadOnly(true);
+        await cargarDatos(); setIsReadOnly(true);
       } else {
         await createCliente(formData);
         if (filesToUpload.length > 0) {
           const uploadPromises = filesToUpload.map((file) => {
             const fData = new FormData();
-            fData.append("archivo", file);
-            fData.append("tipo", 1);
-            fData.append("cuit_cliente", formData.cuit);
-            fData.append("nombre", file.name);
+            fData.append("archivo", file); fData.append("tipo", 1);
+            fData.append("cuit_cliente", formData.cuit); fData.append("nombre", file.name);
             return uploadFile(fData);
           });
-          try {
-            await Promise.all(uploadPromises);
-            setFilesToUpload([]);
-            onNotification(`${filesToUpload.length} archivos subidos con éxito`, "success");
-          } catch (fileErr) {
-            onNotification("Error al subir algunos archivos", "error");
-          }
+          try { await Promise.all(uploadPromises); setFilesToUpload([]); }
+          catch { onNotification("Error al subir algunos archivos", "error"); }
         }
         onNotification("¡Cliente registrado con éxito!", "success");
-        await cargarDatos();
-        volverALista(true);
+        await cargarDatos(); volverALista(true);
       }
     } catch (err) {
-      console.error("Estructura completa del error:", err.response?.data);
       const mensajeBackend = err.response?.data?.message || err.response?.data?.error;
-      if (mensajeBackend) {
-        onNotification(mensajeBackend, "error");
-      } else if (err.response?.status === 400) {
-        onNotification("Error en los datos: El CUIT ya registrado", "error");
-      } else {
-        onNotification("Error de comunicación con el servidor", "error");
-      }
+      if (mensajeBackend) onNotification(mensajeBackend, "error");
+      else if (err.response?.status === 400) onNotification("El CUIT ya está registrado", "error");
+      else onNotification("Error de comunicación con el servidor", "error");
     }
   };
 
   const verDetalle = (cliente) => {
-    setClienteSeleccionado(cliente);
-    setFormData(cliente);
-    setIsEditing(true);
-    setIsReadOnly(true);
-    setView("form");
+    setClienteSeleccionado(cliente); setFormData(cliente);
+    setIsEditing(true); setIsReadOnly(true); setView("form");
   };
 
   const volverALista = (saltarConfirmacion = false) => {
     if (saltarConfirmacion || window.confirm("¿Desea volver al listado?")) {
-      setClienteSeleccionado(null);
-      setIsEditing(false);
-      setIsReadOnly(true);
-      setView("list");
-      setFilesToUpload([]);
-      setFormData({
-        cuit: "",
-        nombre: "",
-        domicilio: "",
-        telefono_1: "",
-        telefono_2: "",
-        fecha_inicio_actividad: "",
-        observaciones: "",
-        baja: false,
-      });
+      setClienteSeleccionado(null); setIsEditing(false); setIsReadOnly(true);
+      setView("list"); setFilesToUpload([]);
+      setFormData({ cuit: "", nombre: "", domicilio: "", telefono_1: "", telefono_2: "", fecha_inicio_actividad: "", observaciones: "", baja: false });
       window.scrollTo(0, 0);
     }
   };
 
-  const styles = {
-    container: {
-      padding: "30px",
-      backgroundColor: "#f4f7f6",
-      minHeight: "100vh",
-      fontFamily: "Segoe UI, sans-serif",
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "25px",
-      gap: "15px",
-      flexWrap: "wrap",
-    },
-    searchWrapper: { position: "relative", width: "60%" },
-    searchIcon: {
-      position: "absolute",
-      left: "12px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      color: "#888",
-    },
-    card: {
-      backgroundColor: "#fff",
-      padding: "20px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
-      marginBottom: "15px",
-      border: "1px solid #eee",
-    },
-    input: {
-      padding: "12px 12px 12px 40px",
-      border: "1px solid #ddd",
-      borderRadius: "8px",
-      width: "100%",
-      fontSize: "14px",
-      boxSizing: "border-box",
-    },
-    formInput: {
-      padding: "10px",
-      border: "1px solid #ddd",
-      borderRadius: "6px",
-      width: "100%",
-      marginTop: "5px",
-      transition: "all 0.3s",
-      boxSizing: "border-box",
-    },
-    btnGreen: {
-      padding: "12px 24px",
-      backgroundColor: "#2ecc71",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontWeight: "600",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    btnBlue: {
-      padding: "10px 20px",
-      backgroundColor: "#3182ce",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontWeight: "600",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    btnAction: (color) => ({
-      padding: "8px 12px",
-      backgroundColor: "transparent",
-      color: color,
-      border: `1px solid ${color}`,
-      borderRadius: "6px",
-      cursor: "pointer",
-      transition: "0.3s",
-      marginLeft: "8px",
-    }),
-    badge: (bg, color) => ({
-      padding: "5px 12px",
-      borderRadius: "20px",
-      fontSize: "11px",
-      backgroundColor: bg,
-      color: color,
-      fontWeight: "bold",
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "5px",
-    }),
-    label: {
-      fontWeight: "600",
-      fontSize: "13px",
-      color: "#4a5568",
-      marginBottom: "5px",
-      display: "inline-block",
-    },
-    sectionTitle: {
-      gridColumn: "1 / -1",
-      fontWeight: "700",
-      marginTop: "25px",
-      marginBottom: "10px",
-      paddingBottom: "8px",
-      borderBottom: "2px solid #3182ce",
-      color: "#2d3748",
-      fontSize: "16px",
-      textTransform: "uppercase",
-      letterSpacing: "1px",
-    },
-    switchTrack: (active) => ({
-      width: "44px",
-      height: "24px",
-      backgroundColor: active ? "#3182ce" : "#cbd5e0",
-      borderRadius: "12px",
-      position: "relative",
-      transition: "background-color 0.3s ease",
-      border: `2px solid ${active ? "#2b6cb0" : "#a0aec0"}`,
-      flexShrink: 0,
-    }),
-    switchThumb: (active) => ({
-      width: "16px",
-      height: "16px",
-      backgroundColor: "white",
-      borderRadius: "50%",
-      position: "absolute",
-      top: "2px",
-      left: active ? "22px" : "2px",
-      transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-      pointerEvents: "none",
-    }),
-    statusTrack: (baja) => ({
-      width: "50px",
-      height: "26px",
-      backgroundColor: baja ? "#fed7d7" : "#c6f6d5",
-      borderRadius: "15px",
-      position: "relative",
-      cursor: "pointer",
-      transition: "all 0.3s ease",
-      border: `2px solid ${baja ? "#e53e3e" : "#38a169"}`,
-    }),
-    statusThumb: (baja) => ({
-      width: "18px",
-      height: "18px",
-      backgroundColor: baja ? "#e53e3e" : "#38a169",
-      borderRadius: "50%",
-      position: "absolute",
-      top: "2px",
-      left: baja ? "2px" : "26px",
-      transition: "all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-      pointerEvents: "none",
-    }),
-    statusLabel: (isBaja) => ({
-      fontSize: "13px",
-      fontWeight: "bold",
-      color: isBaja ? "#c53030" : "#2f855a",
-      textTransform: "uppercase",
-      letterSpacing: "0.5px",
-    }),
-  };
+  // ── Clases reutilizables ──
+  const inputClass = (disabled) =>
+    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors box-border ${
+      disabled
+        ? "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+    }`;
 
-  const dragDropZone = (
+  const labelClass = "block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide";
+
+  const SectionTitle = ({ children }) => (
+    <div className="col-span-full pb-2 mb-1 border-b-2 border-blue-500 text-gray-700 dark:text-gray-200 text-sm font-bold uppercase tracking-widest">
+      {children}
+    </div>
+  );
+
+  const Badge = ({ bg, color, children }) => (
+    <span style={{ backgroundColor: bg, color }} className="px-3 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">
+      {children}
+    </span>
+  );
+
+  // ── Drag & Drop ──
+  const DragDropZone = () => (
     <div
-      onDragOver={(e) => {
-        e.preventDefault();
-        e.currentTarget.style.backgroundColor = "#ebf4ff";
-        e.currentTarget.style.borderColor = "#3182ce";
-      }}
-      onDragLeave={(e) => {
-        e.currentTarget.style.backgroundColor = "#f8fafc";
-        e.currentTarget.style.borderColor = "#cbd5e0";
-      }}
+      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-blue-50", "border-blue-400"); }}
+      onDragLeave={(e) => { e.currentTarget.classList.remove("bg-blue-50", "border-blue-400"); }}
       onDrop={(e) => {
         e.preventDefault();
+        e.currentTarget.classList.remove("bg-blue-50", "border-blue-400");
         const droppedFiles = Array.from(e.dataTransfer.files);
         if (droppedFiles.length > 0) {
           setFilesToUpload((prev) => [...prev, ...droppedFiles]);
@@ -413,83 +183,31 @@ const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened }) => {
         }
       }}
       onClick={() => document.getElementById("file-input-clientes").click()}
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        gap: "15px",
-        backgroundColor: "#f8fafc",
-        padding: "40px 20px",
-        borderRadius: "12px",
-        border: "2px dashed #cbd5e0",
-        textAlign: "center",
-        transition: "all 0.2s ease",
-        cursor: "pointer",
-        position: "relative",
-        marginTop: "20px",
-        marginBottom: "20px",
-      }}
+      className="flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-700/50 p-10 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-center transition-all cursor-pointer mt-5 mb-5 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400"
     >
-      <i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: "48px", color: "#3182ce" }}></i>
+      <i className="fa-solid fa-cloud-arrow-up text-5xl text-blue-500"></i>
       <div>
-        <p style={{ fontSize: "16px", fontWeight: "600", color: "#2d3748", margin: "0" }}>
-          Arrastra la documentación aquí
-        </p>
-        <p style={{ fontSize: "13px", color: "#718096", marginTop: "5px" }}>
-          O haz clic para seleccionar un archivo
-        </p>
+        <p className="text-base font-semibold text-gray-700 dark:text-gray-200 m-0">Arrastra la documentación aquí</p>
+        <p className="text-sm text-gray-400 mt-1">O haz clic para seleccionar un archivo</p>
       </div>
-      <input
-        id="file-input-clientes"
-        type="file"
-        multiple
-        onChange={(e) => {
-          setFilesToUpload((prev) => [...prev, ...Array.from(e.target.files)]);
-        }}
-        style={{ display: "none" }}
+      <input id="file-input-clientes" type="file" multiple className="hidden"
+        onChange={(e) => setFilesToUpload((prev) => [...prev, ...Array.from(e.target.files)])}
       />
       {filesToUpload.length > 0 && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginTop: "15px", justifyContent: "center" }}>
+        <div className="flex flex-wrap gap-2 mt-2 justify-center w-full">
           {filesToUpload.map((file, index) => (
-            <div
-              key={index}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                backgroundColor: "#fff",
-                padding: "5px 15px",
-                borderRadius: "20px",
-                border: "1px solid #e2e8f0",
-                boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-              }}
-            >
-              <span style={{ fontSize: "13px", color: "#2d3748" }}>
-                <i className="fa-solid fa-file-pdf" style={{ color: "#e53e3e", marginRight: "5px" }}></i>
-                {file.name}
-              </span>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setFilesToUpload(filesToUpload.filter((_, i) => i !== index));
-                }}
-                style={{ border: "none", background: "none", color: "#a0aec0", cursor: "pointer" }}
-              >
+            <div key={index} className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">
+              <i className="fa-solid fa-file-pdf text-red-500 text-sm"></i>
+              <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
+              <button type="button" onClick={(e) => { e.stopPropagation(); setFilesToUpload(filesToUpload.filter((_, i) => i !== index)); }}
+                className="border-none bg-none text-gray-300 hover:text-gray-500 cursor-pointer p-0">
                 <i className="fa-solid fa-circle-xmark"></i>
               </button>
             </div>
           ))}
           {isEditing && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                handleFileUpload();
-              }}
-              style={{ ...styles.btnGreen, marginTop: "10px", width: "100%", justifyContent: "center" }}
-            >
+            <button type="button" onClick={(e) => { e.stopPropagation(); handleFileUpload(); }}
+              className="w-full flex items-center justify-center gap-2 mt-2 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg border-none cursor-pointer text-sm transition-colors">
               <i className="fa-solid fa-cloud-arrow-up"></i> Subir
             </button>
           )}
@@ -499,258 +217,210 @@ const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened }) => {
   );
 
   return (
-    <div style={styles.container}>
+    <div className="p-6 bg-gray-50 dark:bg-gray-950 min-h-full font-sans">
+
       {view === "list" ? (
         <div>
-          <div style={styles.header}>
-            <div style={styles.searchWrapper}>
-              <i className="fa-solid fa-magnifying-glass" style={styles.searchIcon}></i>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
+            <div className="relative w-full sm:w-[60%]">
+              <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
               <input
-                style={styles.input}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
                 placeholder="Buscar por nombre o CUIT..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
             <button
-              style={styles.btnGreen}
-              onClick={() => {
-                setIsEditing(false);
-                setIsReadOnly(false);
-                setView("form");
-              }}
+              onClick={() => { setIsEditing(false); setIsReadOnly(false); setView("form"); }}
+              className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm"
             >
-              <i className="fa-solid fa-plus"></i>Registrar
+              <i className="fa-solid fa-plus"></i> Registrar
             </button>
           </div>
 
-          <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "15px", flexWrap: "wrap" }}>
-            <div
-              onClick={() => setMostrarBaja(!mostrarBaja)}
-              style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", userSelect: "none", flexShrink: 0 }}
-            >
-              <div style={styles.switchTrack(mostrarBaja)}>
-                <div style={styles.switchThumb(mostrarBaja)} />
+          {/* Filtros */}
+          <div className="flex items-center gap-4 mb-4 flex-wrap p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+            <div onClick={() => setMostrarBaja(!mostrarBaja)} className="flex items-center gap-2 cursor-pointer select-none flex-shrink-0">
+              <div className={`w-11 h-6 rounded-full relative transition-all duration-300 border-2 flex-shrink-0
+                ${mostrarBaja ? "bg-blue-500 border-blue-600" : "bg-gray-300 dark:bg-gray-600 border-gray-400 dark:border-gray-500"}`}>
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-300 shadow ${mostrarBaja ? "left-5" : "left-0.5"}`} />
               </div>
-              <span style={{ fontSize: "13px", color: mostrarBaja ? "#2b6cb0" : "#718096", fontWeight: mostrarBaja ? "600" : "400", transition: "color 0.3s" }}>
+              <span className={`text-sm font-semibold transition-colors ${mostrarBaja ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
                 Mostrar inactivos
               </span>
             </div>
 
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
-              {[
-                { value: "Todos", label: "Todos" },
-                { value: "Con operaciones", label: "Con operaciones" },
-                { value: "Sin operaciones", label: "Sin operaciones" },
-              ].map((op) => (
-                <button
-                  key={op.value}
-                  onClick={() => setFiltroOperaciones(op.value)}
-                  style={{
-                    padding: "6px 14px",
-                    borderRadius: "20px",
-                    border: `1px solid ${filtroOperaciones === op.value ? "#3182ce" : "#cbd5e0"}`,
-                    backgroundColor: filtroOperaciones === op.value ? "#ebf4ff" : "transparent",
-                    color: filtroOperaciones === op.value ? "#2b6cb0" : "#718096",
-                    fontWeight: filtroOperaciones === op.value ? "600" : "400",
-                    fontSize: "13px",
-                    cursor: "pointer",
-                    transition: "all 0.2s",
-                    flexShrink: 0,
-                  }}
-                >
-                  {op.label}
-                </button>
+            <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 hidden sm:block" />
+
+            <div className="flex gap-2 w-full sm:w-auto flex-1">
+              {["Todos", "Con operaciones", "Sin operaciones"].map((op) => (
+                <button 
+      key={op} 
+      onClick={() => setFiltroOperaciones(op)}
+      className={`
+        flex-1 sm:flex-none px-2 sm:px-4 py-2 rounded-lg text-[10px] sm:text-sm font-bold border transition-all cursor-pointer
+        flex items-center justify-center text-center leading-tight min-h-[40px]
+        ${filtroOperaciones === op
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm"
+          : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-transparent hover:border-gray-300"
+        }
+      `}
+    >
+      {op}
+    </button>
               ))}
             </div>
           </div>
 
+          {/* Cards */}
           {clientesFiltrados.map((c) => (
-            <div key={c.cuit} style={styles.card}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                  <div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#ebf4ff", display: "flex", alignItems: "center", justifyContent: "center", color: "#3182ce" }}>
+            <div key={c.cuit} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                     <i className="fa-solid fa-user"></i>
                   </div>
                   <div>
-                    <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                      <strong style={{ fontSize: "16px", color: "#2d3748" }}>{c.nombre}</strong>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <strong className="text-base text-gray-800 dark:text-gray-100">{c.nombre}</strong>
                       {c.baja
-                        ? <span style={styles.badge("#fff5f5", "#c53030")}>Inactivo</span>
-                        : <span style={styles.badge("#f0fff4", "#22543d")}>Activo</span>
+                        ? <Badge bg="#fff5f5" color="#c53030">Inactivo</Badge>
+                        : <Badge bg="#f0fff4" color="#22543d">Activo</Badge>
                       }
-                      {tieneOperacionesActivas(c.cuit) && (
-                        <span style={styles.badge("#fffeb3", "#856404")}>Con operaciones</span>
-                      )}
+                      {tieneOperacionesActivas(c.cuit) && <Badge bg="#fffeb3" color="#856404">Con operaciones</Badge>}
                     </div>
-                    <p style={{ margin: "4px 0 0 0", color: "#718096", fontSize: "13px" }}>
-                      <i className="fa-solid fa-id-card" style={{ marginRight: "5px" }}></i>
-                      CUIT: {c.cuit} |
-                      <i className="fa-solid fa-location-dot" style={{ marginLeft: "10px", marginRight: "5px" }}></i>
-                      {c.domicilio || "Sin domicilio"}
+                    <p className="m-0 mt-1 text-gray-400 dark:text-gray-500 text-xs">
+                      <i className="fa-solid fa-id-card mr-1"></i> CUIT: {c.cuit} &nbsp;|&nbsp;
+                      <i className="fa-solid fa-location-dot mr-1"></i> {c.domicilio || "Sin domicilio"}
                     </p>
                   </div>
                 </div>
-                <button title="Ver Detalles" style={styles.btnAction("#3182ce")} onClick={() => verDetalle(c)}>
+                <button onClick={() => verDetalle(c)}
+                  className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm">
                   <i className="fa-solid fa-eye"></i>
                 </button>
               </div>
             </div>
           ))}
 
-          {loading ? (
-            <SkeletonTable rows={4} />
-          ) : (
-            clientesFiltrados.length === 0 && (
-              <div style={{ textAlign: "center", padding: "60px 20px", color: "#a0aec0", backgroundColor: "#fff", borderRadius: "12px", border: "2px dashed #e2e8f0" }}>
-                <i className="fa-solid fa-box-open" style={{ fontSize: "50px", marginBottom: "15px", color: "#cbd5e0" }}></i>
-                <h3 style={{ margin: 0, fontSize: "18px", color: "#4a5568" }}>No hay coincidencias</h3>
-                <p style={{ marginTop: "8px" }}>Prueba con otro nombre o CUIT.</p>
-              </div>
-            )
+          {loading ? <SkeletonTable rows={4} /> : clientesFiltrados.length === 0 && (
+            <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
+              <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
+              <p className="mt-2 text-sm">Prueba con otro nombre o CUIT.</p>
+            </div>
           )}
         </div>
+
       ) : (
-        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-          <div style={styles.header}>
-            <button
-              onClick={() => volverALista(false)}
-              style={{ border: "none", background: "none", color: "#3182ce", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}
-            >
+        /* ── Formulario ── */
+        <div className="max-w-3xl mx-auto">
+          <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
+            <button onClick={() => volverALista(false)}
+              className="flex items-center gap-2 border-none bg-none text-blue-600 dark:text-blue-400 cursor-pointer font-bold text-sm hover:text-blue-800 transition-colors">
               <i className="fa-solid fa-arrow-left"></i> Volver al listado
             </button>
             {isEditing && (
-              <button
-                style={{ ...styles.btnBlue, backgroundColor: isReadOnly ? "#3182ce" : "#718096" }}
-                onClick={() => setIsReadOnly(!isReadOnly)}
-              >
+              <button onClick={() => setIsReadOnly(!isReadOnly)}
+                className={`flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-lg border-none cursor-pointer text-sm transition-colors ${isReadOnly ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-500 hover:bg-gray-600"}`}>
                 <i className={isReadOnly ? "fa-solid fa-pen-to-square" : "fa-solid fa-xmark"}></i>
                 {isReadOnly ? "Editar" : "Cancelar"}
               </button>
             )}
           </div>
 
-          <div style={styles.card}>
-            <form
-              onSubmit={handleSubmit}
-              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "20px" }}
-            >
-              <div style={styles.sectionTitle}>Datos Identificatorios</div>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
 
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>CUIT *</label>
-                <input
-                  type="text"
-                  pattern="[0-9]{11}"
-                  style={{ ...styles.formInput, backgroundColor: isEditing ? "#f8fafc" : "#fff" }}
-                  placeholder="Ej: 20123456789"
-                  value={formData.cuit}
-                  disabled={isEditing}
+              <SectionTitle>Datos Identificatorios</SectionTitle>
+
+              <div>
+                <label className={labelClass}>CUIT *</label>
+                <input type="text" pattern="[0-9]{11}" placeholder="Ej: 20123456789"
+                  value={formData.cuit} disabled={isEditing}
                   onChange={(e) => setFormData({ ...formData, cuit: e.target.value })}
-                  required
-                />
+                  required className={inputClass(isEditing)} />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Razón Social / Nombre *</label>
-                <input
-                  style={styles.formInput}
-                  placeholder="Ej: Logística S.A."
-                  value={formData.nombre}
+              <div>
+                <label className={labelClass}>Razón Social / Nombre *</label>
+                <input placeholder="Ej: Logística S.A." value={formData.nombre}
                   disabled={isEditing && isReadOnly}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  required
-                />
+                  required className={inputClass(isEditing && isReadOnly)} />
               </div>
 
-              <div style={styles.sectionTitle}>Información de Contacto</div>
+              <SectionTitle>Información de Contacto</SectionTitle>
 
-              <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Domicilio *</label>
-                <input
-                  style={styles.formInput}
-                  placeholder="Calle, Número, Localidad"
-                  value={formData.domicilio || ""}
+              <div className="col-span-full">
+                <label className={labelClass}>Domicilio *</label>
+                <input placeholder="Calle, Número, Localidad" value={formData.domicilio || ""}
                   disabled={isEditing && isReadOnly}
                   onChange={(e) => setFormData({ ...formData, domicilio: e.target.value })}
-                  required
-                />
+                  required className={inputClass(isEditing && isReadOnly)} />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Teléfono Principal *</label>
-                <input
-                  type="number"
-                  style={styles.formInput}
-                  placeholder="Ej: 0113438401246"
-                  value={formData.telefono_1 || ""}
+              <div>
+                <label className={labelClass}>Teléfono Principal *</label>
+                <input type="number" placeholder="Ej: 0113438401246" value={formData.telefono_1 || ""}
                   disabled={isEditing && isReadOnly}
                   onChange={(e) => setFormData({ ...formData, telefono_1: e.target.value })}
-                  required
-                />
+                  required className={inputClass(isEditing && isReadOnly)} />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Teléfono Secundario</label>
-                <input
-                  type="number"
-                  style={styles.formInput}
-                  placeholder="Opcional"
-                  value={formData.telefono_2 || ""}
+              <div>
+                <label className={labelClass}>Teléfono Secundario</label>
+                <input type="number" placeholder="Opcional" value={formData.telefono_2 || ""}
                   disabled={isEditing && isReadOnly}
                   onChange={(e) => setFormData({ ...formData, telefono_2: e.target.value })}
-                />
+                  className={inputClass(isEditing && isReadOnly)} />
               </div>
 
-              <div style={styles.sectionTitle}>Otros Datos</div>
+              <SectionTitle>Otros Datos</SectionTitle>
 
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Fecha Inicio Actividad *</label>
-                <input
-                  type="date"
-                  style={styles.formInput}
+              <div>
+                <label className={labelClass}>Fecha Inicio Actividad *</label>
+                <input type="date" max={today}
                   value={formData.fecha_inicio_actividad ? formData.fecha_inicio_actividad.split("T")[0] : ""}
-                  max={today}
                   disabled={isEditing && isReadOnly}
                   onChange={(e) => setFormData({ ...formData, fecha_inicio_actividad: e.target.value })}
-                  required
-                />
+                  required className={inputClass(isEditing && isReadOnly)} />
               </div>
 
-              <div style={{ gridColumn: "1 / -1", display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Observaciones</label>
-                <textarea
-                  style={{ ...styles.formInput, height: "80px", resize: "none" }}
-                  placeholder="Notas adicionales sobre el cliente..."
-                  value={formData.observaciones || ""}
+              <div className="col-span-full">
+                <label className={labelClass}>Observaciones</label>
+                <textarea placeholder="Notas adicionales..." value={formData.observaciones || ""}
                   disabled={isEditing && isReadOnly}
                   onChange={(e) => setFormData({ ...formData, observaciones: e.target.value })}
-                />
+                  className={`${inputClass(isEditing && isReadOnly)} h-20 resize-none`} />
               </div>
 
               {isAdmin && isEditing && (
                 <>
-                  <div style={styles.sectionTitle}>Estado Lógico del Cliente</div>
-                  <div style={{ gridColumn: "1 / -1" }}>
+                  <SectionTitle>Estado Lógico del Cliente</SectionTitle>
+                  <div className="col-span-full">
                     <div
-                      style={{
-                        display: "flex", alignItems: "center", gap: "15px",
-                        padding: "12px", backgroundColor: "#f8fafc",
-                        borderRadius: "10px", border: "1px solid #edf2f7",
-                        cursor: isReadOnly ? "default" : "pointer", width: "fit-content",
-                      }}
                       onClick={() => !isReadOnly && setFormData({ ...formData, baja: !formData.baja })}
+                      className={`flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700 w-fit ${isReadOnly ? "cursor-default opacity-70" : "cursor-pointer"}`}
                     >
-                      <div style={styles.statusTrack(formData.baja)}>
-                        <div style={styles.statusThumb(formData.baja)} />
+                      {/* Switch estado */}
+                      <div 
+  className="w-12 h-6 rounded-full relative border-2 transition-all duration-300"
+  style={{ 
+    backgroundColor: formData.baja ? "#fed7d7" : "#c6f6d5", 
+    borderColor: formData.baja ? "#e53e3e" : "#38a169" 
+  }}
+>
+                        <div style={{ backgroundColor: formData.baja ? "#e53e3e" : "#38a169", left: formData.baja ? "2px" : "26px" }}
+                          className="w-4 h-4 rounded-full absolute top-0.5 transition-all duration-300 pointer-events-none" />
                       </div>
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span style={styles.statusLabel(formData.baja)}>
+                      <div className="flex flex-col">
+                        <span style={{ color: formData.baja ? "#c53030" : "#2f855a" }} className="text-xs font-bold uppercase tracking-wide">
                           {formData.baja ? "Inactivo" : "Activo"}
                         </span>
-                        <span style={{ fontSize: "11px", color: "#718096" }}>
-                          {isReadOnly ? "Modo lectura" : "Haz clic para cambiar el estado"}
-                        </span>
+                        <span className="text-xs text-gray-400">{isReadOnly ? "Modo lectura" : "Haz clic para cambiar"}</span>
                       </div>
                     </div>
                   </div>
@@ -758,52 +428,47 @@ const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened }) => {
               )}
 
               {!isEditing && (
-                <div style={{ gridColumn: "1 / -1" }}>
-                  <div style={styles.sectionTitle}>Documentación</div>
-                  {dragDropZone}
+                <div className="col-span-full">
+                  <SectionTitle>Documentación</SectionTitle>
+                  <DragDropZone />
                 </div>
               )}
 
               {(!isEditing || !isReadOnly) && (
-                <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
-                  <button
-                    type="submit"
-                    style={{ ...styles.btnGreen, width: "100%", justifyContent: "center", padding: "15px", fontSize: "16px" }}
-                  >
+                <div className="col-span-full mt-2">
+                  <button type="submit"
+                    className="w-full flex items-center justify-center gap-2 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg border-none cursor-pointer text-base transition-colors">
                     <i className="fa-solid fa-floppy-disk"></i> Guardar
                   </button>
                 </div>
               )}
             </form>
 
+            {/* Documentación en edición */}
             {isEditing && (
-              <div style={{ marginTop: "40px", borderTop: "2px solid #eee", paddingTop: "20px" }}>
-                <div style={styles.sectionTitle}>Documentación</div>
-                {!isReadOnly && dragDropZone}
-                <div style={{ display: "flex", flexDirection: "column", gap: "8px", marginTop: "15px" }}>
-                  {archivos
-                    .filter((a) => a.cuit_cliente === clienteSeleccionado?.cuit)
-                    .map((a) => (
-                      <div
-                        key={a.id}
-                        style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px", border: "1px solid #edf2f7", borderRadius: "8px" }}
-                      >
-                        <span style={{ fontSize: "13px", color: "#4a5568", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "200px" }}>
-                          <i className="fa-solid fa-file-pdf" style={{ marginRight: "8px", color: "#e53e3e" }}></i>
-                          {a.nombre}
-                        </span>
-                        <div style={{ display: "flex", gap: "5px" }}>
-                          <button onClick={() => downloadFile(a.id, a.nombre)} style={styles.btnAction("#3182ce")} title="Descargar">
-                            <i className="fa-solid fa-download"></i>
+              <div className="mt-10 pt-5 border-t-2 border-gray-100 dark:border-gray-700">
+                <SectionTitle>Documentación</SectionTitle>
+                {!isReadOnly && <DragDropZone />}
+                <div className="flex flex-col gap-2 mt-4">
+                  {archivos.filter((a) => a.cuit_cliente === clienteSeleccionado?.cuit).map((a) => (
+                    <div key={a.id} className="flex justify-between items-center p-3 border border-gray-100 dark:border-gray-700 rounded-lg">
+                      <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[200px]">
+                        <i className="fa-solid fa-file-pdf text-red-500 mr-2"></i>{a.nombre}
+                      </span>
+                      <div className="flex gap-2">
+                        <button onClick={() => downloadFile(a.id, a.nombre)}
+                          className="px-3 py-1.5 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm">
+                          <i className="fa-solid fa-download"></i>
+                        </button>
+                        {!isReadOnly && (
+                          <button onClick={() => handleEliminarArchivo(a.id)}
+                            className="px-3 py-1.5 border border-red-400 text-red-500 rounded-lg bg-transparent cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm">
+                            <i className="fa-solid fa-trash-can"></i>
                           </button>
-                          {!isReadOnly && (
-                            <button onClick={() => handleEliminarArchivo(a.id)} style={styles.btnAction("#e53e3e")} title="Eliminar">
-                              <i className="fa-solid fa-trash-can"></i>
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
-                    ))}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}

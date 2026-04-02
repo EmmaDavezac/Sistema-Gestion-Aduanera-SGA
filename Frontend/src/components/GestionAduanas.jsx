@@ -7,7 +7,6 @@ const GestionAduanas = ({ onNotification }) => {
   const [view, setView] = useState("list");
   const [busqueda, setBusqueda] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedAduana, setSelectedAduana] = useState(null);
   const [formData, setFormData] = useState({ id: "", nombre: "" });
   const [loading, setLoading] = useState(true);
   const cargadoRef = useRef(false);
@@ -17,25 +16,21 @@ const GestionAduanas = ({ onNotification }) => {
     try {
       const data = await getAduanas();
       setAduanas(data);
-    } catch (err) {
-      onNotification("Error al cargar aduanas. Intente nuevamente.", "error");
+    } catch {
+      onNotification("Error al cargar aduanas.", "error");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    if (!cargadoRef.current) {
-      cargarAduanas();
-      cargadoRef.current = true;
-    }
+    if (!cargadoRef.current) { cargarAduanas(); cargadoRef.current = true; }
   }, [cargarAduanas]);
 
   const volverALista = (saltarConfirmacion = false) => {
     if (saltarConfirmacion || window.confirm("¿Desea volver al listado?")) {
       setView("list");
       setIsEditing(false);
-      setSelectedAduana(null);
       setFormData({ id: "", nombre: "" });
       window.scrollTo(0, 0);
     }
@@ -48,188 +43,96 @@ const GestionAduanas = ({ onNotification }) => {
       onNotification("Aduana registrada con éxito", "success");
       await cargarAduanas();
       volverALista(true);
-    } catch (err) {
-      onNotification("Error: El código (ID) ya existe o los datos son inválidos.", "error");
+    } catch {
+      onNotification("Error: El código ya existe o los datos son inválidos.", "error");
     }
   };
 
   const handleEliminar = async (id) => {
-    if (!window.confirm("¿Está seguro de eliminar esta aduana? Esta acción no se puede deshacer.")) return;
+    if (!window.confirm("¿Eliminar esta aduana? Esta acción no se puede deshacer.")) return;
     try {
       await deleteAduana(id);
       await cargarAduanas();
       onNotification("Aduana eliminada exitosamente.", "success");
-    } catch (err) {
-      onNotification("Error al eliminar la aduana. Intente nuevamente.", "error");
+    } catch {
+      onNotification("Error al eliminar la aduana.", "error");
     }
   };
 
-  const verDetalle = (aduana) => {
-    setSelectedAduana(aduana);
-    setFormData({ id: aduana.id, nombre: aduana.nombre });
-    setIsEditing(true);
-    setView("form");
-  };
-
   const aduanasFiltradas = aduanas.filter(
-    (a) =>
-      a.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      a.id.toString().includes(busqueda)
+    (a) => a.nombre.toLowerCase().includes(busqueda.toLowerCase()) || a.id.toString().includes(busqueda)
   );
 
-  const styles = {
-    container: {
-      padding: "30px",
-      backgroundColor: "#f4f7f6",
-      minHeight: "100vh",
-      fontFamily: "Segoe UI, sans-serif",
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "25px",
-      gap: "15px",
-      flexWrap: "wrap",
-    },
-    searchWrapper: { position: "relative", width: "60%" },
-    searchIcon: {
-      position: "absolute",
-      left: "12px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      color: "#888",
-    },
-    card: {
-      backgroundColor: "#fff",
-      padding: "20px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
-      marginBottom: "15px",
-      border: "1px solid #eee",
-    },
-    input: {
-      padding: "12px 12px 12px 40px",
-      border: "1px solid #ddd",
-      borderRadius: "8px",
-      width: "100%",
-      fontSize: "14px",
-      boxSizing: "border-box",
-    },
-    formInput: {
-      padding: "10px",
-      border: "1px solid #ddd",
-      borderRadius: "6px",
-      width: "100%",
-      marginTop: "5px",
-      boxSizing: "border-box",
-      transition: "all 0.3s",
-    },
-    label: {
-      fontWeight: "600",
-      fontSize: "13px",
-      color: "#4a5568",
-      marginBottom: "5px",
-      display: "inline-block",
-    },
-    sectionTitle: {
-      gridColumn: "1 / -1",
-      fontWeight: "700",
-      marginTop: "25px",
-      marginBottom: "10px",
-      paddingBottom: "8px",
-      borderBottom: "2px solid #3182ce",
-      color: "#2d3748",
-      fontSize: "16px",
-      textTransform: "uppercase",
-      letterSpacing: "1px",
-    },
-    btnGreen: {
-      padding: "12px 24px",
-      backgroundColor: "#2ecc71",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontWeight: "600",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    btnAction: (color) => ({
-      padding: "8px 12px",
-      backgroundColor: "transparent",
-      color: color,
-      border: `1px solid ${color}`,
-      borderRadius: "6px",
-      cursor: "pointer",
-      transition: "0.3s",
-      marginLeft: "8px",
-    }),
-    badge: {
-      padding: "4px 10px",
-      borderRadius: "12px",
-      fontSize: "12px",
-      backgroundColor: "#edf2f7",
-      color: "#2d3748",
-      fontWeight: "bold",
-    },
-  };
+  const inputClass = (disabled) =>
+    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors box-border ${
+      disabled
+        ? "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+    }`;
+
+  const labelClass = "block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide";
 
   return (
-    <div style={styles.container}>
+    <div className="p-6 bg-gray-50 dark:bg-gray-950 min-h-full font-sans">
+
       {view === "list" ? (
         <div>
-          <div style={styles.header}>
-            <div style={styles.searchWrapper}>
-              <i className="fa-solid fa-magnifying-glass" style={styles.searchIcon}></i>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
+            <div className="relative w-full sm:w-[60%]">
+              <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
               <input
-                style={styles.input}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
                 placeholder="Buscar por nombre o código..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
             <button
-              style={styles.btnGreen}
-              onClick={() => {
-                setIsEditing(false);
-                setFormData({ id: "", nombre: "" });
-                setView("form");
-              }}
+              onClick={() => { setIsEditing(false); setFormData({ id: "", nombre: "" }); setView("form"); }}
+              className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm"
             >
               <i className="fa-solid fa-plus"></i> Registrar
             </button>
           </div>
 
+          {/* Lista */}
           {loading ? (
             <SkeletonTable rows={4} />
           ) : aduanasFiltradas.length === 0 ? (
-            <div style={{ textAlign: "center", padding: "60px 20px", color: "#a0aec0", backgroundColor: "#fff", borderRadius: "12px", border: "2px dashed #e2e8f0" }}>
-              <i className="fa-solid fa-box-open" style={{ fontSize: "50px", marginBottom: "15px", color: "#cbd5e0" }}></i>
-              <h3 style={{ margin: 0, fontSize: "18px", color: "#4a5568" }}>No hay coincidencias</h3>
-              <p style={{ marginTop: "8px" }}>Prueba con otro código u otro nombre.</p>
+            <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
+              <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
+              <p className="mt-2 text-sm">Prueba con otro código u otro nombre.</p>
             </div>
           ) : (
             aduanasFiltradas.map((a) => (
-              <div key={a.id} style={styles.card}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "15px" }}>
-                    <div style={{ width: "45px", height: "45px", borderRadius: "50%", backgroundColor: "#ebf4ff", display: "flex", alignItems: "center", justifyContent: "center", color: "#3182ce" }}>
+              <div key={a.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center gap-4">
+                    <div className="w-11 h-11 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                       <i className="fa-solid fa-building-columns"></i>
                     </div>
-                    <div>
-                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-                        <strong style={{ fontSize: "16px", color: "#2d3748" }}>{a.nombre}</strong>
-                        <span style={styles.badge}>ID: {a.id}</span>
-                      </div>
+                    <div className="flex items-center gap-2">
+                      <strong className="text-base text-gray-800 dark:text-gray-100">{a.nombre}</strong>
+                      <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
+                        ID: {a.id}
+                      </span>
                     </div>
                   </div>
-                  <div style={{ display: "flex" }}>
-                    <button style={styles.btnAction("#3182ce")} onClick={() => verDetalle(a)} title="Ver Detalle">
+                  <div className="flex gap-2">
+                    <button
+                      title="Ver Detalle"
+                      onClick={() => { setFormData({ id: a.id, nombre: a.nombre }); setIsEditing(true); setView("form"); }}
+                      className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm"
+                    >
                       <i className="fa-solid fa-eye"></i>
                     </button>
-                    <button style={styles.btnAction("#e53e3e")} onClick={() => handleEliminar(a.id)} title="Eliminar Aduana">
+                    <button
+                      title="Eliminar"
+                      onClick={() => handleEliminar(a.id)}
+                      className="px-3 py-2 border border-red-400 text-red-500 rounded-lg bg-transparent cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm"
+                    >
                       <i className="fa-solid fa-trash-can"></i>
                     </button>
                   </div>
@@ -238,53 +141,57 @@ const GestionAduanas = ({ onNotification }) => {
             ))
           )}
         </div>
+
       ) : (
-        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-          <div style={styles.header}>
+        /* ── Formulario ── */
+        <div className="max-w-3xl mx-auto">
+          <div className="flex items-center mb-5">
             <button
               onClick={() => volverALista(false)}
-              style={{ border: "none", background: "none", color: "#3182ce", cursor: "pointer", fontWeight: "bold", display: "flex", alignItems: "center", gap: "8px" }}
+              className="flex items-center gap-2 border-none bg-none text-blue-600 dark:text-blue-400 cursor-pointer font-bold text-sm hover:text-blue-800 transition-colors"
             >
               <i className="fa-solid fa-arrow-left"></i> Volver al listado
             </button>
           </div>
 
-          <div style={styles.card}>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div className="pb-2 mb-5 border-b-2 border-blue-500 text-gray-700 dark:text-gray-200 text-sm font-bold uppercase tracking-widest">
+              Datos de la Aduana
+            </div>
+
             <form
               onSubmit={handleSubmit}
-              style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-5"
             >
-              <div style={styles.sectionTitle}>Datos de la Aduana</div>
-
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Código Identificador *</label>
+              <div>
+                <label className={labelClass}>Código Identificador *</label>
                 <input
-                  style={{ ...styles.formInput, backgroundColor: isEditing ? "#f8fafc" : "#fff" }}
                   value={formData.id}
                   disabled={isEditing}
                   onChange={(e) => setFormData({ ...formData, id: e.target.value.toUpperCase().slice(0, 4) })}
                   required
                   placeholder="Ej: 015"
+                  className={inputClass(isEditing)}
                 />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Nombre *</label>
+              <div>
+                <label className={labelClass}>Nombre *</label>
                 <input
-                  style={styles.formInput}
                   value={formData.nombre}
                   disabled={isEditing}
                   onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                   required
                   placeholder="Ej: Concepción del Uruguay"
+                  className={inputClass(isEditing)}
                 />
               </div>
 
               {!isEditing && (
-                <div style={{ gridColumn: "1 / -1", marginTop: "10px" }}>
+                <div className="col-span-full mt-2">
                   <button
                     type="submit"
-                    style={{ ...styles.btnGreen, width: "100%", justifyContent: "center", padding: "15px", fontSize: "16px" }}
+                    className="w-full flex items-center justify-center gap-2 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg border-none cursor-pointer text-base transition-colors"
                   >
                     <i className="fa-solid fa-floppy-disk"></i> Guardar
                   </button>

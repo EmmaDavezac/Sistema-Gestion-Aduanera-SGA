@@ -1,22 +1,15 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import {
-  getImportaciones,
-  createImportacion,
-  updateImportacion,
-  getClientes,
-  getAduanas,
-  getArchivosByImportacion,
-  uploadFile,
-  deleteArchivo,
+  getImportaciones, createImportacion, updateImportacion,
+  getClientes, getAduanas, getArchivosByImportacion, uploadFile, deleteArchivo,
 } from "../api/api";
 import SkeletonTable from "./SkeletonTable";
 
-const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  => {
+const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened }) => {
   const [importaciones, setImportaciones] = useState([]);
   const [clientes, setClientes] = useState([]);
   const [aduanas, setAduanas] = useState([]);
   const [archivos, setArchivos] = useState([]);
-
   const [busqueda, setBusqueda] = useState("");
   const [view, setView] = useState("list");
   const [isEditing, setIsEditing] = useState(false);
@@ -24,150 +17,85 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
   const [selectedId, setSelectedId] = useState(null);
   const [filesToUpload, setFilesToUpload] = useState([]);
   const [loading, setLoading] = useState(true);
-  const isAdmin = localStorage.getItem("isAdmin") === "true";
   const [showClienteModal, setShowClienteModal] = useState(false);
   const [filtroNombreCliente, setFiltroNombreCliente] = useState("");
   const [mostrarBaja, setMostrarBaja] = useState(false);
   const [filtroEstado, setFiltroEstado] = useState("Todas");
-  const [formData, setFormData] = useState({
-    numero_destinacion: "",
-    condicion_venta: "",
-    divisa: "",
-    numero_factura: "",
-    pais_destino: "",
-    unitario_en_divisa: 0,
-    unidad: "",
-    cantidad_unidades: 0,
-    fob_total_en_divisa: 0,
-    fob_total_en_dolar: 0,
-    numeracion: "",
-    baja: false,
-    aduana: "",
-    cliente: "",
-    puerto_embarque: "",
-    oficializacion: "",
-
-    estado: "",
-  });
+  const isAdmin = localStorage.getItem("isAdmin") === "true";
   const cargadoRef = useRef(false);
+
+  const [formData, setFormData] = useState({
+    numero_destinacion: "", condicion_venta: "", divisa: "", numero_factura: "",
+    pais_origen: "", pais_destino: "", unitario_en_divisa: 0, unidad: "",
+    cantidad_unidades: 0, fob_total_en_divisa: 0, fob_total_en_dolar: 0,
+    numeracion: "", baja: false, aduana: "", cliente: "", puerto_embarque: "",
+    oficializacion: "", estado: "", vendedor: "",
+  });
 
   const cargarDatos = useCallback(async () => {
     setLoading(true);
     try {
-      const [dataImp, dataCli, dataAdu] = await Promise.all([
-        getImportaciones(),
-        getClientes(),
-        getAduanas(),
-      ]);
-      setImportaciones(dataImp);
-      setClientes(dataCli);
-      setAduanas(dataAdu);
+      const [dataImp, dataCli, dataAdu] = await Promise.all([getImportaciones(), getClientes(), getAduanas()]);
+      setImportaciones(dataImp); setClientes(dataCli); setAduanas(dataAdu);
     } catch (err) {
-      console.error("Error al cargar datos:", err);
       onNotification("Error al cargar datos: " + (err.response?.data?.detail || "Intente nuevamente"), "error");
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   }, []);
+
   const formatDate = (dateStr) => {
     if (!dateStr) return null;
     const date = new Date(dateStr);
-    if (isNaN(date)) return dateStr; 
-    return date.toISOString().split('T')[0]; 
+    return isNaN(date) ? dateStr : date.toISOString().split("T")[0];
   };
+
   const cargarArchivos = useCallback(async (id) => {
     if (!id) return;
-    try {
-      const data = await getArchivosByImportacion(id);
-      setArchivos(data);
-    } catch (err) {
-      console.error("Error al cargar archivos:", err);
-      onNotification("Error al cargar archivos: " + (err.response?.data?.detail || "Intente nuevamente"), "error");
-    }
+    try { const data = await getArchivosByImportacion(id); setArchivos(data); }
+    catch (err) { onNotification("Error al cargar archivos", "error"); }
   }, []);
- 
+
   useEffect(() => {
-    if (autoOpenForm) {
-      setView("form");
-      setIsEditing(false);
-      setIsReadOnly(false);
-      onFormOpened?.();
-    }
+    if (autoOpenForm) { setView("form"); setIsEditing(false); setIsReadOnly(false); onFormOpened?.(); }
   }, [autoOpenForm]);
 
   useEffect(() => {
-    if (!cargadoRef.current) {
-      cargarDatos();
-      cargadoRef.current = true;
-    }
+    if (!cargadoRef.current) { cargarDatos(); cargadoRef.current = true; }
   }, [cargarDatos]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
+    setFormData({ ...formData, [name]: type === "checkbox" ? checked : value });
   };
 
   const handleNumericChange = (e) => {
     const { name, value } = e.target;
     const numValue = value === "" ? 0 : parseFloat(value);
-
     setFormData((prev) => {
       const newData = { ...prev, [name]: numValue };
-      if (name === "cantidad_unidades" || name === "unitario_en_divisa") {
-        newData.fob_total_en_divisa =
-          newData.cantidad_unidades * newData.unitario_en_divisa;
-      }
+      if (name === "cantidad_unidades" || name === "unitario_en_divisa")
+        newData.fob_total_en_divisa = newData.cantidad_unidades * newData.unitario_en_divisa;
       return newData;
     });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const camposObligatorios = [
-      "cliente",
-      "numero_destinacion",
-      "divisa",
-      "aduana",
-      "cantidad_unidades",
-      "unitario_en_divisa",
-      "fob_total_en_divisa",
-      "fob_total_en_dolar",
-    ];
+    const camposObligatorios = ["cliente", "numero_destinacion", "divisa", "aduana", "cantidad_unidades", "unitario_en_divisa", "fob_total_en_divisa", "fob_total_en_dolar"];
     const faltantes = camposObligatorios.filter((campo) => !formData[campo]);
-    if (faltantes.length > 0) {
-      onNotification(`Faltan campos obligatorios: ${faltantes.join(", ")}`, "error");
-      
-      return;
-    }
-  const esDuplicado = importaciones.some(
-        (imp) =>
-          imp.numero_destinacion === formData.numero_destinacion &&
-          String(imp.id) !== String(selectedId),
-      );
-
-  if (esDuplicado) {
-    onNotification("El número de destinación ya pertenece a otra operación", "error");
-    return; }
-     if (
-        !window.confirm(
-          `¿Desea ${isEditing ? "actualizar" : "registrar"} esta importación?`,
-        )
-      ) {
-        return;
-      }
+    if (faltantes.length > 0) { onNotification(`Faltan campos: ${faltantes.join(", ")}`, "error"); return; }
+    const esDuplicado = importaciones.some((imp) => imp.numero_destinacion === formData.numero_destinacion && String(imp.id) !== String(selectedId));
+    if (esDuplicado) { onNotification("El número de destinación ya pertenece a otra operación", "error"); return; }
+    if (!window.confirm(`¿Desea ${isEditing ? "actualizar" : "registrar"} esta importación?`)) return;
     try {
       const dataToSend = {
         ...formData,
         aduana: formData.aduana ? parseInt(formData.aduana) : null,
-        cliente: formData.cliente || null, 
+        cliente: formData.cliente || null,
         baja: formData.baja || false,
-        cantidad_unidades: formData.cantidad_unidades === "" ? 0 : parseInt(formData.cantidad_unidades),
-        unitario_en_divisa: formData.unitario_en_divisa === "" ? 0.0 : parseFloat(formData.unitario_en_divisa),
-        fob_total_en_divisa: formData.fob_total_en_divisa === "" ? 0.0 : parseFloat(formData.fob_total_en_divisa),
-        fob_total_en_dolar: formData.fob_total_en_dolar === "" ? 0.0 : parseFloat(formData.fob_total_en_dolar),
+        cantidad_unidades: parseInt(formData.cantidad_unidades) || 0,
+        unitario_en_divisa: parseFloat(formData.unitario_en_divisa) || 0,
+        fob_total_en_divisa: parseFloat(formData.fob_total_en_divisa) || 0,
+        fob_total_en_dolar: parseFloat(formData.fob_total_en_dolar) || 0,
         oficializacion: formatDate(formData.oficializacion),
       };
       let importacionId = selectedId;
@@ -175,8 +103,7 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
         await updateImportacion(selectedId, dataToSend);
         onNotification("Importación actualizada con éxito", "success");
       } else {
-        dataToSend.estado= "Inicializada"; 
-        dataToSend.baja = false;
+        dataToSend.estado = "Inicializada"; dataToSend.baja = false;
         const nuevaImportacion = await createImportacion(dataToSend);
         importacionId = nuevaImportacion?.id || nuevaImportacion?.data?.id;
         onNotification("Importación registrada con éxito", "success");
@@ -184,1252 +111,425 @@ const GestionImportaciones = ({ onNotification, autoOpenForm, onFormOpened })  =
       if (filesToUpload.length > 0 && importacionId) {
         const uploadPromises = filesToUpload.map((file) => {
           const fileData = new FormData();
-          fileData.append("archivo", file);
-          fileData.append("id_importacion", importacionId);
-          fileData.append("tipo", 2); 
-          fileData.append("nombre", file.name);
+          fileData.append("archivo", file); fileData.append("id_importacion", importacionId);
+          fileData.append("tipo", 2); fileData.append("nombre", file.name);
           return uploadFile(fileData);
         });
-  
-        try {
-          await Promise.all(uploadPromises);
-          setFilesToUpload([]);
-          onNotification(`${filesToUpload.length} archivos subidos con éxito`, "success");
-        } catch (fileErr) {
-          console.error("Error al subir archivos:", fileErr);
-          onNotification("Error al subir algunos archivos", "error");
-        }
+        try { await Promise.all(uploadPromises); setFilesToUpload([]); }
+        catch { onNotification("Error al subir algunos archivos", "error"); }
       }
       window.scrollTo({ top: 0, behavior: "smooth" });
-      await cargarDatos();
-      volverALista(true);
+      await cargarDatos(); volverALista(true);
     } catch (err) {
-      console.error("Error al guardar importación:", err.response?.data);
-      onNotification("Error al guardar importación: " + (err.response?.data?.detail || "Verifique los datos"), "error");
-      
+      onNotification("Error al guardar: " + (err.response?.data?.detail || "Verifique los datos"), "error");
     }
   };
 
   const handleFileUpload = async () => {
     if (filesToUpload.length === 0 || !selectedId) return;
-    
     const uploadPromises = filesToUpload.map((file) => {
       const data = new FormData();
-      data.append("archivo", file);
-      data.append("id_importacion", selectedId);
-      data.append("tipo", 2);
-      data.append("nombre", file.name);
+      data.append("archivo", file); data.append("id_importacion", selectedId);
+      data.append("tipo", 2); data.append("nombre", file.name);
       return uploadFile(data);
     });
-
-    try {
-      await Promise.all(uploadPromises);
-      setFilesToUpload([]); 
-      cargarArchivos(selectedId);
-      onNotification("Archivos subidos con éxito", "success");
-    } catch (err) {
-      console.error("Error al subir archivos:", err.response?.data);
-      onNotification("Error al subir archivos", "error");
-    }
+    try { await Promise.all(uploadPromises); setFilesToUpload([]); cargarArchivos(selectedId); onNotification("Archivos subidos con éxito", "success"); }
+    catch { onNotification("Error al subir archivos", "error"); }
   };
 
   const handleFileDelete = async (id) => {
     if (!window.confirm("¿Eliminar este documento?")) return;
-    try {
-      await deleteArchivo(id);
-      cargarArchivos(selectedId);
-    } catch (err) {
-      console.error("Error al eliminar archivo:", err.response?.data);
-      onNotification("Error al eliminar archivo: " + (err.response?.data?.detail || "Intente nuevamente"), "error");
-    }
+    try { await deleteArchivo(id); cargarArchivos(selectedId); }
+    catch (err) { onNotification("Error al eliminar: " + (err.response?.data?.detail || "Intente nuevamente"), "error"); }
   };
 
   const handleVerDetalle = async (imp) => {
     setSelectedId(imp.id);
-    setFormData({
-      ...imp,
-      aduana: imp.aduana?.id || imp.aduana,
-      cliente: imp.cliente,
-    });
-    setIsEditing(true);
-    setIsReadOnly(true);
-    setView("form");
-    try {
-      const data = await getArchivosByImportacion(imp.id);
-      setArchivos(data);
-    } catch (err) {
-      console.error(err);
-      onNotification("Error al cargar la información de la importación", "error");
-    }
+    setFormData({ ...imp, aduana: imp.aduana?.id || imp.aduana, cliente: imp.cliente });
+    setIsEditing(true); setIsReadOnly(true); setView("form");
+    try { const data = await getArchivosByImportacion(imp.id); setArchivos(data); }
+    catch { onNotification("Error al cargar archivos", "error"); }
   };
 
   const volverALista = (saltarConfirmacion) => {
-    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?"))
- {
-    setView("list");
-    setIsEditing(false);
-    setSelectedId(null);
-    setArchivos([]);
-    setFilesToUpload([]);
-    setFormData({
-      numero_destinacion: "",
-      condicion_venta: "",
-      vendedor: "",
-      puerto_embarque: "",
-      numero_factura: "",
-      pais_origen: "",
-      pais_destino: "",
-      divisa: "",
-      unitario_en_divisa: 0.0,
-      unidad: "",
-      cantidad_unidades: 0,
-      fob_total_en_divisa: 0.0,
-      fob_total_en_dolar: 0.0,
-      numeracion: "",
-      estado: "",
-      baja: false,
-      aduana: "",
-      cliente: "",
-      oficializacion: "",
-    });
-    window.scrollTo(0, 0);
-  }};
-
-  const styles = {
-    container: {
-      padding: "30px",
-      backgroundColor: "#f4f7f6",
-      minHeight: "100vh",
-      fontFamily: "Segoe UI, sans-serif",
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "25px",
-    },
-    searchWrapper: { position: "relative", width: "60%" },
-    searchIcon: {
-      position: "absolute",
-      left: "12px",
-      top: "50%",
-      transform: "translateY(-50%)",
-      color: "#888",
-    },
-    card: {
-      backgroundColor: "#fff",
-      padding: "20px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 6px rgba(0,0,0,0.05)",
-      marginBottom: "15px",
-      border: "1px solid #eee",
-    },
-    input: {
-      padding: "12px 12px 12px 40px",
-      border: "1px solid #ddd",
-      borderRadius: "8px",
-      width: "100%",
-      fontSize: "14px",
-    },
-    formInput: {
-      padding: "10px",
-      border: "1px solid #ddd",
-      borderRadius: "6px",
-      width: "100%",
-      marginTop: "5px",
-      backgroundColor: isReadOnly ? "#f8fafc" : "#fff",
-      color: isReadOnly ? "#4a5568" : "#2d3748",
-      transition: "all 0.3s",
-    },
-    btnGreen: {
-      padding: "12px 24px",
-      backgroundColor: "#2ecc71",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontWeight: "600",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    btnBlue: {
-      padding: "10px 20px",
-      backgroundColor: "#3182ce",
-      color: "white",
-      border: "none",
-      borderRadius: "8px",
-      cursor: "pointer",
-      fontWeight: "600",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    btnAction: (color) => ({
-      padding: "8px 12px",
-      backgroundColor: "transparent",
-      color: color,
-      border: `1px solid ${color}`,
-      borderRadius: "6px",
-      cursor: "pointer",
-      transition: "0.3s",
-      marginLeft: "8px",
-    }),
-    badge: (bg, color) => ({
-      padding: "5px 12px",
-      borderRadius: "20px",
-      fontSize: "11px",
-      backgroundColor: bg,
-      color: color,
-      fontWeight: "bold",
-      display: "inline-flex",
-      alignItems: "center",
-      gap: "5px",
-    }),
-    label: {
-      fontWeight: "600",
-      fontSize: "13px",
-      color: "#4a5568",
-      marginBottom: "5px",
-      display: "block",
-      whiteSpace: "nowrap",
-    },
-    sectionTitle: {
-      gridColumn: "1 / -1",
-      fontWeight: "700",
-      marginTop: "25px",
-      marginBottom: "10px",
-      paddingBottom: "8px",
-      borderBottom: "2px solid #3182ce",
-      color: "#2d3748",
-      fontSize: "16px",
-      textTransform: "uppercase",
-      letterSpacing: "1px",
-    },
-    switchTrack: (baja) => ({
-      width: "50px",
-      height: "26px",
-      backgroundColor: baja ? "#fed7d7" : "#c6f6d5",
-      borderRadius: "15px",
-      position: "relative",
-      cursor: "pointer",
-      transition: "all 0.3s ease",
-      border: `2px solid ${baja ? "#e53e3e" : "#38a169"}`,
-    }),
-
-    switchThumb: (baja) => ({
-      width: "18px",
-      height: "18px",
-      backgroundColor: baja ? "#e53e3e" : "#38a169",
-      borderRadius: "50%",
-      position: "absolute",
-      top: "2px",
-      left: baja ? "2px" : "26px",
-      transition: "all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-    }),
-    statusLabel: (active) => ({
-      fontSize: "13px",
-      fontWeight: "bold",
-      color: active ? "#c53030" : "#2f855a",
-      textTransform: "uppercase",
-      letterSpacing: "0.5px",
-    }),
+    if (saltarConfirmacion || window.confirm("¿Desea volver al listado?")) {
+      setView("list"); setIsEditing(false); setSelectedId(null);
+      setArchivos([]); setFilesToUpload([]);
+      setFormData({ numero_destinacion: "", condicion_venta: "", vendedor: "", puerto_embarque: "", numero_factura: "", pais_origen: "", pais_destino: "", divisa: "", unitario_en_divisa: 0, unidad: "", cantidad_unidades: 0, fob_total_en_divisa: 0, fob_total_en_dolar: 0, numeracion: "", estado: "", baja: false, aduana: "", cliente: "", oficializacion: "" });
+      window.scrollTo(0, 0);
+    }
   };
-const impFiltradas = importaciones.filter(i => {
-  const t = busqueda.toLowerCase();
-  const coincideBusqueda = 
-    i.numero_destinacion?.toLowerCase().includes(t) ||
-    i.cliente_nombre?.toLowerCase().includes(t) ||
-    i.cliente?.toLowerCase().includes(t) ||
-    i.oficializacion?.toLowerCase().includes(t);
 
-  const coincideEstado =
-    filtroEstado === "Todas" ? true : i.estado === filtroEstado;
+  const impFiltradas = importaciones.filter((i) => {
+    const t = busqueda.toLowerCase();
+    const coincideBusqueda = i.numero_destinacion?.toLowerCase().includes(t) || i.cliente_nombre?.toLowerCase().includes(t) || i.cliente?.toLowerCase().includes(t) || i.oficializacion?.toLowerCase().includes(t);
+    const coincideEstado = filtroEstado === "Todas" ? true : i.estado === filtroEstado;
+    return coincideBusqueda && coincideEstado && (mostrarBaja ? true : !i.baja);
+  });
 
-  return coincideBusqueda && coincideEstado && (mostrarBaja ? true : !i.baja);
-});
+  // ── Clases reutilizables ──
+  const inputClass = (disabled) =>
+    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors box-border ${
+      disabled
+        ? "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
+        : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+    }`;
+
+  const labelClass = "block text-xs font-semibold text-gray-500 dark:text-gray-400 mb-1.5 uppercase tracking-wide";
+
+  const SectionTitle = ({ children }) => (
+    <div className="col-span-full pb-2 mb-1 border-b-2 border-blue-500 text-gray-700 dark:text-gray-200 text-sm font-bold uppercase tracking-widest">
+      {children}
+    </div>
+  );
+
+  const Badge = ({ bg, color, children }) => (
+    <span style={{ backgroundColor: bg, color }} className="px-3 py-1 rounded-full text-[11px] font-bold inline-flex items-center gap-1">
+      {children}
+    </span>
+  );
+
+  const DragDropZone = ({ inputId }) => (
+    <div
+      onDragOver={(e) => { e.preventDefault(); e.currentTarget.classList.add("bg-blue-50", "dark:bg-blue-900/20", "border-blue-400"); }}
+      onDragLeave={(e) => { e.currentTarget.classList.remove("bg-blue-50", "dark:bg-blue-900/20", "border-blue-400"); }}
+      onDrop={(e) => {
+        e.preventDefault();
+        e.currentTarget.classList.remove("bg-blue-50", "border-blue-400");
+        const droppedFiles = Array.from(e.dataTransfer.files);
+        if (droppedFiles.length > 0) { setFilesToUpload((prev) => [...prev, ...droppedFiles]); onNotification(`${droppedFiles.length} archivo(s) preparado(s).`, "success"); }
+      }}
+      onClick={() => document.getElementById(inputId).click()}
+      className="flex flex-col items-center justify-center gap-4 bg-gray-50 dark:bg-gray-700/50 p-10 rounded-xl border-2 border-dashed border-gray-300 dark:border-gray-600 text-center transition-all cursor-pointer mt-5 mb-5 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400"
+    >
+      <i className="fa-solid fa-cloud-arrow-up text-5xl text-blue-500"></i>
+      <div>
+        <p className="text-base font-semibold text-gray-700 dark:text-gray-200 m-0">Arrastra la documentación aquí</p>
+        <p className="text-sm text-gray-400 mt-1">O haz clic para seleccionar un archivo</p>
+      </div>
+      <input id={inputId} type="file" multiple className="hidden"
+        onChange={(e) => setFilesToUpload((prev) => [...prev, ...Array.from(e.target.files)])}
+      />
+      {filesToUpload.length > 0 && (
+        <div className="flex flex-wrap gap-2 mt-2 justify-center w-full">
+          {filesToUpload.map((file, index) => (
+            <div key={index} className="flex items-center gap-2 bg-white dark:bg-gray-800 px-4 py-1.5 rounded-full border border-gray-200 dark:border-gray-600 shadow-sm">
+              <i className="fa-solid fa-file-pdf text-red-500 text-sm"></i>
+              <span className="text-sm text-gray-700 dark:text-gray-300">{file.name}</span>
+              <button type="button" onClick={(e) => { e.stopPropagation(); setFilesToUpload(filesToUpload.filter((_, i) => i !== index)); }}
+                className="border-none bg-transparent text-gray-300 hover:text-gray-500 cursor-pointer p-0">
+                <i className="fa-solid fa-circle-xmark"></i>
+              </button>
+            </div>
+          ))}
+          {isEditing && (
+            <button type="button" onClick={(e) => { e.stopPropagation(); handleFileUpload(); }}
+              className="w-full flex items-center justify-center gap-2 mt-2 py-2.5 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg border-none cursor-pointer text-sm transition-colors">
+              <i className="fa-solid fa-cloud-arrow-up"></i> Subir
+            </button>
+          )}
+        </div>
+      )}
+    </div>
+  );
 
   return (
-    <div style={styles.container}>
+    <div className="p-6 bg-gray-50 dark:bg-gray-950 min-h-full font-sans">
+
       {view === "list" ? (
         <div>
-          <div style={styles.header}>
-            <div style={styles.searchWrapper}>
-              <i
-                className="fa-solid fa-magnifying-glass"
-                style={styles.searchIcon}
-              ></i>
+          {/* Header */}
+          <div className="flex justify-between items-center mb-6 gap-4 flex-wrap">
+            <div className="relative w-full sm:w-[60%]">
+              <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
               <input
-                style={styles.input}
-                placeholder="Buscar por CUIT del cliente, Vendedor o número de destinación..."
-                value={busqueda}
-                onChange={(e) => setBusqueda(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
+                placeholder="Buscar por CUIT, vendedor o número de destinación..."
+                value={busqueda} onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
-            <button
-              style={styles.btnGreen}
-              onClick={() => {
-                setIsEditing(false);
-                setIsReadOnly(false);
-                setView("form");
-              }}
-            >
-              <i className="fa-solid fa-plus"></i>Registrar
+            <button onClick={() => { setIsEditing(false); setIsReadOnly(false); setView("form"); }}
+              className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm">
+              <i className="fa-solid fa-plus"></i> Registrar
             </button>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: "20px", marginBottom: "15px", flexWrap: "wrap" }}>
-          <div
-          
-  onClick={() => setMostrarBaja(!mostrarBaja)}
- style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer", userSelect: "none" }}
->
-  <div style={{
-    width: "44px",
-    height: "24px",
-    backgroundColor: mostrarBaja ? "#3182ce" : "#cbd5e0",
-    borderRadius: "12px",
-    position: "relative",
-    transition: "background-color 0.3s ease",
-    border: `2px solid ${mostrarBaja ? "#2b6cb0" : "#a0aec0"}`,
-    flexShrink: 0,
-  }}>
-    <div style={{
-      width: "16px",
-      height: "16px",
-      backgroundColor: "white",
-      borderRadius: "50%",
-      position: "absolute",
-      top: "2px",
-      left: mostrarBaja ? "22px" : "2px",
-      transition: "left 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55)",
-      boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
-    }}/>
-  </div>
-  <span style={{
-    fontSize: "13px",
-    color: mostrarBaja ? "#2b6cb0" : "#718096",
-    fontWeight: mostrarBaja ? "600" : "400",
-    transition: "color 0.3s",
-  }}>
-    Mostrar dadas de baja
-  </span>
 
+          {/* Filtros */}
+          <div className="flex items-center gap-4 mb-4 flex-wrap p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
+            <div onClick={() => setMostrarBaja(!mostrarBaja)} className="flex items-center gap-2 cursor-pointer select-none flex-shrink-0">
+              <div className={`w-11 h-6 rounded-full relative transition-all duration-300 border-2 flex-shrink-0
+                ${mostrarBaja ? "bg-blue-500 border-blue-600" : "bg-gray-300 dark:bg-gray-600 border-gray-400 dark:border-gray-500"}`}>
+                <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-300 shadow ${mostrarBaja ? "left-5" : "left-0.5"}`} />
+              </div>
+              <span className={`text-sm font-semibold transition-colors ${mostrarBaja ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
+                Mostrar dadas de baja
+              </span>
+            </div>
+            <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 hidden sm:block" />
+           <div className="flex gap-1.5 w-full sm:w-auto flex-1">
+  {[
+    { value: "Todas", label: "Todas" },
+    { value: "Inicializada", label: "Ini" }, 
+    { value: "En Proceso", label: "Proc" }, 
+    { value: "Finalizada", label: "Fin" },   
+  ].map((op) => (
+    <button 
+      key={op.value} 
+      onClick={() => setFiltroEstado(op.value)}
+      className={`
+        flex-1 sm:flex-none px-1 sm:px-4 py-2 rounded-lg text-[10px] sm:text-sm font-bold border transition-all cursor-pointer
+        flex items-center justify-center text-center leading-tight min-h-[40px]
+        ${filtroEstado === op.value
+          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm"
+          : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-transparent hover:border-gray-300"
+        }
+      `}
+    >
+      <span className="block sm:hidden">{op.label}</span>
+      <span className="hidden sm:block">
+        {op.value === "Todas" ? "Todas" : op.value + "s"}
+      </span>
+    </button>
+  ))}
 </div>
-<div style={{ display: "flex", gap: "8px" }}>
-            {[
-              { value: "Todas", label: "Todas" },
-              { value: "Inicializada", label: "Inicializadas" },
-              { value: "En Proceso", label: "En Proceso" },
-              { value: "Finalizada", label: "Finalizadas" },
-            ].map((op) => (
-              <button
-                key={op.value}
-                onClick={() => setFiltroEstado(op.value)}
-                style={{
-                  padding: "6px 14px",
-                  borderRadius: "20px",
-                  border: `1px solid ${filtroEstado === op.value ? "#3182ce" : "#cbd5e0"}`,
-                  backgroundColor:
-                    filtroEstado === op.value ? "#ebf4ff" : "transparent",
-                  color: filtroEstado === op.value ? "#2b6cb0" : "#718096",
-                  fontWeight: filtroEstado === op.value ? "600" : "400",
-                  fontSize: "13px",
-                  cursor: "pointer",
-                  transition: "all 0.2s",
-                }}
-              >
-                {op.label}
-              </button>
-            ))}
           </div>
-</div>
+
+          {/* Cards */}
           {impFiltradas.map((imp) => (
-            <div key={imp.id} style={styles.card}>
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                }}
-              >
-                <div
-                  style={{ display: "flex", alignItems: "center", gap: "15px" }}
-                >
-                  <div
-                    style={{
-                      width: "45px",
-                      height: "45px",
-                      borderRadius: "50%",
-                      backgroundColor: "#ebf4ff",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#3182ce",
-                    }}
-                  >
+            <div key={imp.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-4">
+                  <div className="w-11 h-11 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
                     <i className="fa-solid fa-ship"></i>
                   </div>
                   <div>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "10px",
-                      }}
-                    >
-                      <strong style={{ fontSize: "16px", color: "#2d3748" }}>
-                        ID: {imp.id}
-                      </strong>
-                      <span
-                        style={styles.badge(
-                          imp.estado === "Finalizado" ? "#f0fff4" : "#fffeb3",
-                          imp.estado === "Finalizado" ? "#22543d" : "#856404"
-                        )}
-                      >
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <strong className="text-base text-gray-800 dark:text-gray-100">ID: {imp.id}</strong>
+                      <Badge bg={imp.estado === "Finalizada" ? "#f0fff4" : "#fffeb3"} color={imp.estado === "Finalizada" ? "#22543d" : "#856404"}>
                         {imp.estado}
-                      </span>
-                      <span style={{color: imp.baja ? "#c53030" : "#2f855a", fontWeight: "bold", fontSize: "12px"}}
-                        >
-                          {imp.baja ? "Dada de baja":""}
-                        </span>
+                      </Badge>
+                      {imp.baja && <Badge bg="#fff5f5" color="#c53030">Dada de baja</Badge>}
                     </div>
-                    <p
-                      style={{
-                        margin: "4px 0 0 0",
-                        color: "#718096",
-                        fontSize: "13px",
-                      }}
-                    >
-                      <i
-                        className="fa-solid fa-id-card"
-                        style={{ marginLeft: "10px", marginRight: "5px" }}
-                      ></i>
-                      CUIT Cliente: {imp.cliente || "No Cargado"} |
-                      <i
-                        className="fa-solid fa-user-tie"
-                        style={{ marginLeft: "10px", marginRight: "5px" }}
-                      ></i>
-                      Vendedor: {imp.vendedor || "No Cargado"} |
-                      <i
-                        className="fa-solid fa-globe"
-                        style={{ marginLeft: "10px", marginRight: "5px" }}
-                      ></i>
-                      {imp.pais_origen || "No Cargado"} →{" "}
-                      {imp.pais_destino || "No Cargado"} |
-                      <i
-                        className="fa-solid fa-user-tie"
-                        style={{ marginLeft: "10px", marginRight: "5px" }}
-                      ></i>
-                      N° Destinación: {imp.numero_destinacion || "No Cargado"}
-                      
+                    <p className="m-0 mt-1 text-gray-400 dark:text-gray-500 text-xs">
+                      <i className="fa-solid fa-id-card mr-1"></i> CUIT: {imp.cliente || "No Cargado"} &nbsp;|&nbsp;
+                      <i className="fa-solid fa-user-tie mr-1"></i> Vendedor: {imp.vendedor || "No Cargado"} &nbsp;|&nbsp;
+                      <i className="fa-solid fa-globe mr-1"></i> {imp.pais_origen || "No Cargado"} → {imp.pais_destino || "No Cargado"} &nbsp;|&nbsp;
+                      N° Dest: {imp.numero_destinacion || "No Cargado"}
                     </p>
                   </div>
                 </div>
-                <button
-                  title="Ver Detalles"
-                  style={styles.btnAction("#3182ce")}
-                  onClick={() => handleVerDetalle(imp)}
-                >
+                <button onClick={() => handleVerDetalle(imp)}
+                  className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm">
                   <i className="fa-solid fa-eye"></i>
                 </button>
               </div>
             </div>
           ))}
-          {loading ? (
-            <SkeletonTable rows={4} />
-          ) : (
-            impFiltradas.length === 0 && (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "60px 20px",
-                  color: "#a0aec0",
-                  backgroundColor: "#fff",
-                  borderRadius: "12px",
-                  border: "2px dashed #e2e8f0",
-                }}
-              >
-                <i
-                  className="fa-solid fa-box-open"
-                  style={{
-                    fontSize: "50px",
-                    marginBottom: "15px",
-                    color: "#cbd5e0",
-                  }}
-                ></i>
-                <h3 style={{ margin: 0, fontSize: "18px", color: "#4a5568" }}>
-                  No hay coincidencias
-                </h3>
-                <p style={{ marginTop: "8px" }}>
-                  Prueba con otro CUIT, vendedor o número de destinación .
-                </p>
-              </div>
-            )
+
+          {loading ? <SkeletonTable rows={4} /> : impFiltradas.length === 0 && (
+            <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
+              <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
+              <p className="mt-2 text-sm">Prueba con otro CUIT, vendedor o número de destinación.</p>
+            </div>
           )}
         </div>
+
       ) : (
-        <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-          <div style={styles.header}>
-            <button
-              onClick={() => volverALista(false)}
-              style={{
-                border: "none",
-                background: "none",
-                color: "#3182ce",
-                cursor: "pointer",
-                fontWeight: "bold",
-                display: "flex",
-                alignItems: "center",
-                gap: "8px",
-              }}
-            >
+        /* ── Formulario ── */
+        <div className="max-w-3xl mx-auto">
+          <div className="flex justify-between items-center mb-5 flex-wrap gap-2">
+            <button onClick={() => volverALista(false)}
+              className="flex items-center gap-2 border-none bg-transparent text-blue-600 dark:text-blue-400 cursor-pointer font-bold text-sm hover:text-blue-800 transition-colors">
               <i className="fa-solid fa-arrow-left"></i> Volver al listado
             </button>
-            <div style={{ display: "flex", gap: "10px" }}>
-              {isEditing && (
-                <button
-                  style={{
-                    ...styles.btnBlue,
-                    backgroundColor: isReadOnly ? "#3182ce" : "#718096",
-                  }}
-                  onClick={() => setIsReadOnly(!isReadOnly)}
-                >
-                  <i
-                    className={
-                      isReadOnly
-                        ? "fa-solid fa-pen-to-square"
-                        : "fa-solid fa-xmark"
-                    }
-                  ></i>
-                  {isReadOnly ? "Editar" : "Cancelar"}
-                </button>
-              )}
-            </div>
+            {isEditing && (
+              <button onClick={() => setIsReadOnly(!isReadOnly)}
+                className={`flex items-center gap-2 px-4 py-2 text-white font-semibold rounded-lg border-none cursor-pointer text-sm transition-colors ${isReadOnly ? "bg-blue-600 hover:bg-blue-700" : "bg-gray-500 hover:bg-gray-600"}`}>
+                <i className={isReadOnly ? "fa-solid fa-pen-to-square" : "fa-solid fa-xmark"}></i>
+                {isReadOnly ? "Editar" : "Cancelar"}
+              </button>
+            )}
           </div>
-          <div style={styles.card}>
-            <form
-              onSubmit={handleSubmit}
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
-                gap: "25px",
-                alignItems: "end",
-              }}
-            >
-              <div style={styles.sectionTitle}>Datos Generales</div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                  }}
-                >
-                  <label style={styles.label}>Cliente *</label>
+
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
+            <form onSubmit={handleSubmit} className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+
+              <SectionTitle>Datos Generales</SectionTitle>
+
+              <div>
+                <div className="flex justify-between items-center mb-1.5">
+                  <label className={labelClass}>Cliente *</label>
                   {!isReadOnly && (
-                    <button
-                      type="button"
-                      onClick={() => setShowClienteModal(true)}
-                      style={{
-                        fontSize: "11px",
-                        color: "#3182ce",
-                        border: "none",
-                        background: "none",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <i className="fa-solid fa-search"></i> Buscar Cliente
+                    <button type="button" onClick={() => setShowClienteModal(true)}
+                      className="text-xs text-blue-500 border-none bg-transparent cursor-pointer hover:text-blue-700">
+                      <i className="fa-solid fa-search mr-1"></i> Buscar
                     </button>
                   )}
                 </div>
-                <select
-                  name="cliente"
-                  value={formData.cliente}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  required
-                >
+                <select name="cliente" value={formData.cliente} onChange={handleInputChange} disabled={isReadOnly} required className={inputClass(isReadOnly)}>
                   <option value="">Seleccione Cliente...</option>
-                  {clientes
-                    .filter((c) => c.baja === false)
-                    .map((c) => (
-                      <option key={c.cuit} value={c.cuit}>
-                        {c.nombre} ({c.cuit})
-                      </option>
-                    ))}
+                  {clientes.filter((c) => !c.baja).map((c) => <option key={c.cuit} value={c.cuit}>{c.nombre} ({c.cuit})</option>)}
                 </select>
               </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>N° Destinación *</label>
-                <input
-                  name="numero_destinacion"
-                  value={formData.numero_destinacion || ""}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  required
-                  placeholder="Ej: 12345678"
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>N° Factura *</label>
-                <input
-                  name="numero_factura"
-                  value={formData.numero_factura}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  required
-                  placeholder="Ej: F123-45678"
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Vendedor</label>
-                <input
-                  name="vendedor"
-                  value={formData.vendedor}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  placeholder="Ej: Empresa XYZ S.A."
-                />
+
+              <div>
+                <label className={labelClass}>N° Destinación *</label>
+                <input name="numero_destinacion" value={formData.numero_destinacion || ""} onChange={handleInputChange} disabled={isReadOnly} required placeholder="Ej: 12345678" className={inputClass(isReadOnly)} />
               </div>
 
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Aduana *</label>
-                <select
-                  required
-                  name="aduana"
-                  value={formData.aduana}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                >
+              <div>
+                <label className={labelClass}>N° Factura *</label>
+                <input name="numero_factura" value={formData.numero_factura} onChange={handleInputChange} disabled={isReadOnly} required placeholder="Ej: F123-45678" className={inputClass(isReadOnly)} />
+              </div>
+
+              <div>
+                <label className={labelClass}>Vendedor</label>
+                <input name="vendedor" value={formData.vendedor} onChange={handleInputChange} disabled={isReadOnly} placeholder="Ej: Empresa XYZ S.A." className={inputClass(isReadOnly)} />
+              </div>
+
+              <div>
+                <label className={labelClass}>Aduana *</label>
+                <select name="aduana" value={formData.aduana} onChange={handleInputChange} disabled={isReadOnly} required className={inputClass(isReadOnly)}>
                   <option value="">Seleccione Aduana...</option>
-                  {aduanas.map((a) => (
-                    <option key={a.id} value={a.id}>
-                      {a.nombre}
-                    </option>
-                  ))}
+                  {aduanas.map((a) => <option key={a.id} value={a.id}>{a.nombre}</option>)}
                 </select>
               </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Oficialización</label>
-                <input
-                  type="date"
-                  name="oficializacion"
-                  value={formData.oficializacion}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                />
+
+              <div>
+                <label className={labelClass}>Oficialización</label>
+                <input type="date" name="oficializacion" value={formData.oficializacion} onChange={handleInputChange} disabled={isReadOnly} className={inputClass(isReadOnly)} />
               </div>
+
               {isEditing && (
-              <div style={{ display: "flex", flexDirection: "column" }}>
-        
-                <label style={styles.label}>Estado</label>
-                <select
-                  name="estado"
-                  value={formData.estado}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                >
-                  <option value="Inicializada">Inicializada</option>
-                  <option value="En Proceso">En Proceso</option>
-                  <option value="Finalizada">Finalizada</option>
-                </select>
-              </div>
+                <div>
+                  <label className={labelClass}>Estado</label>
+                  <select name="estado" value={formData.estado} onChange={handleInputChange} disabled={isReadOnly} className={inputClass(isReadOnly)}>
+                    <option value="Inicializada">Inicializada</option>
+                    <option value="En Proceso">En Proceso</option>
+                    <option value="Finalizada">Finalizada</option>
+                  </select>
+                </div>
               )}
-              <div style={styles.sectionTitle}>Logística y Origen</div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>País/Provincia de Origen</label>
-                <input
-                  name="pais_origen"
-                  value={formData.pais_origen}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  placeholder="Ej: Argentina, Buenos Aires"
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Destino</label>
-                <input
-                  name="pais_destino"
-                  value={formData.pais_destino}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  placeholder="Ej: Brasil"
-                />
-              </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Puerto Embarque</label>
-                <input
-                  name="puerto_embarque"
-                  value={formData.puerto_embarque}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  placeholder="Ej: Buenos Aires"
-                />
-              </div>
-             
-              <div style={styles.sectionTitle}>Detalle de Mercadería</div>
 
-<div style={{ display: "flex", flexDirection: "column" }}>
-  <label style={styles.label}>Cantidad de unidades *</label>
-  <input
-    type="number"
-    min="1"
-    step="1"
-    name="cantidad_unidades"
-    value={formData.cantidad_unidades}
-    onChange={handleNumericChange}
-    style={styles.formInput}
-    disabled={isReadOnly}
-    required
-  />
-</div>
-<div style={{ display: "flex", flexDirection: "column" }}>
-  <label style={styles.label}>Unidad *</label>
-  <select
-    name="unidad"
-    value={formData.unidad}
-    onChange={handleInputChange}
-    placeholder="Ej: M, KG"
-    style={styles.formInput}
-    disabled={isReadOnly}
-    required
-  >
-    <option value="">Seleccione Unidad...</option>
-    <option value="KG">KG - Kilogramo</option>
-    <option value="L">L - Litro</option>
-    <option value="M">M - Metro</option>
-    <option value="PZA">PZA - Pieza</option>
-    <option value="TON">TON - Tonelada</option>
-    <option value="CBM">CBM - Metro Cúbico</option>
-    <option value="SET">SET - Set</option>
-    <option value="ROL">ROL - Rollo</option>
-    <option value="PAR">PAR - Par</option>
-    <option value="JUE">JUE - Juego</option>
-    <option value="BUL">BUL - Bulto</option>
-    <option value="SOB">SOB - Sobre</option>
-    <option value="CJA">CJA - Caja</option>
-    <option value="BAG">BAG - Bolsa</option>
-  </select>
-</div>
-<div style={{ display: "flex", flexDirection: "column" }}>
-  <label style={styles.label}>Unitario en Divisa *</label>
-  <input
-    type="number"
-    min="0"
-    name="unitario_en_divisa"
-    value={formData.unitario_en_divisa}
-    onChange={handleNumericChange}
-    style={styles.formInput}
-    disabled={isReadOnly}
-    required
-  />
-</div>
-              <div style={styles.sectionTitle}>Valores Comerciales</div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Divisa *</label>
-                <select
-                  name="divisa"
-                  value={formData.divisa}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  required
-                >
+              <SectionTitle>Logística y Origen</SectionTitle>
+
+              <div>
+                <label className={labelClass}>País/Provincia de Origen</label>
+                <input name="pais_origen" value={formData.pais_origen} onChange={handleInputChange} disabled={isReadOnly} placeholder="Ej: Argentina" className={inputClass(isReadOnly)} />
+              </div>
+              <div>
+                <label className={labelClass}>Destino</label>
+                <input name="pais_destino" value={formData.pais_destino} onChange={handleInputChange} disabled={isReadOnly} placeholder="Ej: Brasil" className={inputClass(isReadOnly)} />
+              </div>
+              <div>
+                <label className={labelClass}>Puerto Embarque</label>
+                <input name="puerto_embarque" value={formData.puerto_embarque} onChange={handleInputChange} disabled={isReadOnly} placeholder="Ej: Buenos Aires" className={inputClass(isReadOnly)} />
+              </div>
+
+              <SectionTitle>Detalle de Mercadería</SectionTitle>
+
+              <div>
+                <label className={labelClass}>Cantidad de Unidades *</label>
+                <input type="number" min="1" step="1" name="cantidad_unidades" value={formData.cantidad_unidades} onChange={handleNumericChange} disabled={isReadOnly} required className={inputClass(isReadOnly)} />
+              </div>
+              <div>
+                <label className={labelClass}>Unidad *</label>
+                <select name="unidad" value={formData.unidad} onChange={handleInputChange} disabled={isReadOnly} required className={inputClass(isReadOnly)}>
+                  <option value="">Seleccione Unidad...</option>
+                  {["KG","L","M","PZA","TON","CBM","SET","ROL","PAR","JUE","BUL","SOB","CJA","BAG"].map((u) => <option key={u} value={u}>{u}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className={labelClass}>Unitario en Divisa *</label>
+                <input type="number" min="0" name="unitario_en_divisa" value={formData.unitario_en_divisa} onChange={handleNumericChange} disabled={isReadOnly} required className={inputClass(isReadOnly)} />
+              </div>
+
+              <SectionTitle>Valores Comerciales</SectionTitle>
+
+              <div>
+                <label className={labelClass}>Divisa *</label>
+                <select name="divisa" value={formData.divisa} onChange={handleInputChange} disabled={isReadOnly} required className={inputClass(isReadOnly)}>
                   <option value="">Seleccione Divisa...</option>
-                  <option value="USD">USD</option>
-                  <option value="EUR">EUR</option>
-                  <option value="ARS">ARS</option>
-                  <option value="BRL">BRL</option>
-                  <option value="CNY">CNY</option>
-                  <option value="JPY">JPY</option>
-                  <option value="GBP">GBP</option>
-                  <option value="CAD">CAD</option>
-                  <option value="AUD">AUD</option>
+                  {["USD","EUR","ARS","BRL","CNY","JPY","GBP","CAD","AUD"].map((d) => <option key={d} value={d}>{d}</option>)}
                 </select>
               </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>FOB Total Divisa *</label>
-                <input
-                  type="number"
-                  min="0"
-                  name="fob_total_en_divisa"
-                  value={formData.fob_total_en_divisa}
-                  onChange={handleNumericChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  required
-                />
+              <div>
+                <label className={labelClass}>FOB Total Divisa *</label>
+                <input type="number" min="0" name="fob_total_en_divisa" value={formData.fob_total_en_divisa} onChange={handleNumericChange} disabled={isReadOnly} required className={inputClass(isReadOnly)} />
               </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>FOB Total USD *</label>
-                <input
-                  type="number"
-                  min="0"
-                  name="fob_total_en_dolar"
-                  value={formData.fob_total_en_dolar}
-                  onChange={handleNumericChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  required
-                />
+              <div>
+                <label className={labelClass}>FOB Total USD *</label>
+                <input type="number" min="0" name="fob_total_en_dolar" value={formData.fob_total_en_dolar} onChange={handleNumericChange} disabled={isReadOnly} required className={inputClass(isReadOnly)} />
               </div>
-              <div style={{ display: "flex", flexDirection: "column" }}>
-                <label style={styles.label}>Condición de Venta *</label>
-                <select
-                  name="condicion_venta"
-                  value={formData.condicion_venta}
-                  onChange={handleInputChange}
-                  style={styles.formInput}
-                  disabled={isReadOnly}
-                  required
-                >
-                  <option value="">Seleccione Condición de Venta</option>
-                  <option value="CFR">CFR</option>
-                  <option value="CIF">CIF</option>
-                  <option value="CIP">CIP</option>
-                  <option value="CPT">CPT</option>
-                  <option value="DAP">DAP</option>
-                  <option value="DAT">DAT</option>
-                  <option value="DDP">DDP</option>
-                  <option value="EXW">EXW</option>
-                  <option value="FAS">FAS</option>
-                  <option value="FCA">FCA</option>
-                  <option value="FOB">FOB</option>
-                  <option value="MUL">MUL</option>
+              <div>
+                <label className={labelClass}>Condición de Venta *</label>
+                <select name="condicion_venta" value={formData.condicion_venta} onChange={handleInputChange} disabled={isReadOnly} required className={inputClass(isReadOnly)}>
+                  <option value="">Seleccione...</option>
+                  {["CFR","CIF","CIP","CPT","DAP","DAT","DDP","EXW","FAS","FCA","FOB","MUL"].map((c) => <option key={c} value={c}>{c}</option>)}
                 </select>
               </div>
-            
-             
-             
 
-             
-
-              {isAdmin && isEditing &&  (
+              {isAdmin && isEditing && (
                 <>
-                  <div style={styles.sectionTitle}>
-                    Estado Lógico de la operación
-                  </div>
-                  <div
-                    style={{
-                      gridColumn: "1 / -1",
-                      marginTop: "10px",
-                    }}
-                  >
+                  <SectionTitle>Estado Lógico de la Operación</SectionTitle>
+                  <div className="col-span-full">
                     <div
-                      tabIndex={0}
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "15px",
-                        padding: "12px",
-                        backgroundColor: "#f8fafc",
-                        borderRadius: "10px",
-                        border: "1px solid #edf2f7",
-                        cursor: isReadOnly ? "default" : "pointer",
-                        width: "fit-content",
-                      }}
-                      onClick={() =>
-                        !isReadOnly &&
-                        setFormData({ ...formData, baja: !formData.baja })
-                      }
+                      onClick={() => !isReadOnly && setFormData({ ...formData, baja: !formData.baja })}
+                      className={`flex items-center gap-4 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl border border-gray-100 dark:border-gray-700 w-fit ${isReadOnly ? "cursor-default opacity-70" : "cursor-pointer"}`}
                     >
-                      <div style={styles.switchTrack(formData.baja)}>
-                        <div style={styles.switchThumb(formData.baja)}></div>
+                      <div style={{ backgroundColor: formData.baja ? "#fed7d7" : "#c6f6d5", borderColor: formData.baja ? "#e53e3e" : "#38a169" }}
+                        className="w-12 h-6 rounded-full relative border-2 transition-all duration-300">
+                        <div style={{ backgroundColor: formData.baja ? "#e53e3e" : "#38a169", left: formData.baja ? "2px" : "26px" }}
+                          className="w-4 h-4 rounded-full absolute top-0.5 transition-all duration-300 pointer-events-none" />
                       </div>
-
-                      <div style={{ display: "flex", flexDirection: "column" }}>
-                        <span style={styles.statusLabel(formData.baja)}>
+                      <div className="flex flex-col">
+                        <span style={{ color: formData.baja ? "#c53030" : "#2f855a" }} className="text-xs font-bold uppercase tracking-wide">
                           {formData.baja ? "Dada de baja" : "Activa"}
                         </span>
-                        <span style={{ fontSize: "11px", color: "#718096" }}>
-                          {isReadOnly
-                            ? "Modo lectura"
-                            : "Haz clic para cambiar el estado"}
-                        </span>
+                        <span className="text-xs text-gray-400">{isReadOnly ? "Modo lectura" : "Haz clic para cambiar"}</span>
                       </div>
                     </div>
                   </div>
                 </>
               )}
+
               {!isEditing && (
-   <div
-                  style={{
-                    gridColumn: "1 / -1",
-                    marginBottom: "30px",
-                  }}
-                >
-                  <div style={styles.sectionTitle}>Documentación</div>
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.currentTarget.style.backgroundColor = "#ebf4ff";
-                      e.currentTarget.style.borderColor = "#3182ce";
-                    }}
-                    onDragLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8fafc";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const droppedFiles = Array.from(e.dataTransfer.files);
-                      if (droppedFiles.length > 0) {
-                        setFilesToUpload((prev) => [...prev, ...droppedFiles]);
-                        onNotification(
-                          `${droppedFiles.length} archivo(s) preparado(s).`,
-                          "success",
-                        );
-                      }
-                    }}
-                    onClick={() =>
-                      document.getElementById("file-input-main").click()
-                    }
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "15px",
-                      backgroundColor: "#f8fafc",
-                      padding: "40px 20px",
-                      borderRadius: "12px",
-                      border: "2px dashed #cbd5e0",
-                      textAlign: "center",
-                      transition: "all 0.2s ease",
-                      cursor: "pointer",
-                      position: "relative",
-                      marginTop: "20px",
-                    }}
-                  >
-                    <i
-                      className="fa-solid fa-cloud-arrow-up"
-                      style={{ fontSize: "48px", color: "#3182ce" }}
-                    ></i>
-                    <div>
-                      <p
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: "600",
-                          color: "#2d3748",
-                          margin: "0",
-                        }}
-                      >
-                        Arrastra la documentación aquí
-                      </p>
-                      <p
-                        style={{
-                          fontSize: "13px",
-                          color: "#718096",
-                          marginTop: "5px",
-                        }}
-                      >
-                        O haz clic para seleccionar un archivo
-                      </p>
-                    </div>
-
-                    <input
-                      id="file-input-main"
-                      type="file"
-                      multiple
-                      onChange={(e) => {
-                        const nuevosArchivos = Array.from(e.target.files);
-                        setFilesToUpload((prev) => [
-                          ...prev,
-                          ...nuevosArchivos,
-                        ]);
-                      }}
-                      style={{ display: "none" }}
-                    />
-
-                    {filesToUpload.length > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "10px",
-                          marginTop: "15px",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {filesToUpload.map((file, index) => (
-                          <div
-                            key={index}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              backgroundColor: "#fff",
-                              padding: "5px 15px",
-                              borderRadius: "20px",
-                              border: "1px solid #e2e8f0",
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                            }}
-                          >
-                            <span
-                              style={{ fontSize: "13px", color: "#2d3748" }}
-                            >
-                              <i
-                                className="fa-solid fa-file-pdf"
-                                style={{ color: "#e53e3e", marginRight: "5px" }}
-                              ></i>
-                              {file.name}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFilesToUpload(
-                                  filesToUpload.filter((_, i) => i !== index),
-                                );
-                              }}
-                              style={{
-                                border: "none",
-                                background: "none",
-                                color: "#a0aec0",
-                                cursor: "pointer",
-                              }}
-                            >
-                              <i className="fa-solid fa-circle-xmark"></i>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                <div className="col-span-full">
+                  <SectionTitle>Documentación</SectionTitle>
+                  <DragDropZone inputId="file-input-imp-new" />
                 </div>
-)}
+              )}
+
               {!isReadOnly && (
-                <div
-                  style={{
-                    gridColumn: "1 / -1",
-                    marginTop: "20px",
-                  }}
-                >
-                  <button
-                    type="submit"
-                    style={{
-                      ...styles.btnBlue,
-                      backgroundColor: "#2ecc71",
-                      width: "100%",
-                      justifyContent: "center",
-                    }}
-                  >
+                <div className="col-span-full mt-2">
+                  <button type="submit"
+                    className="w-full flex items-center justify-center gap-2 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg border-none cursor-pointer text-base transition-colors">
                     <i className="fa-solid fa-floppy-disk"></i> Guardar
                   </button>
                 </div>
               )}
             </form>
 
+            {/* Documentación en edición */}
             {isEditing && (
-   <div
-                style={{
-                  marginTop: "40px",
-                  borderTop: "2px solid #eee",
-                  paddingTop: "20px",
-                }}
-              >
-                <div style={styles.sectionTitle}>Documentación</div>
-                
-                {!isReadOnly && (
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      e.currentTarget.style.backgroundColor = "#ebf4ff";
-                      e.currentTarget.style.borderColor = "#3182ce";
-                    }}
-                    onDragLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = "#f8fafc";
-                      e.currentTarget.style.borderColor = "#cbd5e0";
-                    }}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      const droppedFiles = Array.from(e.dataTransfer.files);
-                      if (droppedFiles.length > 0) {
-                        setFilesToUpload((prev) => [...prev, ...droppedFiles]);
-                        onNotification(
-                          `${droppedFiles.length} archivo(s) preparado(s).`,
-                          "success",
-                        );
-                      }
-                    }}
-                    onClick={() =>
-                      document.getElementById("file-input-main").click()
-                    }
-                    style={{
-                      display: "flex",
-                      flexDirection: "column",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      gap: "15px",
-                      backgroundColor: "#f8fafc",
-                      padding: "40px 20px",
-                      borderRadius: "12px",
-                      border: "2px dashed #cbd5e0",
-                      textAlign: "center",
-                      transition: "all 0.2s ease",
-                      cursor: "pointer",
-                      position: "relative",
-                      marginBottom: "20px",
-                      marginTop: "20px",
-                    }}
-                  >
-                    <i
-                      className="fa-solid fa-cloud-arrow-up"
-                      style={{ fontSize: "48px", color: "#3182ce" }}
-                    ></i>
-                    <div>
-                      <p
-                        style={{
-                          fontSize: "16px",
-                          fontWeight: "600",
-                          color: "#2d3748",
-                          margin: "0",
-                        }}
-                      >
-                        Arrastra la documentación aquí
-                      </p>
-                      <p
-                        style={{
-                          fontSize: "13px",
-                          color: "#718096",
-                          marginTop: "5px",
-                        }}
-                      >
-                        O haz clic para seleccionar un archivo
-                      </p>
-                    </div>
-                    <input
-                      id="file-input-main"
-                      type="file"
-                      multiple
-                      onChange={(e) =>
-                        setFilesToUpload((prev) => [
-                          ...prev,
-                          ...Array.from(e.target.files),
-                        ])
-                      }
-                      style={{ display: "none" }}
-                    />
-                    {filesToUpload.length > 0 && (
-                      <div
-                        style={{
-                          display: "flex",
-                          flexWrap: "wrap",
-                          gap: "10px",
-                          marginTop: "15px",
-                          justifyContent: "center",
-                        }}
-                      >
-                        {filesToUpload.map((file, index) => (
-                          <div
-                            key={index}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: "10px",
-                              backgroundColor: "#fff",
-                              padding: "5px 15px",
-                              borderRadius: "20px",
-                              border: "1px solid #e2e8f0",
-                              boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-                            }}
-                          >
-                            <span
-                              style={{ fontSize: "13px", color: "#2d3748" }}
-                            >
-                              <i
-                                className="fa-solid fa-file-pdf"
-                                style={{ color: "#e53e3e", marginRight: "5px" }}
-                              ></i>
-                              {file.name}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setFilesToUpload(
-                                  filesToUpload.filter((_, i) => i !== index),
-                                );
-                              }}
-                              style={{
-                                border: "none",
-                                background: "none",
-                                color: "#a0aec0",
-                                cursor: "pointer",
-                              }}
-                            >
-                              <i className="fa-solid fa-circle-xmark"></i>
-                            </button>
-                          </div>
-                        ))}
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleFileUpload();
-                          }}
-                          style={{
-                            ...styles.btnGreen,
-                            marginTop: "10px",
-                            width: "100%",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <i className="fa-solid fa-cloud-arrow-up"></i> Subir
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "8px",
-                  }}
-                >
+              <div className="mt-10 pt-5 border-t-2 border-gray-100 dark:border-gray-700">
+                <SectionTitle>Documentación</SectionTitle>
+                {!isReadOnly && <DragDropZone inputId="file-input-imp-edit" />}
+                <div className="flex flex-col gap-2 mt-4">
                   {archivos.map((arch) => (
-                    <div
-                      key={arch.id}
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        padding: "10px",
-                        border: "1px solid #eee",
-                        borderRadius: "8px",
-                         marginTop: "15px",
-                      }}
-                    >
-                      <span style={{ fontSize: "13px" }}>
-                        <i
-                          className="fa-solid fa-file-pdf"
-                          style={{ color: "#e53e3e", marginRight: "10px" }}
-                        ></i>
-                        {arch.nombre}
+                    <div key={arch.id} className="flex justify-between items-center p-3 border border-gray-100 dark:border-gray-700 rounded-lg mt-2">
+                      <span className="text-sm text-gray-600 dark:text-gray-300 truncate max-w-[200px]">
+                        <i className="fa-solid fa-file-pdf text-red-500 mr-2"></i>{arch.nombre}
                       </span>
-                      <div style={{ display: "flex", gap: "5px" }}>
-                        <a
-                          href={arch.archivo}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={styles.btnAction("#3182ce")}
-                        >
+                      <div className="flex gap-2">
+                        <a href={arch.archivo} target="_blank" rel="noreferrer"
+                          className="px-3 py-1.5 border border-blue-400 text-blue-500 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm">
                           <i className="fa-solid fa-download"></i>
                         </a>
                         {!isReadOnly && (
-                          <button
-                            onClick={() => handleFileDelete(arch.id)}
-                            style={styles.btnAction("#e53e3e")}
-                          >
+                          <button onClick={() => handleFileDelete(arch.id)}
+                            className="px-3 py-1.5 border border-red-400 text-red-500 rounded-lg bg-transparent cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm">
                             <i className="fa-solid fa-trash-can"></i>
                           </button>
                         )}
@@ -1443,109 +543,32 @@ const impFiltradas = importaciones.filter(i => {
         </div>
       )}
 
-
+      {/* ── Modal cliente ── */}
       {showClienteModal && (
-        <div
-          style={{
-            position: "fixed",
-            inset: 0,
-            backgroundColor: "rgba(0,0,0,0.5)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1000,
-          }}
-        >
-          <div
-            style={{
-              backgroundColor: "white",
-              padding: "20px",
-              borderRadius: "12px",
-              width: "400px",
-              boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
-            }}
-          >
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: "15px",
-              }}
-            >
-              <h3 style={{ margin: 0 }}>
-                <i className="fa-solid fa-users"></i> Buscar Cliente
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000]">
+          <div className="bg-white dark:bg-gray-800 p-5 rounded-xl w-[400px] shadow-2xl border border-gray-200 dark:border-gray-700">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="m-0 text-gray-800 dark:text-gray-100 font-bold">
+                <i className="fa-solid fa-users mr-2"></i> Buscar Cliente
               </h3>
-              <button
-                onClick={() => setShowClienteModal(false)}
-                style={{
-                  border: "none",
-                  background: "none",
-                  fontSize: "20px",
-                  cursor: "pointer",
-                  color: "#a0aec0",
-                }}
-              >
-                &times;
-              </button>
+              <button onClick={() => setShowClienteModal(false)} className="border-none bg-transparent text-gray-400 text-xl cursor-pointer hover:text-gray-600">&times;</button>
             </div>
-
             <input
-              style={{
-                ...styles.input,
-                paddingLeft: "10px",
-                marginBottom: "10px",
-                boxSizing: "border-box", 
-              }}
+              className="w-full px-3 py-2.5 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-700 text-gray-800 dark:text-gray-100 mb-3 focus:outline-none focus:border-blue-500 box-border"
               placeholder="Escriba nombre del cliente..."
               value={filtroNombreCliente}
               onChange={(e) => setFiltroNombreCliente(e.target.value)}
               autoFocus
             />
-
-            <div
-              style={{
-                maxHeight: "250px",
-                overflowY: "auto",
-                border: "1px solid #eee",
-                borderRadius: "8px",
-              }}
-            >
-              {clientes
-                .filter(
-                  (c) =>
-                    !c.baja &&
-                    c.nombre
-                      .toLowerCase()
-                      .includes(filtroNombreCliente.toLowerCase())
-                )
-                .map((c) => (
-                  <div
-                    key={c.cuit}
-                    onClick={() => {
-                      setFormData({ ...formData, cliente: c.cuit });
-                      setShowClienteModal(false);
-                      setFiltroNombreCliente("");
-                    }}
-                    style={{
-                      padding: "12px",
-                      borderBottom: "1px solid #eee",
-                      cursor: "pointer",
-                      transition: "background 0.2s",
-                    }}
-                    onMouseOver={(e) =>
-                      (e.currentTarget.style.backgroundColor = "#f7fafc")
-                    }
-                    onMouseOut={(e) =>
-                      (e.currentTarget.style.backgroundColor = "transparent")
-                    }
-                  >
-                    <div style={{ fontWeight: "600", color: "#2d3748" }}>
-                      {c.nombre}
-                    </div>
-                    <small style={{ color: "#718096" }}>CUIT: {c.cuit}</small>
-                  </div>
-                ))}
+            <div className="max-h-[250px] overflow-y-auto border border-gray-100 dark:border-gray-700 rounded-lg">
+              {clientes.filter((c) => !c.baja && c.nombre.toLowerCase().includes(filtroNombreCliente.toLowerCase())).map((c) => (
+                <div key={c.cuit}
+                  onClick={() => { setFormData({ ...formData, cliente: c.cuit }); setShowClienteModal(false); setFiltroNombreCliente(""); }}
+                  className="px-4 py-3 border-b border-gray-100 dark:border-gray-700 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors last:border-0">
+                  <div className="font-semibold text-sm text-gray-800 dark:text-gray-100">{c.nombre}</div>
+                  <small className="text-gray-400">CUIT: {c.cuit}</small>
+                </div>
+              ))}
             </div>
           </div>
         </div>

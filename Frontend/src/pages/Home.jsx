@@ -12,6 +12,15 @@ import Footer from "../components/Footer";
 import Profile from "../components/Profile";
 import Toast from "../components/Toast";
 
+const TABS = [
+  { name: "home",          icon: "fa-house",            label: "HOME" },
+  { name: "aduanas",       icon: "fa-building-columns", label: "ADUANAS",       adminOnly: true },
+  { name: "clientes",      icon: "fa-users",            label: "CLIENTES" },
+  { name: "importaciones", icon: "fa-ship",             label: "IMPORTACIONES" },
+  { name: "exportaciones", icon: "fa-truck-ramp-box",      label: "EXPORTACIONES" },
+  { name: "usuarios",      icon: "fa-user-gear",        label: "USUARIOS",      adminOnly: true },
+];
+
 const Home = () => {
   const navigate = useNavigate();
   const [view, setView] = useState("home");
@@ -19,28 +28,20 @@ const Home = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [highlightId, setHighlightId] = useState(null);
   const [autoOpenForm, setAutoOpenForm] = useState(false);
+  const [toasts, setToasts] = useState([]);
 
-  const handleNavigateWithAction = (tab, action) => {
-    changeView(tab);
-    if (action === "new") setAutoOpenForm(true);
-  };
   const userName = localStorage.getItem("userName") || "Usuario";
   const isAdmin = localStorage.getItem("isAdmin") === "true";
-  const [toasts, setToasts] = useState([]);
 
   const showToast = (msg, type) => {
     const id = Date.now();
-    setToasts((prevToasts) => [...prevToasts, { id, msg, type }]);
+    setToasts((prev) => [...prev, { id, msg, type }]);
   };
+  const removeToast = (id) => setToasts((prev) => prev.filter((t) => t.id !== id));
 
-  const removeToast = (id) => {
-    setToasts((prevToasts) => prevToasts.filter((t) => t.id !== id));
-  };
   useEffect(() => {
     const closeMenu = () => setShowUserMenu(false);
-    if (showUserMenu) {
-      window.addEventListener("click", closeMenu);
-    }
+    if (showUserMenu) window.addEventListener("click", closeMenu);
     return () => window.removeEventListener("click", closeMenu);
   }, [showUserMenu]);
 
@@ -55,262 +56,48 @@ const Home = () => {
     window.scrollTo(0, 0);
   };
 
+  const handleNavigateWithAction = (tab, action) => {
+    changeView(tab);
+    if (action === "new") setAutoOpenForm(true);
+  };
+
   const handleAlertClick = (id) => {
     setView("exportaciones");
     setHighlightId(id);
-
     setTimeout(() => setHighlightId(null), 5000);
   };
-
-  const styles = {
-    container: {
-      fontFamily: "'Segoe UI', Roboto, sans-serif",
-      backgroundColor: "#f4f7f6",
-      minHeight: "100vh",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-    },
-    contentWrapper: {
-      width: "100%",
-      maxWidth: "1200px",
-      padding: "20px clamp(10px, 3vw, 30px)",
-      display: "flex",
-      flexDirection: "column",
-      flex: 1,
-      boxSizing: "border-box",
-    },
-    header: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: "15px",
-      backgroundColor: "white",
-      padding: "15px 25px",
-      borderRadius: "12px",
-      boxShadow: "0 2px 10px rgba(0,0,0,0.05)",
-    },
-    logoSection: { display: "flex", alignItems: "center", gap: "15px" },
-    logoIcon: {
-      backgroundColor: "#007bff",
-      color: "white",
-      padding: "10px",
-      borderRadius: "8px",
-      fontSize: "20px",
-    },
-    userProfile: {
-      display: "flex",
-      alignItems: "center",
-      gap: "12px",
-      marginLeft: "20px",
-      paddingLeft: "20px",
-      borderLeft: "1px solid #eee",
-      cursor: "pointer",
-    },
-    userAvatar: {
-      width: "35px",
-      height: "35px",
-      borderRadius: "50%",
-      backgroundColor: "#007bff",
-      color: "white",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontWeight: "bold",
-      fontSize: "14px",
-    },
-    logoutBtn: {
-      padding: "10px 20px",
-      backgroundColor: "#fff",
-      color: "#d9534f",
-      border: "1px solid #d9534f",
-      borderRadius: "6px",
-      cursor: "pointer",
-      fontWeight: "600",
-      transition: "0.3s",
-      display: "flex",
-      alignItems: "center",
-      gap: "8px",
-    },
-    navTabs: (isOpen) => ({
-      display: "flex",
-      gap: "5px",
-      backgroundColor: "#e9ecef",
-      padding: "5px",
-      borderRadius: "10px",
-      overflowX: "auto",
-      WebkitOverflowScrolling: "touch",
-      scrollbarWidth: "none",
-      msOverflowStyle: "none",
-    }),
-    tab: (active) => ({
-      position: "relative",
-      padding: "12px 20px",
-      cursor: "pointer",
-      color: active ? "#007bff" : "#64748b",
-      fontWeight: "600",
-      fontSize: "14px",
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
-      transition: "color 0.3s ease",
-    }),
-    mainContent: {
-      backgroundColor: "white",
-      padding: "10px",
-      borderRadius: "12px",
-      boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
-      flex: 1,
-      minHeight: "400px",
-    },
-    dropdown: {
-      position: "absolute",
-      top: "120%",
-      right: "0",
-      backgroundColor: "white",
-      minWidth: "200px",
-      borderRadius: "8px",
-      boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-      zIndex: 1000,
-      padding: "10px 0",
-      border: "1px solid #edf2f7",
-    },
-    dropdownHeader: {
-      padding: "8px 15px",
-      fontSize: "12px",
-      color: "#a0aec0",
-      textTransform: "uppercase",
-      letterSpacing: "0.5px",
-    },
-    dropdownItem: {
-      padding: "10px 15px",
-      display: "flex",
-      alignItems: "center",
-      gap: "10px",
-      cursor: "pointer",
-      fontSize: "14px",
-      color: "#4a5568",
-      transition: "background 0.2s",
-    },
-    icon: {
-      width: "16px",
-      textAlign: "center",
-      color: "#007bff",
-    },
-    navContainer: {
-      position: "relative",
-      marginBottom: "15px",
-    },
-    hamburger: {
-      display: "none",
-      fontSize: "24px",
-      background: "none",
-      border: "none",
-      color: "#007bff",
-      cursor: "pointer",
-      padding: "10px",
-    },
-  };
-
+const currentTabLabel = TABS.find(t => t.name === view)?.label || "Menú";
   return (
-    <div style={styles.container}>
-      <style>{`
-    .hamburger-btn {
-        display: none;
-        align-items: center;
-        gap: 10px;
-        background: white;
-        border: 1px solid #ddd;
-        padding: 10px 15px;
-        border-radius: 8px;
-        color: #007bff;
-        cursor: pointer;
-        font-weight: bold;
-        width: 100%;
-    }
-    .tab-item:hover {
-        color: #007bff !important;
-        background: rgba(0, 123, 255, 0.08);
-        border-radius: 8px;
-    }
-    @media (max-width: 1024px) {
-        .hamburger-btn {
-            display: flex; 
-        }
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-950 font-sans flex flex-col items-center">
+      <div className="w-full max-w-[1200px] px-4 sm:px-6 lg:px-8 py-5 flex flex-col flex-1 box-border">
 
-        .nav-tabs-desktop {
-            flex-direction: column !important; 
-            overflow: hidden;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            
-      
-            max-height: ${isMobileMenuOpen ? "600px" : "0px"};
-            opacity: ${isMobileMenuOpen ? "1" : "0"};
-            margin-bottom: ${isMobileMenuOpen ? "20px" : "0px"};
-            padding: ${isMobileMenuOpen ? "5px" : "0px"} !important;
-            pointer-events: ${isMobileMenuOpen ? "all" : "none"};
-            width: 100%;
-        }
-
-        .nav-tabs-desktop > div {
-            width: 100%;
-            justify-content: flex-start !important;
-            padding: 12px 15px !important;
-        }
-    }
-
-    @media (min-width: 1025px) {
-        .nav-tabs-desktop {
-            display: flex !important;
-            opacity: 1 !important;
-            max-height: none !important;
-            pointer-events: all !important;
-        }
-    }
-`}</style>
-      <div style={styles.contentWrapper}>
-        <div style={styles.header}>
-          <div style={styles.logoSection}>
-            <div style={styles.logoIcon}>
+        {/* ── Header ── */}
+        <div className="flex justify-between items-center mb-4 bg-white dark:bg-gray-900 px-5 py-4 rounded-xl shadow-sm border border-gray-100 dark:border-gray-800">
+          {/* Logo */}
+          <div className="flex items-center gap-4">
+            <div className="bg-blue-600 text-white p-2.5 rounded-lg text-xl">
               <i className="fa-solid fa-ship"></i>
             </div>
             <div>
-              <h2 style={{ margin: 0, color: "#1a1a1a", fontSize: "20px" }}>
-                SGA
-              </h2>
-              <span style={{ fontSize: "12px", color: "#888" }}>
-                Sistema de Gestión Aduanera
-              </span>
+              <h2 className="m-0 text-gray-900 dark:text-white text-xl font-bold">SGA</h2>
+              <span className="text-xs text-gray-400">Sistema de Gestión Aduanera</span>
             </div>
           </div>
-          <div style={{ position: "relative" }}>
+
+          {/* User menu */}
+          <div className="relative">
             <div
-              style={styles.userProfile}
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowUserMenu(!showUserMenu);
-              }}
+              className="flex items-center gap-3 ml-5 pl-5 border-l border-gray-200 dark:border-gray-700 cursor-pointer"
+              onClick={(e) => { e.stopPropagation(); setShowUserMenu(!showUserMenu); }}
             >
-              <div style={styles.userAvatar}>
+              <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
                 {userName.charAt(0).toUpperCase()}
               </div>
-
-              <div style={{ textAlign: "left" }}>
-                <div
-                  style={{ fontWeight: "600", fontSize: "14px", color: "#333" }}
-                >
-                  @{userName}{" "}
-                  <i
-                    className="fa-solid fa-caret-down"
-                    style={{ fontSize: "10px", marginLeft: "5px" }}
-                  ></i>
+              <div className="text-left">
+                <div className="font-semibold text-sm text-gray-800 dark:text-gray-100">
+                  @{userName} <i className="fa-solid fa-caret-down text-[10px] ml-1"></i>
                 </div>
-                <div
-                  style={{
-                    fontSize: "11px",
-                    color: isAdmin ? "#28a745" : "#666",
-                  }}
-                >
+                <div className={`text-xs ${isAdmin ? "text-green-500" : "text-gray-400"}`}>
                   {isAdmin ? "Administrador" : "Usuario"}
                 </div>
               </div>
@@ -323,69 +110,32 @@ const Home = () => {
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: -10, scale: 0.95 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
-                  style={styles.dropdown}
+                  className="absolute top-[120%] right-0 bg-white dark:bg-gray-800 min-w-[200px] rounded-xl shadow-lg z-[1000] py-2 border border-gray-100 dark:border-gray-700"
                   onClick={(e) => e.stopPropagation()}
                 >
+                  <div className="px-4 py-2 text-xs text-gray-400 font-bold uppercase tracking-wide">Cuenta</div>
+
                   <div
-                    style={{
-                      padding: "10px 15px",
-                      fontSize: "12px",
-                      color: "#999",
-                      fontWeight: "bold",
-                    }}
+                    className="px-4 py-2.5 flex items-center gap-2.5 cursor-pointer text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => { setView("Profile"); setShowUserMenu(false); }}
                   >
-                    CUENTA
+                    <i className="fa-solid fa-circle-user text-blue-500"></i> Mi Perfil
                   </div>
 
                   <div
-                    style={styles.dropdownItem}
-                    onClick={() => {
-                      setView("Profile");
-                      setShowUserMenu(false);
-                    }}
-                  >
-                    <i
-                      className="fa-solid fa-circle-user"
-                      style={{ color: "#007bff" }}
-                    ></i>{" "}
-                    Mi Perfil
-                  </div>
-
-                  <div
-                    style={styles.dropdownItem}
+                    className="px-4 py-2.5 flex items-center gap-2.5 cursor-pointer text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
                     onClick={() => alert("Funcionalidad en desarrollo")}
                   >
-                    <i
-                      className="fa-solid fa-gear"
-                      style={{ color: "#007bff" }}
-                    ></i>{" "}
-                    Configuración
+                    <i className="fa-solid fa-gear text-blue-500"></i> Configuración
                   </div>
 
-                  <hr
-                    style={{
-                      border: "0",
-                      borderTop: "1px solid #eee",
-                      margin: "5px 0",
-                    }}
-                  />
+                  <hr className="my-1 border-gray-100 dark:border-gray-700" />
 
                   <div
-                    style={{ ...styles.dropdownItem, color: "#d9534f" }}
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          "¿Estás seguro de que quieres cerrar sesión?",
-                        )
-                      ) {
-                        handleLogout();
-                      } else {
-                        setShowUserMenu(false);
-                      }
-                    }}
+                    className="px-4 py-2.5 flex items-center gap-2.5 cursor-pointer text-sm text-red-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                    onClick={() => { if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) handleLogout(); else setShowUserMenu(false); }}
                   >
-                    <i className="fa-solid fa-right-from-bracket"></i> Cerrar
-                    Sesión
+                    <i className="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
                   </div>
                 </motion.div>
               )}
@@ -393,118 +143,87 @@ const Home = () => {
           </div>
         </div>
 
+        {/* ── Alertas ── */}
         <AlertasVencimiento onAlertClick={handleAlertClick} />
 
-        <div style={styles.navContainer}>
-          <button
-            className="hamburger-btn"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            <i
-              className={`fa-solid ${isMobileMenuOpen ? "fa-xmark" : "fa-bars"}`}
-              style={{ fontSize: "20px" }}
-            ></i>
-          </button>
+        {/* ── Navegación ── */}
+        <div className="relative mb-4">
+          {/* Botón hamburguesa (mobile) */}
+         <button
+  className="lg:hidden flex items-center justify-between bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 px-4 py-3 rounded-lg text-blue-600 font-bold w-full cursor-pointer shadow-sm"
+  onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+>
+  <div className="flex items-center gap-3">
+    <i className={`fa-solid ${TABS.find(t => t.name === view)?.icon || 'fa-bars'}`}></i>
+    <span className="uppercase tracking-wider text-sm">
+      {view === "Profile" ? "Mi Perfil" : currentTabLabel}
+    </span>
+  </div>
+  
+  <i className={`fa-solid ${isMobileMenuOpen ? "fa-chevron-up" : "fa-chevron-down"} text-xs opacity-50`}></i>
+</button>
 
-          <div className="nav-tabs-desktop" style={styles.navTabs()}>
-            {[
-              "home",
-              "aduanas",
-              "clientes",
-              "importaciones",
-              "exportaciones",
-              "usuarios",
-            ].map((tabName) => {
-              if ((tabName === "usuarios" || tabName === "aduanas") && !isAdmin)
-                return null;
-
-              const isActive = view === tabName;
-
-              return (
-                <div
-                  key={tabName}
-                  style={styles.tab(isActive)}
-                  onClick={() => changeView(tabName)}
-                  className="tab-item"
-                >
-                  <i
-                    className={`fa-solid fa-${tabName === "home" ? "house" : tabName === "clientes" ? "users" : tabName === "importaciones" ? "ship" : tabName === "exportaciones" ? "file-export" : tabName === "usuarios" ? "user-gear" : tabName === "aduanas" ? "building-columns" : "file-invoice"}`}
-                  ></i>
-                  {tabName.toUpperCase()}
-
-                  {isActive && (
-                    <motion.div
-                      layoutId="activeTabIndicator"
-                      style={{
-                        position: "absolute",
-                        bottom: 0,
-                        left: 0,
-                        right: 0,
-                        height: "3px",
-                        background: "#007bff",
-                        borderRadius: "10px",
-                      }}
-                    />
-                  )}
-                </div>
-              );
-            })}
+          {/* Tabs */}
+          <div className={`
+  bg-gray-200 dark:bg-gray-800 p-1.5 rounded-xl
+  lg:flex lg:flex-row lg:gap-1 lg:opacity-100 lg:max-h-none lg:pointer-events-auto lg:mt-0
+  flex-col overflow-hidden transition-all duration-300 ease-in-out
+  ${isMobileMenuOpen
+    ? "flex opacity-100 max-h-[600px] mt-2"
+    : "hidden"
+  }
+`}>
+           {TABS.map((tab) => {
+  if (tab.adminOnly && !isAdmin) return null;
+  const isActive = view === tab.name;
+  return (
+    <div
+      key={tab.name}
+      onClick={() => changeView(tab.name)}
+      className={`
+        relative flex items-center justify-center gap-2.5 px-5 py-3 rounded-lg cursor-pointer
+        text-sm font-bold transition-all duration-200
+        w-full lg:w-auto whitespace-nowrap
+        ${isActive
+          ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700 shadow-sm lg:bg-transparent lg:shadow-none"
+          : "text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-gray-700/50"
+        }
+      `}
+    >
+      <i className={`fa-solid ${tab.icon}`}></i>
+      {tab.label}
+      
+      {/* Indicador inferior solo para escritorio */}
+      {isActive && (
+        <motion.div
+          layoutId="activeTabIndicator"
+          className="absolute -bottom-1.5 left-2 right-2 h-[3px] bg-blue-600 rounded-full hidden lg:block"
+        />
+      )}
+    </div>
+  );
+})}
           </div>
         </div>
 
-        <div style={styles.mainContent}>
-          {view === "home" && (
-            <HomeInfo onNavigate={handleNavigateWithAction} />
-          )}
-          {view === "clientes" && (
-            <GestionClientes
-              onNotification={showToast}
-              autoOpenForm={autoOpenForm}
-              onFormOpened={() => setAutoOpenForm(false)}
-            />
-          )}
-          {view === "aduanas" && <GestionAduanas onNotification={showToast} />}
-          {view === "importaciones" && (
-            <GestionImportaciones
-              onNotification={showToast}
-              autoOpenForm={autoOpenForm}
-              onFormOpened={() => setAutoOpenForm(false)}
-            />
-          )}
-          {view === "exportaciones" && (
-            <GestionExportaciones
-              highlightId={highlightId}
-              onNotification={showToast}
-              autoOpenForm={autoOpenForm}
-              onFormOpened={() => setAutoOpenForm(false)}
-            />
-          )}
-          {view === "usuarios" && (
-            <GestionUsuarios onNotification={showToast} />
-          )}
-          {view === "Profile" && <Profile onNotification={showToast} />}
+        {/* ── Contenido ── */}
+        <div className="bg-white dark:bg-gray-900 p-2.5 rounded-xl shadow-sm flex-1 min-h-[400px] border border-gray-100 dark:border-gray-800">
+          {view === "home"          && <HomeInfo onNavigate={handleNavigateWithAction} />}
+          {view === "clientes"      && <GestionClientes onNotification={showToast} autoOpenForm={autoOpenForm} onFormOpened={() => setAutoOpenForm(false)} />}
+          {view === "aduanas"       && <GestionAduanas onNotification={showToast} />}
+          {view === "importaciones" && <GestionImportaciones onNotification={showToast} autoOpenForm={autoOpenForm} onFormOpened={() => setAutoOpenForm(false)} />}
+          {view === "exportaciones" && <GestionExportaciones highlightId={highlightId} onNotification={showToast} autoOpenForm={autoOpenForm} onFormOpened={() => setAutoOpenForm(false)} />}
+          {view === "usuarios"      && <GestionUsuarios onNotification={showToast} />}
+          {view === "Profile"       && <Profile onNotification={showToast} />}
         </div>
       </div>
 
       <Footer />
-      <div
-        style={{
-          position: "fixed",
-          top: "20px",
-          right: "20px",
-          zIndex: 10000,
-          display: "flex",
-          flexDirection: "column",
-          gap: "10px",
-        }}
-      >
+
+      {/* ── Toasts ── */}
+      <div className="fixed top-5 right-5 z-[10000] flex flex-col gap-2.5">
         {toasts.map((t) => (
-          <Toast
-            key={t.id}
-            msg={t.msg}
-            type={t.type}
-            onClose={() => removeToast(t.id)}
-          />
+          <Toast key={t.id} msg={t.msg} type={t.type} onClose={() => removeToast(t.id)} />
         ))}
       </div>
     </div>

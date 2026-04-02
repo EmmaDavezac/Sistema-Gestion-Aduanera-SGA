@@ -14,20 +14,12 @@ const stagger = {
 
 const fadeUp = {
   hidden: { opacity: 0, y: 18 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.45, ease: "easeOut" },
-  },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
 };
 
 const HomeInfo = ({ onNavigate }) => {
   const [data, setData] = useState({
-    clientes: [],
-    importaciones: [],
-    exportaciones: [],
-    vencimientos: [],
-    loading: true,
+    clientes: [], importaciones: [], exportaciones: [], vencimientos: [], loading: true,
   });
 
   const userName = localStorage.getItem("userName") || "Usuario";
@@ -36,20 +28,10 @@ const HomeInfo = ({ onNavigate }) => {
   useEffect(() => {
     const cargar = async () => {
       try {
-        const [clientes, importaciones, exportaciones, vencimientos] =
-          await Promise.all([
-            getClientes(),
-            getImportaciones(),
-            getExportaciones(),
-            getExportacionesVencer(),
-          ]);
-        setData({
-          clientes,
-          importaciones,
-          exportaciones,
-          vencimientos,
-          loading: false,
-        });
+        const [clientes, importaciones, exportaciones, vencimientos] = await Promise.all([
+          getClientes(), getImportaciones(), getExportaciones(), getExportacionesVencer(),
+        ]);
+        setData({ clientes, importaciones, exportaciones, vencimientos, loading: false });
       } catch {
         setData((d) => ({ ...d, loading: false }));
       }
@@ -58,222 +40,159 @@ const HomeInfo = ({ onNavigate }) => {
   }, []);
 
   const clientesActivos = data.clientes.filter((c) => !c.baja).length;
-  const impActivas = data.importaciones.filter((i) => !i.baja).length;
-  const expActivas = data.exportaciones.filter((e) => !e.baja).length;
-  const porVencer = data.vencimientos.length;
+  const impActivas      = data.importaciones.filter((i) => !i.baja).length;
+  const expActivas      = data.exportaciones.filter((e) => !e.baja).length;
+  const porVencer       = data.vencimientos.length;
 
-  // Últimas 6 operaciones combinadas
   const recientes = [
     ...data.importaciones.map((i) => ({ ...i, tipo: "importacion" })),
     ...data.exportaciones.map((e) => ({ ...e, tipo: "exportacion" })),
-  ]
-    .sort((a, b) => b.id - a.id)
-    .slice(0, 6);
+  ].sort((a, b) => b.id - a.id).slice(0, 6);
 
   const hora = new Date().getHours();
-  const saludo =
-    hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
+  const saludo = hora < 12 ? "Buenos días" : hora < 19 ? "Buenas tardes" : "Buenas noches";
 
   if (data.loading) {
     return (
-      <div style={s.loadingWrap}>
-        <i
-          className="fa-solid fa-circle-notch fa-spin"
-          style={{ fontSize: 28, color: "#2563eb" }}
-        ></i>
+      <div className="flex items-center justify-center min-h-[300px]">
+        <i className="fa-solid fa-circle-notch fa-spin text-blue-600 text-3xl"></i>
       </div>
     );
   }
 
-  return (
-    <div style={s.page}>
-      <style>{css}</style>
+  const STATS = [
+    { label: "Clientes activos",         value: clientesActivos, icon: "fa-users",                nav: "clientes",      color: "blue" },
+    { label: "Importaciones activas",    value: impActivas,      icon: "fa-ship",                 nav: "importaciones", color: "cyan" },
+    { label: "Exportaciones activas",    value: expActivas,      icon: "fa-truck-ramp-box",        nav: "exportaciones", color: "green" },
+    { label: "Exportaciones por vencer", value: porVencer,       icon: "fa-triangle-exclamation", nav: "exportaciones", color: porVencer > 0 ? "red" : "gray", alert: porVencer > 0 },
+  ];
 
-      {/* ── Encabezado ── */}
+  const colorMap = {
+    blue:  { bg: "bg-blue-50  dark:bg-blue-950",  icon: "bg-blue-100  dark:bg-blue-900  text-blue-600  dark:text-blue-400",  value: "text-blue-600  dark:text-blue-400",  border: "border-blue-200  dark:border-blue-800" },
+    cyan:  { bg: "bg-cyan-50  dark:bg-cyan-950",  icon: "bg-cyan-100  dark:bg-cyan-900  text-cyan-600  dark:text-cyan-400",  value: "text-cyan-600  dark:text-cyan-400",  border: "border-cyan-200  dark:border-cyan-800" },
+    green: { bg: "bg-green-50 dark:bg-green-950", icon: "bg-green-100 dark:bg-green-900 text-green-600 dark:text-green-400", value: "text-green-600 dark:text-green-400", border: "border-green-200 dark:border-green-800" },
+    red:   { bg: "bg-red-50   dark:bg-red-950",   icon: "bg-red-100   dark:bg-red-900   text-red-600   dark:text-red-400",   value: "text-red-600   dark:text-red-400",   border: "border-red-200   dark:border-red-800" },
+    gray:  { bg: "bg-gray-50  dark:bg-gray-800",  icon: "bg-gray-100  dark:bg-gray-700  text-gray-500  dark:text-gray-400",  value: "text-gray-700  dark:text-gray-300",  border: "border-gray-200  dark:border-gray-700" },
+  };
+
+  const QUICK_ACTIONS = [
+    { label: "Nueva importación",  icon: "fa-ship",             color: "text-blue-600",   bg: "bg-blue-50  dark:bg-blue-900/30",   border: "border-blue-100  dark:border-blue-800", nav: "importaciones", action: "new" },
+    { label: "Nueva exportación",  icon: "fa-truck-ramp-box",   color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-100 dark:border-orange-800", nav: "exportaciones", action: "new" },
+    { label: "Nuevo cliente",      icon: "fa-user-plus",        color: "text-green-600",  bg: "bg-green-50 dark:bg-green-900/30",  border: "border-green-100  dark:border-green-800", nav: "clientes",      action: "new" },
+    ...(isAdmin ? [
+      { label: "Gestionar aduanas",  icon: "fa-building-columns", color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/30", border: "border-purple-100 dark:border-purple-800", nav: "aduanas" },
+      { label: "Gestionar usuarios", icon: "fa-user-gear",         color: "text-cyan-600",   bg: "bg-cyan-50   dark:bg-cyan-900/30",   border: "border-cyan-100   dark:border-cyan-800",   nav: "usuarios" },
+    ] : []),
+  ];
+
+  return (
+    <div className="p-6 bg-gray-50 dark:bg-gray-950 min-h-full font-sans">
+
+      {/* Encabezado */}
       <motion.div
         initial={{ opacity: 0, y: -12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        style={s.pageHeader}
+        className="flex flex-col md:flex-row md:justify-between md:items-center mb-7 gap-4 w-full"
       >
         <div>
-          <div style={s.greeting}>
-            {saludo}, <span style={s.greetingName}>{userName}</span> 👋
+          <div className="text-2xl font-extrabold text-gray-900 dark:text-white tracking-tight mb-1">
+            {saludo}, <span className="text-blue-600">{userName}</span> 
           </div>
-          <div style={s.greetingSub}>
-            {isAdmin
-              ? "Panel de administración"
-              : "Tu resumen de operaciones aduaneras"}
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {isAdmin ? "Panel de administración" : "Tu resumen de operaciones aduaneras"}
           </div>
         </div>
-        <div style={s.dateBadge}>
-          <i
-            className="fa-solid fa-calendar-check"
-            style={{ marginRight: 6, color: "#2563eb" }}
-          ></i>
-          {new Date().toLocaleDateString("es-AR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
+        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium shadow-sm whitespace-nowrap">
+          <i className="fa-solid fa-calendar-check mr-2 text-blue-600"></i>
+          {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
         </div>
       </motion.div>
 
-      {/* ── Contadores ── */}
-      <motion.div
-        variants={stagger}
-        initial="hidden"
-        animate="visible"
-        style={s.statsGrid}
+      {/* Contadores */}
+      <motion.div variants={stagger} initial="hidden" animate="visible"
+        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
       >
-        {[
-          {
-            label: "Clientes activos",
-            value: clientesActivos,
-            icon: "fa-users",
-            color: "#2563eb",
-            bg: "#eff6ff",
-            nav: "clientes",
-          },
-          {
-            label: "Importaciones activas",
-            value: impActivas,
-            icon: "fa-ship",
-            color: "#0891b2",
-            bg: "#ecfeff",
-            nav: "importaciones",
-          },
-          {
-            label: "Exportaciones activas",
-            value: expActivas,
-            icon: "fa-truck-ramp-box",
-            color: "#059669",
-            bg: "#ecfdf5",
-            nav: "exportaciones",
-          },
-          {
-            label: "Exportaciones por vencer",
-            value: porVencer,
-            icon: "fa-triangle-exclamation",
-            color: porVencer > 0 ? "#dc2626" : "#6b7280",
-            bg: porVencer > 0 ? "#fef2f2" : "#f9fafb",
-            nav: "exportaciones",
-            alert: porVencer > 0,
-          },
-        ].map((stat) => (
-          <motion.div
-            key={stat.label}
-            variants={fadeUp}
-            style={{
-              ...s.statCard,
-              backgroundColor: stat.bg,
-              borderColor: stat.color + "30",
-            }}
-            className="stat-card-hover"
-            onClick={() => onNavigate && onNavigate(stat.nav)}
-          >
-            <div
-              style={{ ...s.statIconWrap, backgroundColor: stat.color + "18" }}
+        {STATS.map((stat) => {
+          const c = colorMap[stat.color];
+          return (
+            <motion.div
+              key={stat.label}
+              variants={fadeUp}
+              onClick={() => onNavigate?.(stat.nav)}
+              className={`relative ${c.bg} ${c.border} border rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg overflow-hidden`}
             >
-              <i
-                className={`fa-solid ${stat.icon}`}
-                style={{ color: stat.color, fontSize: 20 }}
-              ></i>
-            </div>
-            <div style={s.statValue(stat.color)}>{stat.value}</div>
-            <div style={s.statLabel}>{stat.label}</div>
-            {stat.alert && <div style={s.alertDot}></div>}
-          </motion.div>
-        ))}
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${c.icon}`}>
+                <i className={`fa-solid ${stat.icon} text-xl`}></i>
+              </div>
+              <div className={`text-4xl font-extrabold leading-none mb-1.5 tracking-tight ${c.value}`}>
+                {stat.value}
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium leading-snug">
+                {stat.label}
+              </div>
+              {stat.alert && (
+                <div className="absolute top-3.5 right-3.5 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_#fee2e2]" />
+              )}
+            </motion.div>
+          );
+        })}
       </motion.div>
 
-      {/* ── Fila inferior ── */}
-      <div style={s.bottomRow}>
+      {/* Fila inferior */}
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
+
         {/* Actividad reciente */}
-        <motion.div
-          variants={stagger}
-          initial="hidden"
-          animate="visible"
-          style={s.recentCard}
+        <motion.div variants={stagger} initial="hidden" animate="visible"
+          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm"
         >
-          <div style={s.sectionHeader}>
-            <span style={s.sectionTitle}>
-              <i
-                className="fa-solid fa-clock-rotate-left"
-                style={{ marginRight: 8, color: "#2563eb" }}
-              ></i>
+          <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-sm font-bold text-gray-900 dark:text-white">
+              <i className="fa-solid fa-clock-rotate-left mr-2 text-blue-600"></i>
               Actividad reciente
             </span>
-            <span style={s.sectionCount}>{recientes.length} operaciones</span>
+            <span className="text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md">
+              {recientes.length} operaciones
+            </span>
           </div>
 
           {recientes.length === 0 ? (
-            <div style={s.emptyState}>
-              <i
-                className="fa-solid fa-inbox"
-                style={{ fontSize: 32, color: "#cbd5e1", marginBottom: 8 }}
-              ></i>
-              <div style={{ color: "#94a3b8", fontSize: 14 }}>
-                Sin operaciones registradas
-              </div>
+            <div className="flex flex-col items-center justify-center py-12">
+              <i className="fa-solid fa-inbox text-4xl text-gray-300 dark:text-gray-600 mb-2"></i>
+              <div className="text-sm text-gray-400">Sin operaciones registradas</div>
             </div>
           ) : (
-            <div style={s.activityList}>
+            <div className="flex flex-col">
               {recientes.map((op) => {
                 const esImp = op.tipo === "importacion";
                 const estado = op.estado || "—";
                 const estadoColor =
-                  estado === "Finalizada"
-                    ? "#059669"
-                    : estado === "En Proceso"
-                      ? "#2563eb"
-                      : "#d97706";
+                  estado === "Finalizada" ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400" :
+                  estado === "En Proceso" ? "bg-blue-100  dark:bg-blue-900/30  text-blue-700  dark:text-blue-400"  :
+                  "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400";
 
                 return (
                   <motion.div
                     key={`${op.tipo}-${op.id}`}
                     variants={fadeUp}
-                    style={s.activityItem}
-                    className="activity-item-hover"
-                    onClick={() =>
-                      onNavigate &&
-                      onNavigate(
-                        op.tipo === "importacion"
-                          ? "importaciones"
-                          : "exportaciones",
-                      )
-                    }
+                    onClick={() => onNavigate?.(esImp ? "importaciones" : "exportaciones")}
+                    className="flex items-center gap-3 px-5 py-3 border-b border-gray-50 dark:border-gray-700/50 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors last:border-0"
                   >
-                    <div
-                      style={{
-                        ...s.activityIcon,
-                        backgroundColor: esImp ? "#eff6ff" : "#fff7ed",
-                        color: esImp ? "#2563eb" : "#ea580c",
-                      }}
-                    >
-                      <i
-                        className={`fa-solid ${esImp ? "fa-ship" : "fa-truck-ramp-box"}`}
-                      ></i>
+                    <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm flex-shrink-0 ${esImp ? "bg-blue-50 dark:bg-blue-900/30 text-blue-600" : "bg-orange-50 dark:bg-orange-900/30 text-orange-600"}`}>
+                      <i className={`fa-solid ${esImp ? "fa-ship" : "fa-truck-ramp-box"}`}></i>
                     </div>
-                    <div style={s.activityInfo}>
-                      <div style={s.activityTitle}>
+                    <div className="flex-1 min-w-0">
+                      <div className="text-sm font-semibold text-gray-800 dark:text-gray-100 flex items-center gap-1.5 mb-0.5">
                         {esImp ? "Importación" : "Exportación"} #{op.id}
-                        {op.baja && <span style={s.bajaBadge}>Baja</span>}
+                        {op.baja && <span className="text-[10px] font-semibold bg-red-100 dark:bg-red-900/30 text-red-600 px-1.5 py-0.5 rounded">Baja</span>}
                       </div>
-                      <div style={s.activitySub}>
-                        {op.numero_destinacion || "Sin destinación"} ·{" "}
-                        {op.cliente || "Sin cliente"}
+                      <div className="text-xs text-gray-400 truncate">
+                        {op.numero_destinacion || "Sin destinación"} · {op.cliente || "Sin cliente"}
                       </div>
                     </div>
-                    <div
-                      style={{
-                        ...s.estadoBadge,
-                        backgroundColor: estadoColor + "18",
-                        color: estadoColor,
-                      }}
-                    >
+                    <span className={`text-xs font-semibold px-2 py-1 rounded-md flex-shrink-0 ${estadoColor}`}>
                       {estado}
-                    </div>
+                    </span>
                   </motion.div>
                 );
               })}
@@ -286,104 +205,50 @@ const HomeInfo = ({ onNavigate }) => {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          style={s.quickCard}
+          className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 overflow-hidden shadow-sm"
         >
-          <div style={s.sectionHeader}>
-            <span style={s.sectionTitle}>
-              <i
-                className="fa-solid fa-bolt"
-                style={{ marginRight: 8, color: "#f59e0b" }}
-              ></i>
+          <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 dark:border-gray-700">
+            <span className="text-sm font-bold text-gray-900 dark:text-white">
+              <i className="fa-solid fa-bolt mr-2 text-yellow-500"></i>
               Accesos rápidos
             </span>
           </div>
 
-          <div style={s.quickList}>
-            {[
-              {
-                label: "Nueva importación",
-                icon: "fa-ship",
-                color: "#2563eb",
-                nav: "importaciones",
-                action: "new",
-              },
-              {
-                label: "Nueva exportación",
-                icon: "fa-truck-ramp-box",
-                color: "#ea580c",
-                nav: "exportaciones",
-                action: "new",
-              },
-              {
-                label: "Nuevo cliente",
-                icon: "fa-user-plus",
-                color: "#059669",
-                nav: "clientes",
-                action: "new",
-              },
-              ...(isAdmin
-                ? [
-                    {
-                      label: "Gestionar aduanas",
-                      icon: "fa-building-columns",
-                      color: "#7c3aed",
-                      nav: "aduanas",
-                    },
-                    {
-                      label: "Gestionar usuarios",
-                      icon: "fa-user-gear",
-                      color: "#0891b2",
-                      nav: "usuarios",
-                    },
-                  ]
-                : []),
-            ].map((item) => (
+          <div className="flex flex-col p-3 gap-1">
+            {QUICK_ACTIONS.map((item) => (
               <button
                 key={item.label}
-                style={{ ...s.quickBtn, borderColor: item.color + "30" }}
-                className="quick-btn-hover"
-                onClick={() => onNavigate && onNavigate(item.nav, item.action)}
+                onClick={() => onNavigate?.(item.nav, item.action)}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl border cursor-pointer transition-colors text-left w-full ${item.border} hover:${item.bg} bg-transparent`}
               >
-                <div
-                  style={{
-                    ...s.quickBtnIcon,
-                    backgroundColor: item.color + "15",
-                    color: item.color,
-                  }}
-                >
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm flex-shrink-0 ${item.bg} ${item.color}`}>
                   <i className={`fa-solid ${item.icon}`}></i>
                 </div>
-                <span style={s.quickBtnLabel}>{item.label}</span>
-                <i
-                  className="fa-solid fa-chevron-right"
-                  style={{ fontSize: 11, color: "#cbd5e1", marginLeft: "auto" }}
-                ></i>
+                <span className="text-sm font-semibold text-gray-700 dark:text-gray-300">{item.label}</span>
+                <i className="fa-solid fa-chevron-right text-xs text-gray-300 dark:text-gray-600 ml-auto"></i>
               </button>
             ))}
           </div>
 
           {/* Mini resumen */}
-          <div style={s.miniSummary}>
-            <div style={s.miniSummaryTitle}>Resumen del sistema</div>
-            <div style={s.miniSummaryGrid}>
-              <div style={s.miniStat}>
-                <span style={s.miniStatNum}>{data.clientes.length}</span>
-                <span style={s.miniStatLabel}>Total clientes</span>
-              </div>
-              <div style={s.miniStat}>
-                <span style={s.miniStatNum}>{data.importaciones.length}</span>
-                <span style={s.miniStatLabel}>Total importaciones</span>
-              </div>
-              <div style={s.miniStat}>
-                <span style={s.miniStatNum}>{data.exportaciones.length}</span>
-                <span style={s.miniStatLabel}>Total exportaciones</span>
-              </div>
-              <div style={s.miniStat}>
-                <span style={{ ...s.miniStatNum, color: "#dc2626" }}>
-                  {porVencer}
-                </span>
-                <span style={s.miniStatLabel}>Por vencer</span>
-              </div>
+          <div className="mx-3 mb-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4 border border-gray-100 dark:border-gray-700">
+            <div className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+              Resumen del sistema
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { num: data.clientes.length,      label: "Total clientes" },
+                { num: data.importaciones.length, label: "Total importaciones" },
+                { num: data.exportaciones.length, label: "Total exportaciones" },
+                { num: porVencer,                 label: "Por vencer", alert: true },
+              ].map((item) => (
+                <div key={item.label} className="flex flex-col gap-0.5">
+                  <span className={`text-2xl font-extrabold tracking-tight ${item.alert && item.num > 0 ? "text-red-600 dark:text-red-400" : "text-gray-900 dark:text-white"}`}>
+                    {item.num}
+                  </span>
+                  <span className="text-xs text-gray-400">{item.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         </motion.div>
@@ -391,297 +256,5 @@ const HomeInfo = ({ onNavigate }) => {
     </div>
   );
 };
-
-const s = {
-  page: {
-    padding: "24px",
-    backgroundColor: "#f8fafc",
-    minHeight: "100%",
-    fontFamily: "'Segoe UI', system-ui, sans-serif",
-  },
-  loadingWrap: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    minHeight: 300,
-  },
-  pageHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: 28,
-    flexWrap: "wrap",
-    gap: 12,
-  },
-  greeting: {
-    fontSize: 22,
-    fontWeight: 800,
-    color: "#0f172a",
-    letterSpacing: "-0.5px",
-    marginBottom: 4,
-  },
-  greetingName: {
-    color: "#2563eb",
-  },
-  greetingSub: {
-    fontSize: 13,
-    color: "#64748b",
-  },
-  dateBadge: {
-    backgroundColor: "white",
-    border: "1px solid #e2e8f0",
-    borderRadius: 10,
-    padding: "8px 14px",
-    fontSize: 13,
-    color: "#475569",
-    fontWeight: 500,
-    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-    whiteSpace: "nowrap",
-  },
-  statsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: 16,
-    marginBottom: 24,
-  },
-  statCard: {
-    backgroundColor: "white",
-    borderRadius: 14,
-    padding: "20px 18px",
-    border: "1.5px solid",
-    cursor: "pointer",
-    position: "relative",
-    overflow: "hidden",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-  },
-  statIconWrap: {
-    width: 42,
-    height: 42,
-    borderRadius: 10,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  statValue: (color) => ({
-    fontSize: 32,
-    fontWeight: 800,
-    color: color,
-    lineHeight: 1,
-    marginBottom: 6,
-    letterSpacing: "-1px",
-  }),
-  statLabel: {
-    fontSize: 12,
-    color: "#64748b",
-    fontWeight: 500,
-    lineHeight: 1.4,
-  },
-  alertDot: {
-    position: "absolute",
-    top: 14,
-    right: 14,
-    width: 8,
-    height: 8,
-    borderRadius: "50%",
-    backgroundColor: "#dc2626",
-    boxShadow: "0 0 0 3px #fee2e2",
-  },
-  bottomRow: {
-    display: "grid",
-    gridTemplateColumns: "1fr 340px",
-    gap: 16,
-    alignItems: "start",
-  },
-  recentCard: {
-    backgroundColor: "white",
-    borderRadius: 14,
-    border: "1px solid #e2e8f0",
-    overflow: "hidden",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-  },
-  quickCard: {
-    backgroundColor: "white",
-    borderRadius: 14,
-    border: "1px solid #e2e8f0",
-    overflow: "hidden",
-    boxShadow: "0 1px 4px rgba(0,0,0,0.04)",
-  },
-  sectionHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "16px 20px",
-    borderBottom: "1px solid #f1f5f9",
-  },
-  sectionTitle: {
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#0f172a",
-  },
-  sectionCount: {
-    fontSize: 12,
-    color: "#94a3b8",
-    backgroundColor: "#f1f5f9",
-    padding: "3px 8px",
-    borderRadius: 6,
-  },
-  emptyState: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "48px 20px",
-  },
-  activityList: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  activityItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-    padding: "12px 20px",
-    borderBottom: "1px solid #f8fafc",
-    cursor: "pointer",
-    transition: "background 0.15s",
-  },
-  activityIcon: {
-    width: 36,
-    height: 36,
-    borderRadius: 9,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 14,
-    flexShrink: 0,
-  },
-  activityInfo: {
-    flex: 1,
-    minWidth: 0,
-  },
-  activityTitle: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#1e293b",
-    display: "flex",
-    alignItems: "center",
-    gap: 6,
-    marginBottom: 2,
-  },
-  activitySub: {
-    fontSize: 11,
-    color: "#94a3b8",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-  },
-  estadoBadge: {
-    fontSize: 11,
-    fontWeight: 600,
-    padding: "3px 8px",
-    borderRadius: 6,
-    flexShrink: 0,
-  },
-  bajaBadge: {
-    fontSize: 10,
-    fontWeight: 600,
-    backgroundColor: "#fee2e2",
-    color: "#dc2626",
-    padding: "2px 6px",
-    borderRadius: 4,
-  },
-  quickList: {
-    display: "flex",
-    flexDirection: "column",
-    padding: "8px 12px",
-    gap: 4,
-  },
-  quickBtn: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    padding: "10px 12px",
-    backgroundColor: "transparent",
-    border: "1px solid",
-    borderRadius: 10,
-    cursor: "pointer",
-    transition: "background 0.15s",
-    textAlign: "left",
-    width: "100%",
-  },
-  quickBtnIcon: {
-    width: 32,
-    height: 32,
-    borderRadius: 8,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: 14,
-    flexShrink: 0,
-  },
-  quickBtnLabel: {
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#374151",
-  },
-  miniSummary: {
-    margin: "8px 12px 12px",
-    backgroundColor: "#f8fafc",
-    borderRadius: 10,
-    padding: "14px",
-    border: "1px solid #f1f5f9",
-  },
-  miniSummaryTitle: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: "0.8px",
-    marginBottom: 12,
-  },
-  miniSummaryGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 10,
-  },
-  miniStat: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 2,
-  },
-  miniStatNum: {
-    fontSize: 20,
-    fontWeight: 800,
-    color: "#0f172a",
-    letterSpacing: "-0.5px",
-  },
-  miniStatLabel: {
-    fontSize: 11,
-    color: "#94a3b8",
-  },
-};
-
-const css = `
-  .stat-card-hover:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important;
-    transition: all 0.2s ease;
-  }
-  .stat-card-hover {
-    transition: all 0.2s ease;
-  }
-  .activity-item-hover:hover {
-    background-color: #f8fafc;
-  }
-  .quick-btn-hover:hover {
-    background-color: #f8fafc !important;
-  }
-  @media (max-width: 900px) {
-    .home-bottom-row {
-      grid-template-columns: 1fr !important;
-    }
-  }
-`;
 
 export default HomeInfo;

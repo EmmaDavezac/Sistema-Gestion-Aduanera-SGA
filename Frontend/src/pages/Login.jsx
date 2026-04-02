@@ -14,7 +14,7 @@ const Login = () => {
   const [focusedField, setFocusedField] = useState("");
 
   const navigate = useNavigate();
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://192.168.1.102:8000";
 
   const fetchCaptcha = async () => {
     try {
@@ -205,7 +205,12 @@ const Login = () => {
               <div style={s.captchaRow}>
                 <div style={s.captchaImgWrap}>
                   {captchaData.url ? (
-                    <img src={captchaData.url} alt="captcha" style={s.captchaImg} />
+                   <img 
+  src={`${captchaData.url}?t=${new Date().getTime()}`} 
+  alt="captcha" 
+  style={s.captchaImg}
+  key={captchaData.key} 
+/>
                   ) : (
                     <div style={s.captchaLoading}>
                       <i className="fa-solid fa-circle-notch fa-spin"></i>
