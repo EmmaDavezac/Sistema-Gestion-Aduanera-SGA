@@ -173,7 +173,7 @@ const currentTabLabel = TABS.find(t => t.name === view)?.label || "Menú";
     : "hidden"
   }
 `}>
-           {TABS.map((tab) => {
+{TABS.map((tab) => {
   if (tab.adminOnly && !isAdmin) return null;
   const isActive = view === tab.name;
   return (
@@ -181,17 +181,23 @@ const currentTabLabel = TABS.find(t => t.name === view)?.label || "Menú";
       key={tab.name}
       onClick={() => changeView(tab.name)}
       className={`
-        relative flex items-center justify-center gap-2.5 px-5 py-3 rounded-lg cursor-pointer
+        relative flex items-center gap-3 px-5 py-3.5 rounded-lg cursor-pointer
         text-sm font-bold transition-all duration-200
         w-full lg:w-auto whitespace-nowrap
+        /* Alineación: Izquierda en móvil, Centro en escritorio */
+        justify-start lg:justify-center 
         ${isActive
-          ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700 shadow-sm lg:bg-transparent lg:shadow-none"
+          ? "text-blue-600 dark:text-blue-400 bg-white dark:bg-gray-700 shadow-sm lg:shadow-none lg:bg-transparent"
           : "text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-white/50 dark:hover:bg-gray-700/50"
         }
       `}
     >
-      <i className={`fa-solid ${tab.icon}`}></i>
-      {tab.label}
+      {/* Icono con ancho fijo para que todos los textos empiecen en la misma línea vertical */}
+      <i className={`fa-solid ${tab.icon} w-5 text-center`}></i>
+      
+      <span className="uppercase tracking-wider">
+        {tab.label}
+      </span>
       
       {/* Indicador inferior solo para escritorio */}
       {isActive && (

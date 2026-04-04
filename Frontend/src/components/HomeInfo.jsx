@@ -76,12 +76,12 @@ const HomeInfo = ({ onNavigate }) => {
   };
 
   const QUICK_ACTIONS = [
-    { label: "Nueva importación",  icon: "fa-ship",             color: "text-blue-600",   bg: "bg-blue-50  dark:bg-blue-900/30",   border: "border-blue-100  dark:border-blue-800", nav: "importaciones", action: "new" },
-    { label: "Nueva exportación",  icon: "fa-truck-ramp-box",   color: "text-orange-600", bg: "bg-orange-50 dark:bg-orange-900/30", border: "border-orange-100 dark:border-orange-800", nav: "exportaciones", action: "new" },
-    { label: "Nuevo cliente",      icon: "fa-user-plus",        color: "text-green-600",  bg: "bg-green-50 dark:bg-green-900/30",  border: "border-green-100  dark:border-green-800", nav: "clientes",      action: "new" },
+    { label: "Nueva importación",  icon: "fa-ship",             color: "text-blue-600",   bg: "bg-blue-50  dark:bg-gray-900/30",   border: "border-blue-100  dark:border-gray-600", nav: "importaciones", action: "new" },
+    { label: "Nueva exportación",  icon: "fa-truck-ramp-box",   color: "text-orange-600", bg: "bg-orange-50 dark:bg-gray-900/30", border: "border-orange-100 dark:border-gray-600", nav: "exportaciones", action: "new" },
+    { label: "Nuevo cliente",      icon: "fa-user-plus",        color: "text-green-600",  bg: "bg-green-50 dark:bg-gray-900/30",  border: "border-green-100  dark:border-gray-600", nav: "clientes",      action: "new" },
     ...(isAdmin ? [
-      { label: "Gestionar aduanas",  icon: "fa-building-columns", color: "text-purple-600", bg: "bg-purple-50 dark:bg-purple-900/30", border: "border-purple-100 dark:border-purple-800", nav: "aduanas" },
-      { label: "Gestionar usuarios", icon: "fa-user-gear",         color: "text-cyan-600",   bg: "bg-cyan-50   dark:bg-cyan-900/30",   border: "border-cyan-100   dark:border-cyan-800",   nav: "usuarios" },
+      { label: "Gestionar aduanas",  icon: "fa-building-columns", color: "text-purple-600", bg: "bg-purple-50 dark:bg-gray-900/30", border: "border-purple-100 dark:border-gray-600", nav: "aduanas" },
+      { label: "Gestionar usuarios", icon: "fa-user-gear",         color: "text-cyan-600",   bg: "bg-cyan-50   dark:bg-gray-900/30",   border: "border-cyan-100   dark:border-gray-600",   nav: "usuarios" },
     ] : []),
   ];
 
@@ -103,41 +103,9 @@ const HomeInfo = ({ onNavigate }) => {
             {isAdmin ? "Panel de administración" : "Tu resumen de operaciones aduaneras"}
           </div>
         </div>
-        <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-2 text-sm text-gray-500 dark:text-gray-400 font-medium shadow-sm whitespace-nowrap">
-          <i className="fa-solid fa-calendar-check mr-2 text-blue-600"></i>
-          {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}
-        </div>
+      
       </motion.div>
 
-      {/* Contadores */}
-      <motion.div variants={stagger} initial="hidden" animate="visible"
-        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8"
-      >
-        {STATS.map((stat) => {
-          const c = colorMap[stat.color];
-          return (
-            <motion.div
-              key={stat.label}
-              variants={fadeUp}
-              onClick={() => onNavigate?.(stat.nav)}
-              className={`relative ${c.bg} ${c.border} border rounded-2xl p-5 cursor-pointer transition-all duration-200 hover:-translate-y-1 hover:shadow-lg overflow-hidden`}
-            >
-              <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-4 ${c.icon}`}>
-                <i className={`fa-solid ${stat.icon} text-xl`}></i>
-              </div>
-              <div className={`text-4xl font-extrabold leading-none mb-1.5 tracking-tight ${c.value}`}>
-                {stat.value}
-              </div>
-              <div className="text-xs text-gray-500 dark:text-gray-400 font-medium leading-snug">
-                {stat.label}
-              </div>
-              {stat.alert && (
-                <div className="absolute top-3.5 right-3.5 w-2.5 h-2.5 rounded-full bg-red-500 shadow-[0_0_0_3px_#fee2e2]" />
-              )}
-            </motion.div>
-          );
-        })}
-      </motion.div>
 
       {/* Fila inferior */}
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-4 items-start">
@@ -209,7 +177,7 @@ const HomeInfo = ({ onNavigate }) => {
         >
           <div className="flex justify-between items-center px-5 py-4 border-b border-gray-100 dark:border-gray-700">
             <span className="text-sm font-bold text-gray-900 dark:text-white">
-              <i className="fa-solid fa-bolt mr-2 text-yellow-500"></i>
+              <i className="fa-solid fa-bolt mr-2 "></i>
               Accesos rápidos
             </span>
           </div>

@@ -169,7 +169,7 @@ const GestionExportaciones = ({ onNotification, autoOpenForm, onFormOpened, high
 
   // ── Clases reutilizables ──
   const inputClass = (disabled) =>
-    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors box-border ${
+    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors box-border no-spinner ${
       disabled
         ? "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
         : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
@@ -249,80 +249,96 @@ const GestionExportaciones = ({ onNotification, autoOpenForm, onFormOpened, high
             </div>
             <button onClick={() => { setIsEditing(false); setIsReadOnly(false); setView("form"); }}
               className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm">
-              <i className="fa-solid fa-plus"></i> Registrar
+               Registrar
             </button>
           </div>
 
-          {/* Filtros */}
-          <div className="flex items-center gap-4 mb-4 flex-wrap p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
-            <div onClick={() => setMostrarBaja(!mostrarBaja)} className="flex items-center gap-2 cursor-pointer select-none flex-shrink-0">
-              <div className={`w-11 h-6 rounded-full relative transition-all duration-300 border-2 flex-shrink-0
-                ${mostrarBaja ? "bg-blue-500 border-blue-600" : "bg-gray-300 dark:bg-gray-600 border-gray-400 dark:border-gray-500"}`}>
-                <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-300 shadow ${mostrarBaja ? "left-5" : "left-0.5"}`} />
-              </div>
-              <span className={`text-sm font-semibold transition-colors ${mostrarBaja ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
-                Mostrar dadas de baja
-              </span>
-            </div>
-            <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 hidden sm:block" />
-            <div className="flex gap-1.5 w-full sm:w-auto flex-1">
-  {[
-    { value: "Todas", label: "Todas", short: "Todas" },
-    { value: "Inicializada", label: "Inicializadas", short: "Ini" },
-    { value: "En Proceso", label: "En Proceso", short: "Proc" },
-    { value: "Finalizada", label: "Finalizadas", short: "Fin" },
-  ].map((op) => (
-    <button 
-      key={op.value} 
-      onClick={() => setFiltroEstado(op.value)}
-      className={`
-        flex-1 sm:flex-none px-1 sm:px-4 py-2 rounded-lg text-[10px] sm:text-sm font-bold border transition-all cursor-pointer
-        flex items-center justify-center text-center leading-tight min-h-[40px]
-        ${filtroEstado === op.value
-          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm"
-          : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-transparent hover:border-gray-300"
-        }
-      `}
-    >
-      {/* Texto corto para móviles (Ini, Proc, Fin) */}
-      <span className="block sm:hidden uppercase tracking-tighter">{op.short}</span>
-      
-      {/* Texto completo para escritorio */}
-      <span className="hidden sm:block">{op.label}</span>
-    </button>
-  ))}
+ {/* Filtros exportaciones */}
+<div className="mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+
+  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+    <div onClick={() => setMostrarBaja(!mostrarBaja)}
+      className="flex items-center gap-2.5 cursor-pointer select-none">
+      <div className={`w-10 h-5 rounded-full relative transition-all duration-300 border-2 flex-shrink-0
+        ${mostrarBaja ? "bg-blue-500 border-blue-600" : "bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500"}`}>
+        <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[1px] transition-all duration-300 shadow
+          ${mostrarBaja ? "left-[18px]" : "left-[1px]"}`} />
+      </div>
+      <span className={`text-xs font-semibold transition-colors ${mostrarBaja ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
+        Mostrar dadas de baja
+      </span>
+    </div>
+    <span className="text-xs text-gray-400 dark:text-gray-500">
+      <span className="font-bold text-gray-600 dark:text-gray-300">{expFiltradas.length}</span>
+      <span> / {exportaciones.length}</span>
+    </span>
+  </div>
+
+  <div className="flex p-2 gap-1.5">
+    {[
+      { value: "Todas",        label: "Todas",         icon: "fa-list" },
+      { value: "Inicializada", label: "Inicializadas", icon: "fa-circle-play" },
+      { value: "En Proceso",   label: "En Proceso",    icon: "fa-spinner" },
+      { value: "Finalizada",   label: "Finalizadas",   icon: "fa-circle-check" },
+    ].map((op) => (
+      <button key={op.value} onClick={() => setFiltroEstado(op.value)}
+        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-1 rounded-lg text-xs font-semibold border transition-all cursor-pointer
+          ${filtroEstado === op.value
+            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+            : "border-transparent text-gray-500 dark:text-gray-400 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-700"
+          }`}>
+        <i className={`fa-solid ${op.icon} text-[10px]`}></i>
+        <span className="hidden sm:inline">{op.label}</span>
+        <span className="sm:hidden">{op.value === "Todas" ? "Todas" : op.value === "Inicializada" ? "Init." : op.value === "En Proceso" ? "Proc." : "Final."}</span>
+      </button>
+    ))}
+  </div>
+
+  {(mostrarBaja || filtroEstado !== "Todas") && (
+    <div className="px-3 pb-2.5">
+      <button
+        onClick={() => { setMostrarBaja(false); setFiltroEstado("Todas"); }}
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg transition-colors cursor-pointer bg-transparent"
+      >
+        <i className="fa-solid fa-xmark"></i> Limpiar filtros
+      </button>
+    </div>
+  )}
 </div>
+          {/* Cards */}
+         {expFiltradas.map((exp) => (
+  <div key={exp.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm mb-3 border border-gray-100 dark:border-gray-700">
+    <div className="flex justify-between items-start gap-3">
+
+      <div className="flex items-start gap-3 flex-1 min-w-0">
+        <div className="w-10 h-10 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500 flex-shrink-0">
+          <i className="fa-solid fa-truck-ramp-box"></i>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+            <strong className="text-sm text-gray-800 dark:text-gray-100">ID: {exp.id}</strong>
+            <Badge bg={exp.estado === "Finalizada" ? "#f0fff4" : "#fffeb3"} color={exp.estado === "Finalizada" ? "#22543d" : "#856404"}>
+              {exp.estado}
+            </Badge>
+            {exp.baja && <Badge bg="#fff5f5" color="#c53030">Dada de baja</Badge>}
           </div>
 
-          {/* Cards */}
-          {expFiltradas.map((exp) => (
-            <div key={exp.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-full bg-red-50 dark:bg-red-900/20 flex items-center justify-center text-red-500">
-                    <i className="fa-solid fa-truck-ramp-box"></i>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <strong className="text-base text-gray-800 dark:text-gray-100">ID: {exp.id}</strong>
-                      <Badge bg={exp.estado === "Finalizada" ? "#f0fff4" : "#fffeb3"} color={exp.estado === "Finalizada" ? "#22543d" : "#856404"}>
-                        {exp.estado}
-                      </Badge>
-                      {exp.baja && <Badge bg="#fff5f5" color="#c53030">Dada de baja</Badge>}
-                    </div>
-                    <p className="m-0 mt-1 text-gray-400 dark:text-gray-500 text-xs">
-                      <i className="fa-solid fa-id-card mr-1"></i> CUIT: {exp.cliente || "No Cargado"} &nbsp;|&nbsp;
-                      <i className="fa-solid fa-plane-departure mr-1"></i> Destino: {exp.pais_destino || "No Cargado"}
-                    </p>
-                  </div>
-                </div>
-                <button onClick={() => handleVerDetalle(exp)}
-                  className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm">
-                  <i className="fa-solid fa-eye"></i>
-                </button>
-              </div>
-            </div>
-          ))}
+          <div className="flex flex-col sm:flex-row sm:flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-400 dark:text-gray-500">
+            <span><i className="fa-solid fa-id-card mr-1"></i>CUIT: {exp.cliente || "No Cargado"}</span>
+            <span><i className="fa-solid fa-plane-departure mr-1"></i>Destino: {exp.pais_destino || "No Cargado"}</span>
+             <span>N° Dest: {exp.numero_destinacion || "No Cargado"}</span>
+          </div>
+        </div>
+      </div>
+
+      <button onClick={() => handleVerDetalle(exp)}
+        className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm flex-shrink-0">
+        <i className="fa-solid fa-eye"></i>
+      </button>
+
+    </div>
+  </div>
+))}
 
           {loading ? <SkeletonTable rows={4} /> : expFiltradas.length === 0 && (
             <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
@@ -523,7 +539,7 @@ const GestionExportaciones = ({ onNotification, autoOpenForm, onFormOpened, high
                 <div className="col-span-full mt-2">
                   <button type="submit"
                     className="w-full flex items-center justify-center gap-2 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg border-none cursor-pointer text-base transition-colors">
-                    <i className="fa-solid fa-floppy-disk"></i> Guardar
+                   Guardar
                   </button>
                 </div>
               )}

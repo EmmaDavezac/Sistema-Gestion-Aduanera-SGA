@@ -11,6 +11,8 @@ const Profile = ({ onNotification }) => {
   const [showPasswordSection, setShowPasswordSection] = useState(false);
   const [loading, setLoading] = useState(true);
   const [passwords, setPasswords] = useState({ new_password: "", confirm_password: "" });
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => { loadProfileData(); }, []);
 
@@ -20,14 +22,11 @@ const Profile = ({ onNotification }) => {
       const actual = lista.find((u) => u.username === localStorage.getItem("userName"));
       if (actual) {
         const current = {
-          id: actual.id,
-          username: actual.username || "",
-          email: actual.email || "",
-          first_name: actual.first_name || "",
+          id: actual.id, username: actual.username || "",
+          email: actual.email || "", first_name: actual.first_name || "",
           last_name: actual.last_name || "",
         };
-        setUserData(current);
-        setBackupData(current);
+        setUserData(current); setBackupData(current);
         localStorage.setItem("userId", actual.id);
       }
     } catch {
@@ -38,10 +37,10 @@ const Profile = ({ onNotification }) => {
   };
 
   const handleCancel = () => {
-    setUserData(backupData);
-    setIsEditing(false);
+    setUserData(backupData); setIsEditing(false);
     setShowPasswordSection(false);
     setPasswords({ new_password: "", confirm_password: "" });
+    setShowNewPassword(false); setShowConfirmPassword(false);
   };
 
   const handleSave = async () => {
@@ -54,12 +53,10 @@ const Profile = ({ onNotification }) => {
       const dataToSave = { ...userData };
       if (showPasswordSection && passwords.new_password) dataToSave.password = passwords.new_password;
       const response = await updateUsuario(userData.id, dataToSave);
-      setUserData(response);
-      setBackupData(response);
+      setUserData(response); setBackupData(response);
       localStorage.setItem("userName", response.username);
       onNotification("¡Perfil actualizado!", "success");
-      setIsEditing(false);
-      setShowPasswordSection(false);
+      setIsEditing(false); setShowPasswordSection(false);
       setPasswords({ new_password: "", confirm_password: "" });
     } catch {
       onNotification("Error al guardar los cambios", "error");
@@ -69,7 +66,7 @@ const Profile = ({ onNotification }) => {
   if (loading) return <ProfileSkeleton />;
 
   const inputClass = (disabled) =>
-    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors ${
+    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors box-border ${
       disabled
         ? "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
         : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
@@ -91,18 +88,16 @@ const Profile = ({ onNotification }) => {
         </div>
       </div>
 
-      <div className="max-w-2xl">
+      {/* Contenido centrado con mismo ancho que otros forms */}
+      <div className="max-w-3xl mx-auto">
+
         {/* Card datos personales */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-4 shadow-sm">
           <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
-              Datos Personales
-            </span>
+            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Datos Personales</span>
             {!isEditing && (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer border-none"
-              >
+              <button onClick={() => setIsEditing(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors cursor-pointer border-none">
                 <i className="fa-solid fa-pen-to-square"></i> Editar
               </button>
             )}
@@ -111,44 +106,28 @@ const Profile = ({ onNotification }) => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="sm:col-span-2">
               <label className={labelClass}>Usuario</label>
-              <input
-                value={userData.username}
-                disabled
-                className={inputClass(true)}
-              />
+              <input value={userData.username} disabled className={inputClass(true)} />
             </div>
             <div>
               <label className={labelClass}>Nombre *</label>
-              <input
-                name="first_name"
-                value={userData.first_name}
+              <input name="first_name" value={userData.first_name}
                 onChange={(e) => setUserData({ ...userData, first_name: e.target.value })}
-                disabled={!isEditing}
-                placeholder="Ingresá tu nombre"
-                className={inputClass(!isEditing)}
-              />
+                disabled={!isEditing} placeholder="Ingresá tu nombre"
+                className={inputClass(!isEditing)} />
             </div>
             <div>
               <label className={labelClass}>Apellido *</label>
-              <input
-                name="last_name"
-                value={userData.last_name}
+              <input name="last_name" value={userData.last_name}
                 onChange={(e) => setUserData({ ...userData, last_name: e.target.value })}
-                disabled={!isEditing}
-                placeholder="Ingresá tu apellido"
-                className={inputClass(!isEditing)}
-              />
+                disabled={!isEditing} placeholder="Ingresá tu apellido"
+                className={inputClass(!isEditing)} />
             </div>
             <div className="sm:col-span-2">
               <label className={labelClass}>Email *</label>
-              <input
-                name="email"
-                value={userData.email}
+              <input name="email" value={userData.email}
                 onChange={(e) => setUserData({ ...userData, email: e.target.value })}
-                disabled={!isEditing}
-                placeholder="Ingresá tu email"
-                className={inputClass(!isEditing)}
-              />
+                disabled={!isEditing} placeholder="Ingresá tu email"
+                className={inputClass(!isEditing)} />
             </div>
           </div>
         </div>
@@ -156,15 +135,13 @@ const Profile = ({ onNotification }) => {
         {/* Card seguridad */}
         <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-4 shadow-sm">
           <div className="flex items-center justify-between mb-5 pb-3 border-b border-gray-100 dark:border-gray-700">
-            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">
-              Seguridad
-            </span>
+            <span className="text-sm font-bold text-gray-700 dark:text-gray-200 uppercase tracking-wide">Seguridad</span>
           </div>
 
           {!showPasswordSection ? (
             <button
               onClick={() => { setShowPasswordSection(true); setIsEditing(true); }}
-              className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm font-semibold bg-none border-none cursor-pointer p-0 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+              className="flex items-center gap-2 text-blue-600 dark:text-blue-400 text-sm font-semibold bg-transparent border-none cursor-pointer p-0 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
             >
               <i className="fa-solid fa-lock"></i> Cambiar contraseña
             </button>
@@ -172,29 +149,41 @@ const Profile = ({ onNotification }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className={labelClass}>Nueva Contraseña</label>
-                <input
-                  type="password"
-                  name="new_password"
-                  value={passwords.new_password}
-                  onChange={(e) => setPasswords({ ...passwords, new_password: e.target.value })}
-                  placeholder="Mín. 8 caracteres"
-                  className={inputClass(false)}
-                />
+                <div className="relative">
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    name="new_password"
+                    value={passwords.new_password}
+                    onChange={(e) => setPasswords({ ...passwords, new_password: e.target.value })}
+                    placeholder="Mín. 8 caracteres"
+                    className={`${inputClass(false)} pr-10`}
+                  />
+                  <button type="button" onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 border-none bg-transparent cursor-pointer text-sm">
+                    <i className={`fa-solid ${showNewPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                  </button>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">Mínimo 8 caracteres.</p>
               </div>
               <div>
                 <label className={labelClass}>Confirmar Contraseña</label>
-                <input
-                  type="password"
-                  name="confirm_password"
-                  value={passwords.confirm_password}
-                  onChange={(e) => setPasswords({ ...passwords, confirm_password: e.target.value })}
-                  placeholder="Repetir contraseña"
-                  className={`${inputClass(false)} ${
-                    passwords.confirm_password && passwords.new_password !== passwords.confirm_password
-                      ? "border-red-400 dark:border-red-500"
-                      : ""
-                  }`}
-                />
+                <div className="relative">
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    name="confirm_password"
+                    value={passwords.confirm_password}
+                    onChange={(e) => setPasswords({ ...passwords, confirm_password: e.target.value })}
+                    placeholder="Repetir contraseña"
+                    className={`${inputClass(false)} pr-10 ${
+                      passwords.confirm_password && passwords.new_password !== passwords.confirm_password
+                        ? "!border-red-400 dark:!border-red-500" : ""
+                    }`}
+                  />
+                  <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 border-none bg-transparent cursor-pointer text-sm">
+                    <i className={`fa-solid ${showConfirmPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+                  </button>
+                </div>
                 {passwords.confirm_password && passwords.new_password !== passwords.confirm_password && (
                   <p className="text-xs text-red-500 mt-1">Las contraseñas no coinciden.</p>
                 )}
@@ -206,17 +195,13 @@ const Profile = ({ onNotification }) => {
         {/* Acciones */}
         {isEditing && (
           <div className="flex gap-3">
-            <button
-              onClick={handleSave}
-              className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm"
-            >
-              <i className="fa-solid fa-floppy-disk"></i> Guardar cambios
+            <button onClick={handleSave}
+              className="flex-1 flex items-center justify-center gap-2 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm">
+               Guardar
             </button>
-            <button
-              onClick={handleCancel}
-              className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm"
-            >
-              <i className="fa-solid fa-xmark"></i> Cancelar
+            <button onClick={handleCancel}
+              className="flex items-center justify-center gap-2 px-6 py-3 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-600 dark:text-gray-300 font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm">
+        Cancelar
             </button>
           </div>
         )}

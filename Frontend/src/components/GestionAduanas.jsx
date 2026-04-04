@@ -92,54 +92,70 @@ const GestionAduanas = ({ onNotification }) => {
               onClick={() => { setIsEditing(false); setFormData({ id: "", nombre: "" }); setView("form"); }}
               className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm"
             >
-              <i className="fa-solid fa-plus"></i> Registrar
+           Registrar
             </button>
           </div>
 
           {/* Lista */}
-          {loading ? (
-            <SkeletonTable rows={4} />
-          ) : aduanasFiltradas.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-              <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
-              <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
-              <p className="mt-2 text-sm">Prueba con otro código u otro nombre.</p>
+     {loading ? (
+  <SkeletonTable rows={4} />
+) : aduanasFiltradas.length === 0 ? (
+  <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+    <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
+    <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
+    <p className="mt-2 text-sm">Prueba con otro código u otro nombre.</p>
+  </div>
+) : (
+  aduanasFiltradas.map((a) => (
+    <div key={a.id} className="bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
+      {/* Contenedor Principal: Columna en móvil, Fila en escritorio */}
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        
+        {/* Lado Izquierdo: Icono + Texto */}
+        <div className="flex items-start sm:items-center gap-3">
+          {/* Icono circular - se oculta en móviles muy pequeños si prefieres ahorrar espacio */}
+          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-blue-50 dark:bg-blue-900/30 flex-shrink-0 flex items-center justify-center text-blue-600 dark:text-blue-400">
+            <i className="fa-solid fa-building-columns text-sm sm:text-base"></i>
+          </div>
+
+          {/* Textos: Se apilan en móvil */}
+          <div className="flex flex-col gap-1 min-w-0">
+            <strong className="text-sm sm:text-base text-gray-800 dark:text-gray-100 truncate break-words">
+              {a.nombre}
+            </strong>
+            <div>
+              <span className="px-2 py-0.5 rounded-lg text-[10px] sm:text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 inline-block">
+                ID: {a.id}
+              </span>
             </div>
-          ) : (
-            aduanasFiltradas.map((a) => (
-              <div key={a.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                      <i className="fa-solid fa-building-columns"></i>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <strong className="text-base text-gray-800 dark:text-gray-100">{a.nombre}</strong>
-                      <span className="px-2.5 py-1 rounded-xl text-xs font-bold bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">
-                        ID: {a.id}
-                      </span>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      title="Ver Detalle"
-                      onClick={() => { setFormData({ id: a.id, nombre: a.nombre }); setIsEditing(true); setView("form"); }}
-                      className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm"
-                    >
-                      <i className="fa-solid fa-eye"></i>
-                    </button>
-                    <button
-                      title="Eliminar"
-                      onClick={() => handleEliminar(a.id)}
-                      className="px-3 py-2 border border-red-400 text-red-500 rounded-lg bg-transparent cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm"
-                    >
-                      <i className="fa-solid fa-trash-can"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
+          </div>
+        </div>
+
+        {/* Lado Derecho: Botones de Acción */}
+        <div className="flex items-center justify-end gap-2 border-t sm:border-none pt-3 sm:pt-0 border-gray-100 dark:border-gray-700">
+          <button
+            title="Ver Detalle"
+            onClick={() => { setFormData({ id: a.id, nombre: a.nombre }); setIsEditing(true); setView("form"); }}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm"
+          >
+            <i className="fa-solid fa-eye"></i>
+            <span className="sm:hidden font-semibold">Detalles</span>
+          </button>
+          
+          <button
+            title="Eliminar"
+            onClick={() => handleEliminar(a.id)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 sm:py-2 border border-red-400 text-red-500 rounded-lg bg-transparent cursor-pointer hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm"
+          >
+            <i className="fa-solid fa-trash-can"></i>
+            <span className="sm:hidden font-semibold">Borrar</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  ))
+)}
         </div>
 
       ) : (
@@ -193,7 +209,7 @@ const GestionAduanas = ({ onNotification }) => {
                     type="submit"
                     className="w-full flex items-center justify-center gap-2 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg border-none cursor-pointer text-base transition-colors"
                   >
-                    <i className="fa-solid fa-floppy-disk"></i> Guardar
+                  Guardar
                   </button>
                 </div>
               )}

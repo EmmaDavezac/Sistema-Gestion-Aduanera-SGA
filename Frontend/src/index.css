@@ -10,4 +10,16 @@ body, html {
   0% { opacity: 1; }
   50% { opacity: 0.4; }
   100% { opacity: 1; }
+  
+}@layer utilities {
+  .no-spinner::-webkit-inner-spin-button,
+  .no-spinner::-webkit-outer-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+
+  .no-spinner {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
 }

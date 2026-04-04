@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { getUsuarios, createUsuario, updateUsuario } from "../api/api";
 import SkeletonTable from "./SkeletonTable";
+import axios from "axios";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000";
 
 const GestionUsuarios = ({ onNotification }) => {
   const [usuarios, setUsuarios] = useState([]);
@@ -12,6 +14,9 @@ const GestionUsuarios = ({ onNotification }) => {
   const [isReadOnly, setIsReadOnly] = useState(true);
   const [mostrarInactivos, setMostrarInactivos] = useState(false);
   const [filtroRol, setFiltroRol] = useState("todos");
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     username: "", first_name: "", last_name: "", email: "",
     password: "", confirmPassword: "", is_staff: false, is_active: true,
@@ -103,13 +108,22 @@ const GestionUsuarios = ({ onNotification }) => {
     }
   };
 
-  const handleResetPassword = () => {
-    onNotification("Solicitud de restablecimiento enviada (ESTA ALERTA SOLO ES DE DEMOSTRACION)", "success");
-  };
+const handleResetPassword = async () => {
+  try {
+    const email = formData.email;
+    if (!email) { onNotification("El usuario no tiene email registrado.", "error"); return; }
+    await axios.post(`${API_BASE_URL}/api/password-reset/`, { email });
+    onNotification(`Email de restablecimiento enviado a ${email}`, "success");
+    setShowResetConfirm(false);
+  } catch {
+    onNotification("Error al enviar el email de restablecimiento.", "error");
+    setShowResetConfirm(false);
+  }
+};
 
   // ── Clases reutilizables ──
   const inputClass = (disabled) =>
-    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors box-border ${
+    `w-full px-3 py-2.5 rounded-lg border text-sm transition-colors box-border no-spinner ${
       disabled
         ? "bg-gray-50 dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-500 dark:text-gray-400 cursor-not-allowed"
         : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-500 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
@@ -166,103 +180,114 @@ const GestionUsuarios = ({ onNotification }) => {
               }}
               className="flex items-center gap-2 px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition-colors cursor-pointer border-none text-sm"
             >
-              <i className="fa-solid fa-plus"></i> Registrar
+              Registrar
             </button>
           </div>
 
           {/* Filtros */}
-          <div className="flex items-center gap-4 mb-4 flex-wrap p-3 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl">
-            <div
-              onClick={() => setMostrarInactivos(!mostrarInactivos)}
-              className="flex items-center gap-2 cursor-pointer select-none"
-            >
-              <div className={`w-11 h-6 rounded-full relative transition-all duration-300 border-2 flex-shrink-0
-                ${mostrarInactivos ? "bg-blue-500 border-blue-600" : "bg-gray-300 dark:bg-gray-600 border-gray-400 dark:border-gray-500"}`}
-              >
-                <div className={`w-4 h-4 bg-white rounded-full absolute top-0.5 transition-all duration-300 shadow
-                  ${mostrarInactivos ? "left-5" : "left-0.5"}`}
-                />
-              </div>
-              <span className={`text-sm font-semibold transition-colors ${mostrarInactivos ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
-                Mostrar inactivos
-              </span>
-            </div>
+<div className="mb-4 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl overflow-hidden">
+  
+  {/* Barra superior: toggle + contador */}
+  <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-700">
+    <div onClick={() => setMostrarInactivos(!mostrarInactivos)}
+      className="flex items-center gap-2.5 cursor-pointer select-none">
+      <div className={`w-10 h-5 rounded-full relative transition-all duration-300 border-2 flex-shrink-0
+        ${mostrarInactivos ? "bg-blue-500 border-blue-600" : "bg-gray-200 dark:bg-gray-600 border-gray-300 dark:border-gray-500"}`}>
+        <div className={`w-3.5 h-3.5 bg-white rounded-full absolute top-[1px] transition-all duration-300 shadow
+          ${mostrarInactivos ? "left-[18px]" : "left-[1px]"}`} />
+      </div>
+      <span className={`text-xs font-semibold transition-colors ${mostrarInactivos ? "text-blue-600 dark:text-blue-400" : "text-gray-500 dark:text-gray-400"}`}>
+        Mostrar inactivos
+      </span>
+    </div>
 
-            <div className="w-px h-6 bg-gray-200 dark:bg-gray-600 hidden sm:block" />
+    {/* Contador */}
+    <span className="text-xs text-gray-400 dark:text-gray-500">
+      <span className="font-bold text-gray-600 dark:text-gray-300">{usuariosFiltrados.length}</span>
+      <span> / {usuarios.length}</span>
+    </span>
+  </div>
 
-          <div className="flex gap-1.5 w-full sm:w-auto flex-1">
-  {[
-    { value: "todos",   label: "Todos",   short: "Todos" },
-    { value: "admin",   label: "Administradores", short: "Admin" },
-    { value: "usuario", label: "Usuarios", short: "Users" },
-  ].map((op) => (
-    <button
-      key={op.value}
-      onClick={() => setFiltroRol(op.value)}
-      className={`
-        flex-1 sm:flex-none px-1 sm:px-4 py-2 rounded-lg text-[10px] sm:text-sm font-bold border transition-all cursor-pointer
-        flex items-center justify-center text-center leading-tight min-h-[40px]
-        ${filtroRol === op.value
-          ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 shadow-sm"
-          : "border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 bg-transparent hover:border-gray-300"
-        }
-      `}
-    >
-      {/* Etiqueta corta para móviles */}
-      <span className="block sm:hidden uppercase tracking-tighter">{op.short}</span>
-      
-      {/* Etiqueta completa para escritorio */}
-      <span className="hidden sm:block">{op.label}</span>
-    </button>
-  ))}
+  {/* Pills de rol */}
+  <div className="flex p-2 gap-1.5">
+    {[
+      { value: "todos",   label: "Todos",            icon: "fa-users" },
+      { value: "admin",   label: "Administradores",  icon: "fa-shield-halved" },
+      { value: "usuario", label: "Usuarios",         icon: "fa-user-tie" },
+    ].map((op) => (
+      <button key={op.value} onClick={() => setFiltroRol(op.value)}
+        className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer
+          ${filtroRol === op.value
+            ? "border-blue-500 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+            : "border-transparent text-gray-500 dark:text-gray-400 bg-transparent hover:bg-gray-50 dark:hover:bg-gray-700"
+          }`}>
+        <i className={`fa-solid ${op.icon} text-[10px]`}></i>
+        <span className="hidden sm:inline">{op.label}</span>
+        <span className="sm:hidden">{op.value === "todos" ? "Todos" : op.value === "admin" ? "Admin" : "Users"}</span>
+      </button>
+    ))}
+  </div>
+
+  {/* Limpiar filtros — solo visible si hay alguno activo */}
+  {(mostrarInactivos || filtroRol !== "todos") && (
+    <div className="px-3 pb-2.5">
+      <button
+        onClick={() => { setMostrarInactivos(false); setFiltroRol("todos"); }}
+        className="w-full flex items-center justify-center gap-1.5 py-1.5 text-xs text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 border border-dashed border-gray-200 dark:border-gray-700 rounded-lg transition-colors cursor-pointer bg-transparent"
+      >
+        <i className="fa-solid fa-xmark"></i> Limpiar filtros
+      </button>
+    </div>
+  )}
 </div>
-          </div>
 
           {/* Lista */}
-          {loading ? (
-            <SkeletonTable rows={4} />
-          ) : usuariosFiltrados.length === 0 ? (
-            <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
-              <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
-              <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
-              <p className="mt-2 text-sm">Prueba con otro usuario, nombre, apellido o email.</p>
+      {loading ? (
+  <SkeletonTable rows={4} />
+) : usuariosFiltrados.length === 0 ? (
+  <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+    <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
+    <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
+    <p className="mt-2 text-sm">Prueba con otro usuario, nombre, apellido o email.</p>
+  </div>
+) : (
+  usuariosFiltrados.map((u) => (
+    <div key={u.id} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm mb-3 border border-gray-100 dark:border-gray-700">
+      <div className="flex justify-between items-start gap-3">
+
+        <div className="flex items-start gap-3 flex-1 min-w-0">
+          <div className="w-10 h-10 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400 flex-shrink-0">
+            <i className="fa-solid fa-user"></i>
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-1.5 mb-1">
+              <strong className="text-sm text-gray-800 dark:text-gray-100">{u.username}</strong>
+              {u.is_staff
+                ? <Badge bg="#fef3c7" color="#92400e"><i className="fa-solid fa-shield-halved"></i> Administrador</Badge>
+                : <Badge bg="#f0fff4" color="#22543d"><i className="fa-solid fa-user-tie"></i> Usuario</Badge>
+              }
+              {!u.is_active && <Badge bg="#fff5f5" color="#c53030"><i className="fa-solid fa-ban"></i> Inactivo</Badge>}
             </div>
-          ) : (
-            usuariosFiltrados.map((u) => (
-              <div key={u.id} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
-                <div className="flex justify-between items-center">
-                  <div className="flex items-center gap-4">
-                    <div className="w-11 h-11 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                      <i className="fa-solid fa-user"></i>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <strong className="text-base text-gray-800 dark:text-gray-100">{u.username}</strong>
-                        {u.is_staff
-                          ? <Badge bg="#fef3c7" color="#92400e"><i className="fa-solid fa-shield-halved"></i> Administrador</Badge>
-                          : <Badge bg="#f0fff4" color="#22543d"><i className="fa-solid fa-user-tie"></i> Usuario</Badge>
-                        }
-                        {!u.is_active && <Badge bg="#fff5f5" color="#c53030"><i className="fa-solid fa-ban"></i> Inactivo</Badge>}
-                      </div>
-                      <p className="m-0 mt-1 text-gray-400 dark:text-gray-500 text-xs">
-                        <i className="fa-solid fa-envelope mr-1"></i>
-                        {u.email || "Sin Correo"} &nbsp;|&nbsp;
-                        <i className="fa-solid fa-id-card mr-1"></i>
-                        {u.first_name || "Sin Nombre"} {u.last_name || "Sin Apellido"}
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    title="Ver Detalle"
-                    onClick={() => handleVerDetalle(u)}
-                    className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm"
-                  >
-                    <i className="fa-solid fa-eye"></i>
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
+
+            <div className="flex flex-col sm:flex-row sm:flex-wrap gap-x-3 gap-y-0.5 text-xs text-gray-400 dark:text-gray-500">
+              <span className="truncate"><i className="fa-solid fa-envelope mr-1"></i>{u.email || "Sin Correo"}</span>
+              <span><i className="fa-solid fa-id-card mr-1"></i>{u.first_name || "Sin Nombre"} {u.last_name || "Sin Apellido"}</span>
+            </div>
+          </div>
+        </div>
+
+        <button
+          title="Ver Detalle"
+          onClick={() => handleVerDetalle(u)}
+          className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm flex-shrink-0"
+        >
+          <i className="fa-solid fa-eye"></i>
+        </button>
+
+      </div>
+    </div>
+  ))
+)}
         </div>
 
       ) : (
@@ -323,38 +348,52 @@ const GestionUsuarios = ({ onNotification }) => {
               <div>
                 <label className={labelClass}>Contraseña *</label>
                 {!isEditing ? (
-                  <div className="flex flex-col gap-4">
-                    <div>
-                      <input name="password" type="password" value={formData.password} onChange={handleInputChange}
-                        required placeholder="Definir contraseña..." className={inputClass(false)} />
-                      <small className="text-gray-400 text-xs mt-1 block">Mínimo 8 caracteres.</small>
-                    </div>
-                    <div>
-                      <input
-                        name="confirmPassword" type="password" value={formData.confirmPassword}
-                        onChange={handleInputChange} required placeholder="Repetir contraseña..."
-                        className={`${inputClass(false)} ${
-                          formData.password !== formData.confirmPassword && formData.confirmPassword
-                            ? "!border-red-400 dark:!border-red-500" : ""
-                        }`}
-                      />
-                      {formData.password !== formData.confirmPassword && formData.confirmPassword && (
-                        <small className="text-red-500 text-xs mt-1 block">Las contraseñas no coinciden.</small>
-                      )}
-                    </div>
-                  </div>
-                ) : (
+  <div className="flex flex-col gap-4">
+    <div>
+      <div className="relative">
+        <input name="password" type={showPassword ? "text" : "password"}
+          value={formData.password} onChange={handleInputChange}
+          required placeholder="Definir contraseña..."
+            className={`${inputClass(false)} pr-10`} /> 
+        <button type="button" onClick={() => setShowPassword(!showPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 border-none bg-transparent cursor-pointer text-sm">
+          <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+        </button>
+      </div>
+      <small className="text-gray-400 text-xs mt-1 block">Mínimo 8 caracteres.</small>
+    </div>
+
+    <div>
+      <div className="relative">
+        <input name="confirmPassword" type={showConfirmPassword ? "text" : "password"}
+          value={formData.confirmPassword} onChange={handleInputChange}
+          required placeholder="Repetir contraseña..."
+          className={`${inputClass(false)} pr-10 ${
+            formData.password !== formData.confirmPassword && formData.confirmPassword
+              ? "!border-red-400 dark:!border-red-500" : ""
+          }`}
+        />
+        <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 border-none bg-transparent cursor-pointer text-sm">
+          <i className={`fa-solid ${showConfirmPassword ? "fa-eye-slash" : "fa-eye"}`}></i>
+        </button>
+      </div>
+      {formData.password !== formData.confirmPassword && formData.confirmPassword && (
+        <small className="text-red-500 text-xs mt-1 block">Las contraseñas no coinciden.</small>
+      )}
+    </div>
+  </div>
+) : (
                   <div className="flex items-center gap-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-dashed border-blue-300 dark:border-blue-700">
-                    <div className="flex-1">
-                      <p className="m-0 text-sm text-blue-800 dark:text-blue-300 font-semibold">La contraseña está encriptada.</p>
-                      <p className="m-0 text-xs text-blue-600 dark:text-blue-400 opacity-80 mt-1">Si el usuario la olvidó, podés enviar un restablecimiento.</p>
-                    </div>
-                    <button type="button" onClick={handleResetPassword}
-                      className="flex items-center gap-2 px-4 py-2 border border-blue-400 text-blue-600 dark:text-blue-400 rounded-lg bg-white dark:bg-gray-800 cursor-pointer text-sm font-semibold hover:bg-blue-50 transition-colors whitespace-nowrap"
-                    >
-                      <i className="fa-solid fa-key"></i> Restablecer
-                    </button>
-                  </div>
+  <div className="flex-1">
+    <p className="m-0 text-sm text-blue-800 dark:text-blue-300 font-semibold">La contraseña está encriptada.</p>
+    <p className="m-0 text-xs text-blue-600 dark:text-blue-400 opacity-80 mt-1">Si el usuario la olvidó, podés enviar un restablecimiento a <strong>{formData.email || "su email"}</strong>.</p>
+  </div>
+  <button type="button" onClick={() => setShowResetConfirm(true)}
+    className="flex items-center gap-2 px-4 py-2 border border-blue-400 text-blue-600 dark:text-blue-400 rounded-lg bg-white dark:bg-gray-800 cursor-pointer text-sm font-semibold hover:bg-blue-50 transition-colors whitespace-nowrap">
+    <i className="fa-solid fa-key"></i> Restablecer
+  </button>
+</div>
                 )}
               </div>
 
@@ -398,13 +437,54 @@ const GestionUsuarios = ({ onNotification }) => {
                 <button type="submit"
                   className="w-full flex items-center justify-center gap-2 py-4 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg border-none cursor-pointer text-base transition-colors"
                 >
-                  <i className="fa-solid fa-floppy-disk"></i> Guardar
+                 Guardar
                 </button>
               )}
             </form>
           </div>
         </div>
       )}
+      {showResetConfirm && (
+  <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[1000] px-4">
+    <div className="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-2xl p-6 w-full max-w-sm">
+      
+    
+
+      <h3 className="text-center text-base font-extrabold text-gray-900 dark:text-white mb-1">
+        Restablecer contraseña
+      </h3>
+      <p className="text-center text-sm text-gray-400 dark:text-gray-500 mb-2">
+        Se enviará un email a:
+      </p>
+      <p className="text-center text-sm font-semibold text-blue-600 dark:text-blue-400 mb-5">
+        {formData.email || "Sin email registrado"}
+      </p>
+
+      {!formData.email && (
+        <div className="flex items-center gap-2 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-800 rounded-lg px-3 py-2 text-xs mb-4">
+          <i className="fa-solid fa-triangle-exclamation"></i>
+          Este usuario no tiene email. Agregá uno antes de continuar.
+        </div>
+      )}
+
+      <div className="flex gap-3">
+        <button
+          onClick={() => setShowResetConfirm(false)}
+          className="flex-1 py-2.5 border border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 font-semibold rounded-xl bg-transparent hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors cursor-pointer text-sm"
+        >
+          Cancelar
+        </button>
+        <button
+          onClick={handleResetPassword}
+          disabled={!formData.email}
+          className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold rounded-xl border-none cursor-pointer text-sm flex items-center justify-center gap-2 transition-colors"
+        >
+          Enviar
+        </button>
+      </div>
+    </div>
+  </div>
+)}
     </div>
   );
 };

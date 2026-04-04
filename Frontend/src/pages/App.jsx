@@ -1,8 +1,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import Home from './pages/Home'
+import Login from './Login';
+import Home from './Home'
 import '@fortawesome/fontawesome-free/css/all.min.css';
 import { registerSW } from 'virtual:pwa-register'
+import ForgotPassword from "./ForgotPassword";
+import ResetPassword from "./ResetPassword";
 
 registerSW({ immediate: true })
 // Rutas protegidas
@@ -24,6 +26,8 @@ function App()
                 <Route path="/login" element={<PublicRoute><Login /></PublicRoute>} />
                 <Route path="/" element={<PrivateRoute><Home /></PrivateRoute>} />
                 <Route path="*" element={<Navigate to="/login" />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password/:uid/:token" element={<ResetPassword />} />
             </Routes>
         </Router>
     );
