@@ -3,13 +3,15 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 load_dotenv()
-BASE_DIR = Path(__file__).resolve().parent.parent
 
+BASE_DIR = Path(__file__).resolve().parent.parent
+#Se obtiene la clave secreta y otras configuraciones sensibles desde variables de entorno para mayor seguridad. Si no se encuentra la clave, se lanza un error para evitar que la aplicación se ejecute sin una configuración adecuada.
 SECRET_KEY = os.environ.get('SECRET_KEY')
 if not SECRET_KEY:
     raise ValueError("SECRET_KEY no está definida en las variables de entorno")
+#La configuración de DEBUG también se obtiene de una variable de entorno, permitiendo activar o desactivar el modo de depuración sin modificar el código. Por defecto, se asume que DEBUG es True si no se especifica lo contrario.
 DEBUG = os.environ.get('DEBUG', 'True') == 'True'
-
+#ALLOWED_HOSTS se configura a través de una variable de entorno, permitiendo especificar múltiples hosts separados por comas. Si no se proporciona esta variable, se asume 'localhost' como valor predeterminado.
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost').split(',')
 CORS_ALLOW_CREDENTIALS = True
 INSTALLED_APPS = [
@@ -75,7 +77,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 LANGUAGE_CODE = 'es-es'
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'America/Argentina/Buenos_Aires'
 USE_I18N = True
 USE_TZ = True
 
@@ -106,9 +108,10 @@ SIMPLE_JWT = {
     'USER_ID_FIELD': 'id',
     'USER_ID_CLAIM': 'user_id',
 }
-
+# Configuración para manejo de archivos multimedia (imágenes de perfil, documentos, etc.)
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# Configuración de correo electrónico para restablecimiento de contraseña y notificaciones
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
@@ -118,6 +121,7 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = f"SGA - Sistema de Gestión Aduanera <{EMAIL_HOST_USER}>"
 FRONTEND_URL = os.environ.get("FRONTEND_URL", "http://localhost:5173")
 
+# Configuración de CAPTCHA
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.math_challenge'
 CAPTCHA_IMAGE_SIZE = (120, 45)
 CAPTCHA_FONT_SIZE = 30
@@ -125,4 +129,5 @@ CAPTCHA_TIMEOUT = 10
 CAPTCHA_NOISE_FUNCTIONS = []
 CAPTCHA_LETTER_ROTATION = (-5, 5)
 
+#Tiempo de expiración para el token de restablecimiento de contraseña (en segundos)
 PASSWORD_RESET_TIMEOUT = 3600  # 1 hora
