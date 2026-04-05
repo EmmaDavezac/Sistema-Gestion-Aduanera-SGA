@@ -6,8 +6,23 @@ import { registerSW } from 'virtual:pwa-register'
 
 registerSW({ immediate: true })
 
-const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-if (prefersDark) document.documentElement.classList.add('dark')
+const savedTheme = localStorage.getItem("theme");
+
+if (savedTheme === "dark") {
+  document.documentElement.classList.add("dark");
+} else if (savedTheme === "light") {
+  document.documentElement.classList.remove("dark");
+} else {
+  // system (default)
+  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+  if (prefersDark) document.documentElement.classList.add("dark");
+
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+    if (localStorage.getItem("theme") === "system" || !localStorage.getItem("theme")) {
+      document.documentElement.classList.toggle("dark", e.matches);
+    }
+  });
+}
 
 window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
   document.documentElement.classList.toggle('dark', e.matches)

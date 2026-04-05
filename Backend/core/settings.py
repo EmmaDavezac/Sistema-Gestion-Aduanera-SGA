@@ -131,3 +131,5 @@ CAPTCHA_LETTER_ROTATION = (-5, 5)
 
 #Tiempo de expiración para el token de restablecimiento de contraseña (en segundos)
 PASSWORD_RESET_TIMEOUT = 3600  # 1 hora
+
+CRFS_TRUSTED_ORIGINS = os.environ.get('CRSF_TRUSTED_ORIGINS', '').split(',')

@@ -11,7 +11,7 @@ import HomeInfo from "../components/HomeInfo";
 import Footer from "../components/Footer";
 import Profile from "../components/Profile";
 import Toast from "../components/Toast";
-
+import { useTheme } from "../hooks/useTheme";
 const TABS = [
   { name: "home",          icon: "fa-house",            label: "HOME" },
   { name: "aduanas",       icon: "fa-building-columns", label: "ADUANAS",       adminOnly: true },
@@ -32,6 +32,10 @@ const Home = () => {
 
   const userName = localStorage.getItem("userName") || "Usuario";
   const isAdmin = localStorage.getItem("isAdmin") === "true";
+  const { theme, setTheme } = useTheme();
+  const toggleTheme = () => {
+  setTheme((prev) => prev === "dark" ? "light" : "dark");
+};
 
   const showToast = (msg, type) => {
     const id = Date.now();
@@ -85,59 +89,75 @@ const currentTabLabel = TABS.find(t => t.name === view)?.label || "Menú";
           </div>
 
           {/* User menu */}
-          <div className="relative">
-            <div
-              className="flex items-center gap-3 ml-5 pl-5 border-l border-gray-200 dark:border-gray-700 cursor-pointer"
-              onClick={(e) => { e.stopPropagation(); setShowUserMenu(!showUserMenu); }}
-            >
-              <div className="w-9 h-9 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-sm">
-                {userName.charAt(0).toUpperCase()}
-              </div>
-              <div className="text-left">
-                <div className="font-semibold text-sm text-gray-800 dark:text-gray-100">
-                  @{userName} <i className="fa-solid fa-caret-down text-[10px] ml-1"></i>
-                </div>
-                <div className={`text-xs ${isAdmin ? "text-green-500" : "text-gray-400"}`}>
-                  {isAdmin ? "Administrador" : "Usuario"}
-                </div>
-              </div>
-            </div>
+<div className="relative">
+  <div
+    className="flex items-center gap-3 cursor-pointer"
+    onClick={(e) => { e.stopPropagation(); setShowUserMenu(!showUserMenu); }}
+  >
+    {/* Avatar con gradiente igual al dropdown */}
+    <div className="flex items-center gap-2.5 bg-gradient-to-br from-blue-600 to-blue-700 px-3 py-2 rounded-xl">
+      <div className="w-7 h-7 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center font-bold text-white text-xs flex-shrink-0">
+        {userName.charAt(0).toUpperCase()}
+      </div>
+      <div className="text-left hidden sm:block">
+        <div className="font-bold text-white text-sm leading-tight">
+          @{userName}
+        </div>
+        <div className={`text-xs font-medium ${isAdmin ? "text-blue-200" : "text-blue-300"}`}>
+          {isAdmin ? "Administrador" : "Usuario"}
+        </div>
+      </div>
+      <i className="fa-solid fa-caret-down text-white/60 text-[10px] hidden sm:block"></i>
+    </div>
+  </div>
 
             <AnimatePresence>
               {showUserMenu && (
                 <motion.div
-                  initial={{ opacity: 0, y: -10, scale: 0.95 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  className="absolute top-[120%] right-0 bg-white dark:bg-gray-800 min-w-[200px] rounded-xl shadow-lg z-[1000] py-2 border border-gray-100 dark:border-gray-700"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div className="px-4 py-2 text-xs text-gray-400 font-bold uppercase tracking-wide">Cuenta</div>
+  initial={{ opacity: 0, y: -10, scale: 0.95 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  exit={{ opacity: 0, y: -10, scale: 0.95 }}
+  transition={{ duration: 0.2, ease: "easeOut" }}
+  className="absolute top-[120%] right-0 bg-white dark:bg-gray-800 min-w-[200px] rounded-xl shadow-lg z-[1000] py-2 border border-gray-100 dark:border-gray-700"
+  onClick={(e) => e.stopPropagation()}
+>
+  <div className="px-4 py-2 text-xs text-gray-400 font-bold uppercase tracking-wide">Cuenta</div>
 
-                  <div
-                    className="px-4 py-2.5 flex items-center gap-2.5 cursor-pointer text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    onClick={() => { setView("Profile"); setShowUserMenu(false); }}
-                  >
-                    <i className="fa-solid fa-circle-user text-blue-500"></i> Mi Perfil
-                  </div>
+  <div
+    className="px-4 py-2.5 flex items-center gap-2.5 cursor-pointer text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+    onClick={() => { setView("Profile"); setShowUserMenu(false); }}
+  >
+    <i className="fa-solid fa-circle-user text-blue-500"></i> Mi Perfil
+  </div>
 
-                  <div
-                    className="px-4 py-2.5 flex items-center gap-2.5 cursor-pointer text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    onClick={() => alert("Funcionalidad en desarrollo")}
-                  >
-                    <i className="fa-solid fa-gear text-blue-500"></i> Configuración
-                  </div>
+  <hr className="my-1 border-gray-100 dark:border-gray-700" />
 
-                  <hr className="my-1 border-gray-100 dark:border-gray-700" />
+  {/* Toggle dark mode */}
+  <div
+    onClick={toggleTheme}
+    className="px-4 py-2.5 flex items-center justify-between cursor-pointer text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+  >
+    <div className="flex items-center gap-2.5">
+      <i className={`fa-solid ${theme === "dark" ? "fa-sun text-yellow-400" : "fa-moon text-gray-400"}`}></i>
+      {theme === "dark" ? "Modo claro" : "Modo oscuro"}
+    </div>
+    {/* Mini toggle visual */}
+    <div className={`w-9 h-5 rounded-full relative border-2 transition-all duration-300 flex-shrink-0
+      ${theme === "dark" ? "bg-blue-500 border-blue-600" : "bg-gray-200 border-gray-300"}`}>
+      <div className={`w-3 h-3 bg-white rounded-full absolute top-[1px] transition-all duration-300 shadow
+        ${theme === "dark" ? "left-[17px]" : "left-[1px]"}`} />
+    </div>
+  </div>
 
-                  <div
-                    className="px-4 py-2.5 flex items-center gap-2.5 cursor-pointer text-sm text-red-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    onClick={() => { if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) handleLogout(); else setShowUserMenu(false); }}
-                  >
-                    <i className="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
-                  </div>
-                </motion.div>
+  <hr className="my-1 border-gray-100 dark:border-gray-700" />
+
+  <div
+    className="px-4 py-2.5 flex items-center gap-2.5 cursor-pointer text-sm text-red-500 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+    onClick={() => { if (window.confirm("¿Estás seguro de que quieres cerrar sesión?")) handleLogout(); else setShowUserMenu(false); }}
+  >
+    <i className="fa-solid fa-right-from-bracket"></i> Cerrar Sesión
+  </div>
+</motion.div>
               )}
             </AnimatePresence>
           </div>
