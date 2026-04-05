@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-baseURL: (import.meta.env.VITE_API_URL || "http://192.168.1.102:8000") + "/api/",
+baseURL: (import.meta.env.VITE_API_URL || "https://sistema-gestion-aduanera-sga-1.onrender.com") + "/api/",
 });
 
 api.interceptors.request.use(
