@@ -17,7 +17,7 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const API_BASE_URL = import.meta.env.VITE_API_URL || "https://sistema-gestion-aduanera-sga-1.onrender.com";
+  const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000";
 
   useEffect(() => {
     fetchCaptcha();
@@ -108,8 +108,8 @@ const Login = () => {
       </div>
 
       {/* Panel derecho */}
-      <div className="flex-1 flex items-center justify-center px-4 py-10 bg-gray-50 dark:bg-gray-950">
-        <div className="w-full max-w-[420px] bg-white dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-8 sm:p-10">
+      <div className="flex-1 flex items-center justify-center px-4 py-10  bg-gray-50 dark:bg-gray-950 ">
+        <div className="w-full max-w-[420px] bg-white  dark:bg-gray-900 rounded-2xl border border-gray-200 dark:border-gray-800 shadow-sm p-8 sm:p-10">
 
           {/* Logo mobile */}
           <div className="flex lg:hidden items-center gap-2 justify-center mb-6">
@@ -174,14 +174,14 @@ const Login = () => {
             <div>
               <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">Verificación de seguridad</label>
               <div className="flex gap-2 mb-2">
-                <div className="flex-1 bg-white  border-2 border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-center overflow-hidden min-h-[48px] p-1">
+                <div className="flex-1 bg-white  border-2 border-gray-200 dark:border-gray-700 rounded-xl flex items-center justify-center overflow-hidden min-h-[48px] py-1">
                   {captchaData.url
-                    ? <img src={`${captchaData.url}?t=${Date.now()}`} alt="captcha" key={captchaData.key} className="max-h-[52px] rounded-lg block" />
-                    : <i className="fa-solid fa-circle-notch fa-spin text-gray-400 text-lg py-3"></i>
+                    ? <img src={`${captchaData.url}?t=${Date.now()}`} alt="captcha" key={captchaData.key} className="max-h-[px] rounded-lg block" />
+                    : <i classcaptchaName="fa-solid fa-circle-notch fa-spin text-gray-400 text-lg py-3"></i>
                   }
                 </div>
                 <button type="button" onClick={fetchCaptcha}
-                  className="w-11 h-11 rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center flex-shrink-0">
+                  className="w-10 h-10 my-auto rounded-xl border-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer flex items-center justify-center flex-shrink-0">
                   <i className="fa-solid fa-arrows-rotate"></i>
                 </button>
               </div>

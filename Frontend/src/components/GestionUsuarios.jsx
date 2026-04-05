@@ -167,7 +167,7 @@ const handleResetPassword = async () => {
               <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
               <input
                 className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
-                placeholder="Buscar por username, nombre, apellido o email..."
+                placeholder="Buscar por  Nombre, Apellido, Username o Email de Usuario..."
                 onChange={(e) => setBusqueda(e.target.value)}
               />
             </div>
@@ -248,7 +248,7 @@ const handleResetPassword = async () => {
   <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
     <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
     <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
-    <p className="mt-2 text-sm">Prueba con otro usuario, nombre, apellido o email.</p>
+    <p className="mt-2 text-sm">Prueba con otro  Nombre, Apellido, Username o Email de Usuario..</p>
   </div>
 ) : (
   usuariosFiltrados.map((u) => (

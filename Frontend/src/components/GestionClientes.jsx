@@ -227,7 +227,7 @@ const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened }) => {
               <i className="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
               <input
                 className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg text-sm bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 focus:outline-none focus:border-blue-500"
-                placeholder="Buscar por nombre o CUIT..."
+                placeholder="Buscar por Nombre o CUIT de Cliente..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
               />
@@ -297,36 +297,7 @@ const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened }) => {
 </div>
 
           {/* Cards */}
-          {clientesFiltrados.map((c) => (
-            <div key={c.cuit} className="bg-white dark:bg-gray-800 p-5 rounded-xl shadow-sm mb-4 border border-gray-100 dark:border-gray-700">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center gap-4">
-                  <div className="w-11 h-11 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-                    <i className="fa-solid fa-user"></i>
-                  </div>
-                  <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <strong className="text-base text-gray-800 dark:text-gray-100">{c.nombre}</strong>
-                      {c.baja
-                        ? <Badge bg="#fff5f5" color="#c53030">Inactivo</Badge>
-                        : <Badge bg="#f0fff4" color="#22543d">Activo</Badge>
-                      }
-                      {tieneOperacionesActivas(c.cuit) && <Badge bg="#fffeb3" color="#856404">Con operaciones</Badge>}
-                    </div>
-                    <p className="m-0 mt-1 text-gray-400 dark:text-gray-500 text-xs">
-                      <i className="fa-solid fa-id-card mr-1"></i> CUIT: {c.cuit} &nbsp;|&nbsp;
-                      <i className="fa-solid fa-location-dot mr-1"></i> {c.domicilio || "Sin domicilio"}
-                    </p>
-                  </div>
-                </div>
-                <button onClick={() => verDetalle(c)}
-                  className="px-3 py-2 border border-blue-400 text-blue-500 rounded-lg bg-transparent cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors text-sm">
-                  <i className="fa-solid fa-eye"></i>
-                </button>
-              </div>
-            </div>
-          ))}
-
+      
         {clientesFiltrados.map((c) => (
   <div key={c.cuit} className="bg-white dark:bg-gray-800 p-4 rounded-xl shadow-sm mb-3 border border-gray-100 dark:border-gray-700">
     <div className="flex justify-between items-start gap-3">
@@ -372,6 +343,13 @@ const GestionClientes = ({ onNotification, autoOpenForm, onFormOpened }) => {
     </div>
   </div>
 ))}
+ {loading ? <SkeletonTable rows={4} /> : clientesFiltrados.length === 0 && (
+            <div className="text-center py-16 text-gray-400 bg-white dark:bg-gray-800 rounded-xl border-2 border-dashed border-gray-200 dark:border-gray-700">
+              <i className="fa-solid fa-box-open text-5xl mb-4 text-gray-300 dark:text-gray-600 block"></i>
+              <h3 className="m-0 text-lg text-gray-600 dark:text-gray-300">No hay coincidencias</h3>
+              <p className="mt-2 text-sm">Prueba con otro Nombre o CUIT de CLiente.</p>
+            </div>
+          )}
         </div>
 
       ) : (
